@@ -1,0 +1,34 @@
+{
+  "name": "analytics-api",
+  "version": "1.0.0",
+  "description": "API for getting data from big-query",
+  "main": "./dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node-dev ./index.ts",
+    "build": "tsc"
+  },
+  "keywords": [
+    "big-query",
+    "analytics"
+  ],
+  "author": "Ankit Kumar",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/amqplib": "^0.8.2",
+    "@types/express": "^4.17.13",
+    "@types/luxon": "^2.3.2",
+    "@types/node": "^17.0.40",
+    "@types/response-time": "^2.3.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.7.3"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^6.0.0",
+    "amqplib": "^0.10.0",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "luxon": "^2.4.0",
+    "response-time": "^2.3.2"
+  }
+}
