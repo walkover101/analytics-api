@@ -7,12 +7,13 @@ dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 3000;
 import bigquery from './database/big-query';
+import logger from "./logger/logger";
 
 app.use(responseTime(function (req: Request, res: Response, time) {
     var stat = (req.method + req.url).toLowerCase()
         .replace(/[:.]/g, '')
         .replace(/\//g, '_')
-    console.info(`${stat} ${time}`);
+    logger.info(`${stat} ${time}`);
 }));
 // Body parsing Middleware
 app.use(express.json());
