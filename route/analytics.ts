@@ -126,7 +126,7 @@ COUNTIF(status = 17) as Blocked,
 COUNTIF(status = 7) as AutoFailed,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
 FROM \`msg91-reports.msg91_production.report_data\`
-WHERE (sentTime BETWEEN DATE("{endDate}") AND DATE("{startDate}")) AND
+WHERE (sentTime BETWEEN "{endDate}" AND "{startDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), user_pid;`);
 
