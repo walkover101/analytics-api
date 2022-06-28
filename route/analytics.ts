@@ -6,7 +6,7 @@ const queryMap = new Map();
 
 router.route('/users/:userId')
     .get(async (req: Request, res: Response) => {
-        const { userId = 100079, startDate = getDefaultDate().start, endDate = getDefaultDate().end, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        const { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         if (!isValidInterval(interval)) {
             res.status(400).send({
                 message: "Invalid interval provided",
@@ -111,7 +111,7 @@ COUNTIF(status = 17) as Blocked,
 COUNTIF(status = 7) as AutoFailed,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
 FROM \`msg91-reports.msg91_production.report_data\`
-WHERE (sentTime BETWEEN "{endDate}" AND "{startDate}") AND
+WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), EXTRACT(HOUR FROM sentTime), user_pid;`)
 
@@ -126,7 +126,7 @@ COUNTIF(status = 17) as Blocked,
 COUNTIF(status = 7) as AutoFailed,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
 FROM \`msg91-reports.msg91_production.report_data\`
-WHERE (sentTime BETWEEN "{endDate}" AND "{startDate}") AND
+WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), user_pid;`);
 
