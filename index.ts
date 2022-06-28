@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import analytics from './route/analytics';
 import reports from './route/reports'
 import responseTime from 'response-time';
+import cors from 'cors';
 dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 3000;
@@ -15,6 +16,18 @@ app.use(responseTime(function (req: Request, res: Response, time) {
         .replace(/\//g, '_')
     logger.info(`${stat} ${time}`);
 }));
+app.use(cors({
+    maxAge: 86400,
+    preflightContinue: true
+}));
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.end();
+    } else {
+        next();
+    }
+})
 // Body parsing Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
