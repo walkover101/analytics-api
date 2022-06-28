@@ -14,10 +14,11 @@ import logger from "./logger/logger";
 
 app.use(
     helmet({
-      contentSecurityPolicy: false,
+        contentSecurityPolicy: false,
     })
-  );
+);
 app.use(cors({
+    origin: '*',
     maxAge: 86400,
     preflightContinue: true
 }));
