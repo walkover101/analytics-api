@@ -4,6 +4,7 @@ import analytics from './route/analytics';
 import reports from './route/reports'
 import responseTime from 'response-time';
 import cors from 'cors';
+import helmet from 'helmet';
 dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 3000;
@@ -16,6 +17,11 @@ app.use(responseTime(function (req: Request, res: Response, time) {
         .replace(/\//g, '_')
     logger.info(`${stat} ${time}`);
 }));
+app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    })
+  );
 app.use(cors({
     maxAge: 86400,
     preflightContinue: true
