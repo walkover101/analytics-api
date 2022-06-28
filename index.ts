@@ -11,12 +11,7 @@ const port = process.env.PORT || 3000;
 import bigquery from './database/big-query';
 import logger from "./logger/logger";
 
-app.use(responseTime(function (req: Request, res: Response, time) {
-    var stat = (req.method + req.url).toLowerCase()
-        .replace(/[:.]/g, '')
-        .replace(/\//g, '_')
-    logger.info(`${stat} ${time}`);
-}));
+
 app.use(
     helmet({
       contentSecurityPolicy: false,
@@ -34,6 +29,13 @@ app.use((req, res, next) => {
         next();
     }
 })
+
+app.use(responseTime(function (req: Request, res: Response, time) {
+    var stat = (req.method + req.url).toLowerCase()
+        .replace(/[:.]/g, '')
+        .replace(/\//g, '_')
+    logger.info(`${stat} ${time}`);
+}));
 // Body parsing Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
