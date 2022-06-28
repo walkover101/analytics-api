@@ -40,7 +40,10 @@ router.route('/users/:userId')
             // maximumBytesBilled: "1000"
         });
         console.log(getDefaultDate());
-        const [rows] = await job.getQueryResults();
+        const [rows] = await job.getQueryResults().catch(error=>{
+            console.log(error);
+            return [];
+        });
         const total = {
             "Message": 0,
             "Delivered": 0,
@@ -123,7 +126,7 @@ COUNTIF(status = 17) as Blocked,
 COUNTIF(status = 7) as AutoFailed,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
 FROM \`msg91-reports.msg91_production.report_data\`
-WHERE (sentTime BETWEEN "{endDate}" AND "{startDate}") AND
+WHERE (sentTime BETWEEN {endDate} AND {startDate}) AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), user_pid;`);
 
