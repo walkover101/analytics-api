@@ -107,6 +107,7 @@ COUNTIF(status = 1) as Delivered,
 COUNTIF(status = 2) as Failed,
 COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
 COUNTIF(status = 9) as NDNC, 
+COUNTIF(status = 25) as Rejected,
 COUNTIF(status = 17) as Blocked, 
 COUNTIF(status = 7) as AutoFailed,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
@@ -124,6 +125,7 @@ COUNTIF(status = 1) + COUNTIF(status= 2) as Sent,
 COUNTIF(status = 9) as NDNC, 
 COUNTIF(status = 17) as Blocked, 
 COUNTIF(status = 7) as AutoFailed,
+COUNTIF(status = 25) as Rejected,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
 FROM \`msg91-reports.msg91_production.report_data\`
 WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
