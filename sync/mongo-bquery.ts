@@ -116,7 +116,7 @@ function updatePointer(timestamp: string, documentId: string = 'null') {
 function getLastTimestamp() {
     try {
         let data = fs.readFileSync(timestampPointerFile, 'utf-8');
-        return data;
+        return data.trim();
     } catch (error) {
         throw new Error("Please set the initial timestamp to sync data from in timestamp.txt file");
     }
@@ -129,7 +129,7 @@ function getLastDocument() {
     try {
         let data = fs.readFileSync(lastDocumentProcessed, 'utf-8');
         if (data && data != 'null') {
-            return data;
+            return data.trim();
         } else {
             return undefined;
         }
