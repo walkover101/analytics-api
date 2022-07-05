@@ -2,7 +2,7 @@ import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import bigQuery, { trimData, insertRow } from '../database/big-query';
+import bigQuery, { trimData, insertRows } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
 const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
@@ -76,10 +76,10 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
     // console.log(apps);
     let skip = !!docuemntId;
     for (let i = 0; i < docs.length; i++) {
-        const app = docs[i];
+        const doc = docs[i];
         // Skip documents that have already been processed
         if (skip) {
-            if (app._id == docuemntId) {
+            if (doc._id == docuemntId) {
                 skip = false;
             } else {
                 skip = true;
@@ -87,13 +87,13 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRow("msg91_test", "report_data", [trimData(textReportSchema, { ...app, _id: app?._id?.toString() })]);
+        await insertRows("msg91_test", "report_data", [trimData(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
         // Update the pointer to the last processed document
-        output.timestamp = DateTime.fromJSDate(app.updatedAt);
-        if (!output.timestamp?.isValid) {
-            output.timestamp = endTime;
+        let timestamp = DateTime.fromJSDate(doc.sentTime);
+        if (timestamp?.isValid) {
+            output.timestamp = timestamp;
         }
-        output.documentId = app["_id"]?.toString();
+        output.documentId = doc["_id"]?.toString();
     }
     return output;
 }

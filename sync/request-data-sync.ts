@@ -2,11 +2,12 @@ import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import bigQuery, { trimData, insertRow } from '../database/big-query';
+import bigQuery, { trimData, insertRows } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
 const textRequestSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
 dotenv.config();
+const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
@@ -75,6 +76,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
     const docs = await collection.find(query).sort({ requestDate: 1 }).toArray();
     // console.log(apps);
     let skip = !!docuemntId;
+    let batch = new Array();
     for (let i = 0; i < docs.length; i++) {
         const doc = docs[i];
         // Skip documents that have already been processed
@@ -87,13 +89,30 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRow("msg91_production", "new_request_data", [trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() })]);
+        batch.push(trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
+        if (batch.length >= BATCH_SIZE) {
+            await insertRows("msg91_production", "new_request_data", batch);
+            batch = [];
+        } else if (i == (docs.length - 1)) {
+            await insertRows("msg91_production", "new_request_data", batch);
+            batch = [];
+        } else {
+            continue;
+        }
+
         // Update the pointer to the last processed document
-        output.timestamp = DateTime.fromJSDate(doc.updatedAt);
-        if (!output.timestamp?.isValid) {
-            output.timestamp = endTime;
+        let timestamp = DateTime.fromJSDate(doc.requestDate);
+        if (timestamp?.isValid) {
+            output.timestamp = timestamp;
         }
         output.documentId = doc["_id"]?.toString();
+        try {
+            updatePointer(output.timestamp.toString(), output.documentId || undefined);
+
+        } catch (error) {
+            console.error(error);
+            break;
+        }
     }
     return output;
 }

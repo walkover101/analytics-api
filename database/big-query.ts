@@ -1,5 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import dotenv from 'dotenv';
+import fs from 'fs';
 dotenv.config();
 const options = {
     keyFilename: './service-account.json',
@@ -14,12 +15,19 @@ const bigQuery = new BigQuery({
     "projectId": process.env.GCP_PROJECT_ID
 });
 export default bigQuery;
-export async function insertRow(datasetId: string, tableId: string, rows: Array<Object>) {
+export async function insertRows(datasetId: string, tableId: string, rows: Array<Object>) {
     try {
         await bigQuery.dataset(datasetId).table(tableId).insert(rows);
         console.log(`Inserted ${rows.length} rows`);
     } catch (error) {
-        console.log(rows);
+        rows.forEach(row => {
+            try {
+
+                fs.appendFileSync('./error-row.txt', JSON.stringify(row));
+            } catch (error) {
+                console.error(error);
+            }
+        })
         console.error(JSON.stringify(error));
     }
 }
