@@ -5,10 +5,10 @@ import dotenv from 'dotenv';
 import bigQuery, { trimData, insertRow } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
-const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod'];
+const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod','oppri','crcy','node_id'];
 dotenv.config();
 const LAG = 48 * 60;  // Hours * Minutes
-const INTERVAL = 5   // Minutes 
+const INTERVAL = 5   // Minutes
 // Connection URL
 const url = process.env.MONGO_CONNECTION_STRING || "";
 const client = new MongoClient(url);
