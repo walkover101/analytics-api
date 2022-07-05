@@ -5,18 +5,18 @@ import dotenv from 'dotenv';
 import bigQuery, { trimData, insertRow } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
-const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
+const textRequestSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
 dotenv.config();
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
 const url = process.env.MONGO_CONNECTION_STRING || "";
 const client = new MongoClient(url);
-const timestampPointerFile = `${appDir}/timestamp.txt`;
-const lastDocumentProcessed = `${appDir}/last-document.txt`;
+const timestampPointerFile = `${appDir}/request-timestamp.txt`;
+const lastDocumentProcessed = `${appDir}/request-last-document.txt`;
 const dbName = process.env.MONGO_DB_NAME;
 
-export async function main() {
+export default async function requestDataSync() {
     // console.log("Timestamp",getTimestamp());
     // Use connect method to connect to the server
     let connection = await client.connect();
@@ -40,7 +40,7 @@ export async function main() {
             });
             console.log(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await dummyWait((INTERVAL * 1000) / 2);
+                await dummyWait((INTERVAL * 1000) / 4);
             } else {
                 console.log("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
@@ -67,19 +67,19 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         timestamp: endTime
     }
     const query = {
-        sentTime: {
+        requestDate: {
             $gte: startTime,
             $lte: endTime
         }
     }
-    const docs = await collection.find(query).sort({ sentTime: 1 }).toArray();
+    const docs = await collection.find(query).sort({ requestDate: 1 }).toArray();
     // console.log(apps);
     let skip = !!docuemntId;
     for (let i = 0; i < docs.length; i++) {
-        const app = docs[i];
+        const doc = docs[i];
         // Skip documents that have already been processed
         if (skip) {
-            if (app._id == docuemntId) {
+            if (doc._id == docuemntId) {
                 skip = false;
             } else {
                 skip = true;
@@ -87,13 +87,13 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRow("msg91_test", "report_data", [trimData(textReportSchema, { ...app, _id: app?._id?.toString() })]);
+        await insertRow("msg91_production", "new_request_data", [trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() })]);
         // Update the pointer to the last processed document
-        output.timestamp = DateTime.fromJSDate(app.updatedAt);
+        output.timestamp = DateTime.fromJSDate(doc.updatedAt);
         if (!output.timestamp?.isValid) {
             output.timestamp = endTime;
         }
-        output.documentId = app["_id"]?.toString();
+        output.documentId = doc["_id"]?.toString();
     }
     return output;
 }
