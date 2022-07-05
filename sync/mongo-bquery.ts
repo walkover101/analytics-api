@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import bigQuery, { trimData, insertRow } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
-const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod','oppri','crcy','node_id'];
+const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
 dotenv.config();
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
@@ -87,7 +87,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRow("msg91_test", "report_data", [trimData(textReportSchema, app)]);
+        await insertRow("msg91_test", "report_data", [trimData(textReportSchema, { ...app, _id: app?._id?.toString() })]);
         // Update the pointer to the last processed document
         output.timestamp = DateTime.fromJSDate(app.updatedAt);
         if (!output.timestamp?.isValid) {
