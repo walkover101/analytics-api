@@ -16,20 +16,20 @@ const bigQuery = new BigQuery({
 });
 export default bigQuery;
 export async function insertRows(datasetId: string, tableId: string, rows: Array<Object>) {
-    try {
-        await bigQuery.dataset(datasetId).table(tableId).insert(rows);
+    await bigQuery.dataset(datasetId).table(tableId).insert(rows, { skipInvalidRows: true, ignoreUnknownValues: true }).then(value => {
         console.log(`Inserted ${rows.length} rows`);
-    } catch (error) {
-        rows.forEach(row => {
-            try {
 
-                fs.appendFileSync('./error-row.txt', JSON.stringify(row));
-            } catch (error) {
-                console.error(error);
-            }
-        })
-        console.error(JSON.stringify(error));
-    }
+    }).catch((err) => {
+        if (err.name === 'PartialFailureError') {
+            // Some rows failed to insert, while others may have succeeded.
+            console.log("Some rows have failed to insert");
+            console.log(err?.message);
+            // err.errors (object[]):
+            // err.errors[].row (original row object passed to `insert`)
+            // err.errors[].errors[].reason
+        } 
+        console.error(JSON.stringify(err));
+    });
 }
 
 export function trimData(schema: Array<string>, data: { [key: string]: any }) {
