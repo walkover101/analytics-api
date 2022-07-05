@@ -2,7 +2,7 @@ import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import bigQuery from '../database/big-query';
+import bigQuery, { trimData, insertRow } from '../database/big-query';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
 const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod'];
@@ -87,7 +87,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRow("msg91_test", "text_report", [trimData(textReportSchema, app)]);
+        await insertRow("msg91_test", "report_data", [trimData(textReportSchema, app)]);
         // Update the pointer to the last processed document
         output.timestamp = DateTime.fromJSDate(app.updatedAt);
         if (!output.timestamp?.isValid) {
@@ -142,20 +142,3 @@ function getCurrentTimeInUTC() {
     return DateTime.now().toUTC().toUnixInteger();
 }
 
-async function insertRow(datasetId: string, tableId: string, rows: Array<Object>) {
-    try {
-        await bigQuery.dataset(datasetId).table(tableId).insert(rows);
-        console.log(`Inserted ${rows.length} rows`);
-    } catch (error) {
-        console.log(rows);
-        console.error(JSON.stringify(error));
-    }
-}
-
-function trimData(schema: Array<string>, data: { [key: string]: any }) {
-    let output: { [key: string]: any } = {};
-    schema.forEach((key: string) => {
-        output[key as string] = data[key as string];
-    })
-    return output;
-}
