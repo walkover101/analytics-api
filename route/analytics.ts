@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import bigquery from '../database/big-query';
+import bigquery from '../startup/big-query';
 import { getDefaultDate } from '../utility';
 const router = express.Router();
 const queryMap = new Map();
@@ -40,7 +40,7 @@ router.route('/users/:userId')
             // maximumBytesBilled: "1000"
         });
         console.log(getDefaultDate());
-        const [rows] = await job.getQueryResults().catch(error=>{
+        const [rows] = await job.getQueryResults().catch(error => {
             console.log(error);
             return [];
         });

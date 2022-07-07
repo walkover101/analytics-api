@@ -1,15 +1,15 @@
-import rabbitmq, { Connection } from './database/rabbitmq';
+import rabbitmq, { Connection } from './startup/rabbitmq';
 import { delay } from './utility';
 const localRabbit = rabbitmq("amqp://localhost");
 localRabbit.on("connection", (connection) => {
     console.log("Got Connection");
-  startProducer(connection);
+    startProducer(connection);
 });
-localRabbit.on("error",(error)=>{
+localRabbit.on("error", (error) => {
     console.log(error);
 })
 
-function startProducer(connection: Connection){
+function startProducer(connection: Connection) {
     try {
 
         connection.createChannel(async (error: any, channel: any) => {
@@ -21,17 +21,17 @@ function startProducer(connection: Connection){
                 durable: false
             });
             let condition = true;
-            channel.on("error",(error:any)=>{
+            channel.on("error", (error: any) => {
                 condition = false;
             })
             let i = 0;
             while (condition) {
                 await delay(2000);
                 var msg = "Welcome World-" + (i++);
-                try{
+                try {
 
                     channel.sendToQueue(queue, Buffer.from(msg));
-                }catch(reason){
+                } catch (reason) {
                     console.log("Error");
                     condition = false;
                 }

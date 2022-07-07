@@ -2,7 +2,8 @@ import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import bigQuery, { trimData, insertRows } from '../database/big-query';
+import requestDataService from '../services/request-data-service';
+import utilityService from '../services/utility-service';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
 const textRequestSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
@@ -89,12 +90,10 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        batch.push(trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
-        if (batch.length >= BATCH_SIZE) {
-            await insertRows("msg91_production", "new_request_data", batch);
-            batch = [];
-        } else if (i == (docs.length - 1)) {
-            await insertRows("msg91_production", "new_request_data", batch);
+        batch.push(utilityService.trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
+
+        if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
+            await requestDataService.insertMany(batch);
             batch = [];
         } else {
             continue;

@@ -1,22 +1,22 @@
-import rabbitmq, { Connection } from './database/rabbitmq';
+import rabbitmq, { Connection } from './startup/rabbitmq';
 const localRabbit = rabbitmq('amqp://localhost');
 localRabbit.on("connection", (connection) => {
     console.log("Got Connection");
     startConsumer(connection);
 })
-localRabbit.on("close",()=>{
+localRabbit.on("close", () => {
     console.log("Local Rabbit Closed");
 })
-localRabbit.on("error",(error)=>{
+localRabbit.on("error", (error) => {
     console.error(error);
 })
-localRabbit.on("retry",()=>{
+localRabbit.on("retry", () => {
     console.log("Retrying");
 })
 
-function startConsumer(connection:Connection) {
+function startConsumer(connection: Connection) {
     try {
-        connection.createChannel((error:any, channel:any) => {
+        connection.createChannel((error: any, channel: any) => {
             if (error) {
                 throw error;
             }
@@ -24,7 +24,7 @@ function startConsumer(connection:Connection) {
             channel.assertQueue(queue, {
                 durable: false
             })
-            channel.consume(queue, (msg:any) => {
+            channel.consume(queue, (msg: any) => {
                 console.log(" [x] Received %s", msg.content.toString());
             }, {
                 noAck: true

@@ -8,7 +8,7 @@ import helmet from 'helmet';
 dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 3000;
-import bigquery from './database/big-query';
+import { bigQuery } from './startup/big-query';
 import logger from "./logger/logger";
 
 
@@ -43,7 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/analytics", analytics);
 app.use("/reports", reports);
 app.get("/", (req: Request, res: Response) => {
-    bigquery.getDatasets().then(datasets => {
+    bigQuery.getDatasets().then(datasets => {
         console.log(datasets);
     }).catch(reason => {
         console.log(reason);
