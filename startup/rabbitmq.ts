@@ -7,6 +7,7 @@ const RETRY_INTERVAL = 5000; // in millis
 const RABBIT_CONNECTION_STRING = process.env.RABBIT_CONNECTION_STRING || '';
 
 class RabbitConnection extends EventEmitter {
+    private static instance: RabbitConnection;
     private gracefulClose: boolean = false;
     private connectionString: string;
     private connection?: Connection;
@@ -16,6 +17,10 @@ class RabbitConnection extends EventEmitter {
         if (!connectionString) throw new Error("connectionString is required");
         this.connectionString = connectionString;
         this.setupConnection();
+    }
+
+    public static getSingletonInstance(connectionString: string): RabbitConnection {
+        return RabbitConnection.instance ||= new RabbitConnection(connectionString);
     }
 
     private async setupConnection(): Promise<Connection> {
@@ -59,5 +64,5 @@ class RabbitConnection extends EventEmitter {
 }
 
 export default (connectionString: string = RABBIT_CONNECTION_STRING): RabbitConnection => {
-    return new RabbitConnection(connectionString);
+    return RabbitConnection.getSingletonInstance(connectionString);
 }
