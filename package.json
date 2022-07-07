@@ -33,6 +33,7 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "helmet": "^5.1.0",
+    "lodash": "^4.17.21",
     "luxon": "^2.4.0",
     "mongodb": "^4.7.0",
     "response-time": "^2.3.2",

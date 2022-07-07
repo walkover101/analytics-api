@@ -1,19 +1,14 @@
+const _ = require('lodash');
+
 class UtilityService {
     private static instance: UtilityService;
 
     public static getSingletonInstance(): UtilityService {
-        UtilityService.instance ||= new UtilityService();
-        return UtilityService.instance;
+        return UtilityService.instance ||= new UtilityService();
     }
 
-    public trimData(schema: Array<string>, data: { [key: string]: any }) {
-        const output: { [key: string]: any } = {};
-
-        schema.forEach((key: string) => {
-            output[key as string] = data[key as string];
-        })
-
-        return output;
+    public prepareDataForBigQuery(schema: Array<string>, data: { [key: string]: any }) {
+        return _.pick(data, schema);
     }
 }
 

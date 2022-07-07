@@ -88,7 +88,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await reportDataService.insertMany([utilityService.trimData(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
+        await reportDataService.insertMany([utilityService.prepareDataForBigQuery(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
         // Update the pointer to the last processed document
         let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {

@@ -12,8 +12,7 @@ class ReportDataService {
     }
 
     public static getSingletonInstance(): ReportDataService {
-        ReportDataService.instance ||= new ReportDataService();
-        return ReportDataService.instance;
+        return ReportDataService.instance ||= new ReportDataService();
     }
 
     public insertMany(rows: Array<Object>) {

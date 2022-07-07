@@ -90,7 +90,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        batch.push(utilityService.trimData(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
+        batch.push(utilityService.prepareDataForBigQuery(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
             await requestDataService.insertMany(batch);

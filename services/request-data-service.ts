@@ -1,7 +1,7 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from '../startup/big-query';
 
-const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'new_request_data'
+const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
 
 class RequestDataService {
     private static instance: RequestDataService;
@@ -12,8 +12,7 @@ class RequestDataService {
     }
 
     public static getSingletonInstance(): RequestDataService {
-        RequestDataService.instance ||= new RequestDataService();
-        return RequestDataService.instance;
+        return RequestDataService.instance ||= new RequestDataService();
     }
 
     public insertMany(rows: Array<Object>) {
