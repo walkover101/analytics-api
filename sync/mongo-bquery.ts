@@ -2,7 +2,8 @@ import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import bigQuery, { trimData, insertRows } from '../database/big-query';
+import reportDataService from '../services/report-data-service';
+import utilityService from '../services/utility-service';
 const { dirname } = require('path');
 const appDir = dirname(require.main?.filename);
 const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
@@ -87,7 +88,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await insertRows("msg91_test", "report_data", [trimData(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
+        await reportDataService.insertMany([utilityService.prepareDataForBigQuery(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
         // Update the pointer to the last processed document
         let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {
