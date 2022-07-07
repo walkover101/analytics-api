@@ -8,6 +8,7 @@ const CREDENTIALS = {
     "client_email": process.env.CLIENT_EMAIL,
     "client_id": process.env.CLIENT_ID,
 };
+
 const bigQuery = new BigQuery({
     credentials: CREDENTIALS,
     projectId: process.env.GCP_PROJECT_ID
