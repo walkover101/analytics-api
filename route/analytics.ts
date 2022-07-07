@@ -1,12 +1,13 @@
+import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
 import bigquery from '../startup/big-query';
 import { getDefaultDate } from '../utility';
 const router = express.Router();
-const queryMap = new Map();
-
+const reportQueryMap = new Map();
+const requestQueryMap = new Map();
 router.route('/users/:userId')
     .get(async (req: Request, res: Response) => {
-        const { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         if (!isValidInterval(interval)) {
             res.status(400).send({
                 message: "Invalid interval provided",
@@ -24,26 +25,51 @@ router.route('/users/:userId')
         // WHERE (sentTime BETWEEN "${endDate}" AND "${startDate}") AND
         // user_pid = "${userId}"
         // GROUP BY DATE(sentTime), EXTRACT(HOUR FROM sentTime), user_pid, senderID;`
-        let query = null;
+        let reportDataQuery = null;
+        let requestDataQuery = null;
         try {
-            query = getQuery(interval, { startDate, endDate, userId });
-
+            interval = interval.replace(/['"]+/g, '') as any;
+            reportDataQuery = getQuery(reportQueryMap.get(interval), { startDate, endDate, userId });
+            requestDataQuery = getQuery(requestQueryMap.get(interval), { startDate, endDate, userId });
         } catch (error: any) {
             console.log(error);
             res.send(error && error.message);
-            return;
+            return [];
         }
 
-        const [job, stats] = await bigquery.createQueryJob({
-            query,
-            location: process.env.DATA_SET_LOCATION,
-            // maximumBytesBilled: "1000"
+        // const [reportDataJob] = await bigquery.createQueryJob({
+        //     query: reportDataQuery,
+        //     location: process.env.DATA_SET_LOCATION,
+        //     // maximumBytesBilled: "1000"
+        // });
+        // const [requestDataJob] = await bigquery.createQueryJob({
+        //     query: requestDataQuery,
+        //     location: process.env.DATA_SET_LOCATION,
+        //     // maximumBytesBilled: "1000"
+        // });
+        const [[reportDataJob], [requestDataJob]] = await Promise.all([
+            bigquery.createQueryJob({
+                query: reportDataQuery,
+                location: process.env.DATA_SET_LOCATION,
+                // maximumBytesBilled: "1000"
+            }),
+            bigquery.createQueryJob({
+                query: requestDataQuery,
+                location: process.env.DATA_SET_LOCATION,
+                // maximumBytesBilled: "1000"
+            })
+        ]).catch(reason => {
+            console.error(reason);
+            return [[], []];
         });
+
+
         console.log(getDefaultDate());
-        const [rows] = await job.getQueryResults().catch(error => {
-            console.log(error);
-            return [];
+        const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
+            console.error(reason)
+            return [[], []];
         });
+        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value } }), 'Date');
         const total = {
             "Message": 0,
             "Delivered": 0,
@@ -52,8 +78,7 @@ router.route('/users/:userId')
             "AvgDeliveryTime": 0
         }
         let totalDeliveryTime = 0;
-        const data = rows.map((row, index) => {
-            row["Date"] = row["Date"].value;
+        const data = rows.map((row: any, index: any) => {
             total["Message"] += row["Sent"];
             total["Delivered"] += row["Delivered"];
             total["TotalCredits"] += row["BalanceDeducted"];
@@ -77,10 +102,7 @@ router.route('/users/:userId/campaigns/:campaignId')
 function isValidInterval(interval: string) {
     return Object.values(INTERVAL).some(value => value == interval.replace(/['"]+/g, ''));
 }
-function getQuery(interval: INTERVAL, options: any) {
-    interval = interval.replace(/['"]+/g, '') as any;
-    var sqlQuery = queryMap.get(interval);
-
+function getQuery(sqlQuery: string, options: any) {
     sqlQuery = sqlQuery.replace(/{\w+}/g, (placeholder: any) => {
         const key = placeholder.substring(1, placeholder.length - 1);
         const value = options[key];
@@ -93,14 +115,53 @@ function getQuery(interval: INTERVAL, options: any) {
 
     return sqlQuery;
 }
-
+function mergeRows(rows: any[], mergeKey: string) {
+    console.log(rows);
+    const map = new Map();
+    rows.forEach(row => {
+        let key = row[mergeKey];
+        if (map.has(key)) {
+            map.set(key, mergeObject(row, map.get(key)));
+        } else {
+            map.set(key, row);
+        }
+    })
+    return Array.from(map.values());
+}
+function mergeObject(one: any, two: any) {
+    Object.keys(one).forEach(currKey => {
+        console.log("ONE", one);
+        console.log("TWO", two);
+        if (currKey == "DeliveryTime") return;
+        let value = one[currKey];
+        switch (typeof value) {
+            case 'number':
+                one[currKey] += two[currKey] || 0;
+                delete two[currKey];
+                break;
+            case 'string':
+                one[currKey] = two[currKey] || one[currKey];
+                delete two[currKey];
+                break;
+            case 'boolean':
+                one[currKey] = one[currKey] && two[currKey];
+                delete two[currKey];
+                break;
+            default:
+                one = { ...one, ...two };
+                break;
+        }
+    })
+    console.log("MERGED", one);
+    return one;
+}
 enum INTERVAL {
     HOURLY = "hourly",
     DAILY = "daily",
     // WEEKLY = "weekly",
     // MONTHLY = "monthly"
 }
-queryMap.set(INTERVAL.HOURLY, `SELECT DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
+reportQueryMap.set(INTERVAL.HOURLY, `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
 user_pid as Company,
 SUM(credit) as BalanceDeducted, 
 COUNTIF(status = 1) as Delivered, 
@@ -116,12 +177,12 @@ WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), EXTRACT(HOUR FROM sentTime), user_pid;`)
 
-queryMap.set(INTERVAL.DAILY, `SELECT DATE(sentTime) as Date,
+reportQueryMap.set(INTERVAL.DAILY, `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
 user_pid as Company, 
 SUM(credit) as BalanceDeducted, 
 COUNTIF(status = 1) as Delivered, 
 COUNTIF(status = 2) as Failed,
-COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
+-- COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
 COUNTIF(status = 9) as NDNC, 
 COUNTIF(status = 17) as Blocked, 
 COUNTIF(status = 7) as AutoFailed,
@@ -132,5 +193,19 @@ WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), user_pid;`);
 
-
+requestQueryMap.set(INTERVAL.DAILY, `SELECT COUNT(_id) as Sent, DATE(requestDate) as Date,
+user_pid as Company, 
+SUM(credit) as BalanceDeducted, 
+COUNTIF(reportStatus = 1) as Delivered, 
+COUNTIF(reportStatus = 2) as Failed,
+-- COUNTIF(reportStatus = 1) + COUNTIF(status= '2') as Sent, 
+COUNTIF(reportStatus = 9) as NDNC, 
+COUNTIF(reportStatus = 17) as Blocked, 
+COUNTIF(reportStatus = 7) as AutoFailed,
+COUNTIF(reportStatus = 25) as Rejected,
+ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
+FROM \`msg91-reports.msg91_production.request_data\`
+WHERE (requestDate BETWEEN "{startDate}" AND "{endDate}") AND isSingleRequest = "1" AND
+user_pid = "{userId}"
+GROUP BY DATE(requestDate), user_pid;`)
 export default router;
