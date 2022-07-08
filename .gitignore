@@ -3,6 +3,6 @@ package-lock.json
 .env
 service-account.json
 dist
-sync-job-pointers.json
+sync-jobs-config.json
 vineet*
 logs
