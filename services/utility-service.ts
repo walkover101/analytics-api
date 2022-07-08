@@ -1,15 +1,11 @@
-const _ = require('lodash');
-
-class UtilityService {
-    private static instance: UtilityService;
-
-    public static getSingletonInstance(): UtilityService {
-        return UtilityService.instance ||= new UtilityService();
-    }
-
-    public prepareDataForBigQuery(schema: Array<string>, data: { [key: string]: any }) {
-        return _.pick(data, schema);
-    }
+function delay(time = 1000) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            return resolve(true);
+        }, time)
+    });
 }
 
-export default UtilityService.getSingletonInstance();
+export {
+    delay
+}

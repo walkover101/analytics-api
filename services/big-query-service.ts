@@ -1,6 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
-import dotenv from 'dotenv';
-dotenv.config();
+import * as _ from "lodash";
+
 const MSG91_DATASET_ID = process.env.MSG91_DATASET_ID || 'msg91_test';
 
 const CREDENTIALS = {
@@ -18,7 +18,12 @@ function getMsg91Dataset() {
     return bigQuery.dataset(MSG91_DATASET_ID);
 }
 
+function prepareDocument(schema: Array<string>, doc: any) {
+    return _.pick({ ...doc, _id: doc?._id?.toString() }, schema);
+}
+
 export default getMsg91Dataset();
 export {
-    bigQuery
+    bigQuery,
+    prepareDocument
 }
