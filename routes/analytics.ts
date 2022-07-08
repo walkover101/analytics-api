@@ -141,11 +141,11 @@ router.route('/vendors')
                 // maximumBytesBilled: "1000"
             })
         ]).catch(reason => {
-            console.error(reason);
+            logger.error(reason);
             return [[], []];
         });
         const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
-            console.error(reason)
+            logger.error(reason)
             return [[], []];
         });
         const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["smsc"]}` } }), 'mergeKey');
