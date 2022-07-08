@@ -2,12 +2,14 @@ import rabbitmq, { Connection } from './services/rabbitmq-service';
 import logger from "./logger/logger";
 import { delay } from './utility';
 
-const localRabbit = rabbitmq("amqps://mfdbfjvm:Vb_uzFbnTZ40f43D9cgaENNyiYsuO-vg@puffin.rmq2.cloudamqp.com/mfdbfjvm");
-localRabbit.on("connect", (connection) => {
+const rabbitConnection = rabbitmq();
+
+rabbitConnection.on("connect", (connection) => {
     logger.info("Got Connection");
     startProducer(connection);
 });
-localRabbit.on("error", (error) => {
+
+rabbitConnection.on("error", (error) => {
     logger.error(error);
 })
 

@@ -11,7 +11,7 @@ function buildDevLogger(logLevel?: string) {
         level: logLevel,
         format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), format.errors({ stack: true }), localLogFormat),
         defaultMeta: SERVICE_NAME,
-        transports: [new transports.Console(),]
+        transports: [new transports.Console()]
     });
 }
 
@@ -21,7 +21,10 @@ function buildProdLogger(logLevel?: string) {
         level: logLevel,
         format: combine(timestamp(), format.errors({ stack: true }), format.json()),
         defaultMeta: { service: SERVICE_NAME },
-        transports: []
+        transports: [
+            new transports.Console(),
+            new transports.File({ filename: `logs/log_${new Date().toJSON().slice(0, 10)}.log` })
+        ]
     });
 }
 

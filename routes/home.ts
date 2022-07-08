@@ -6,12 +6,12 @@ const router = express.Router();
 router.get("/", async (_req: Request, res: Response) => {
     try {
         const datasets = await bigQuery.getDatasets();
-        logger.info(datasets);
+        if (datasets?.length) return res.send({ "healthy": true });
     } catch (err) {
         logger.error(err);
     }
 
-    res.send({ "healthy": true });
+    res.status(500).send('Couldn\'t load Datasets');
 });
 
 export default router;

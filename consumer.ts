@@ -1,18 +1,19 @@
 import rabbitmq, { Connection } from './services/rabbitmq-service';
 import logger from "./logger/logger";
-const localRabbit = rabbitmq('amqps://mfdbfjvm:Vb_uzFbnTZ40f43D9cgaENNyiYsuO-vg@puffin.rmq2.cloudamqp.com/mfdbfjvm');
 
-localRabbit.on("connect", (connection) => {
+const rabbitConnection = rabbitmq();
+
+rabbitConnection.on("connect", (connection) => {
     logger.info("Got Connection");
     startConsumer(connection);
 })
-localRabbit.on("close", () => {
+rabbitConnection.on("close", () => {
     logger.info("Local Rabbit Closed");
 })
-localRabbit.on("error", (error) => {
+rabbitConnection.on("error", (error) => {
     logger.error(error);
 })
-localRabbit.on("retry", () => {
+rabbitConnection.on("retry", () => {
     logger.info("Retrying");
 })
 

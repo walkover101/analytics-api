@@ -1,13 +1,13 @@
 import express from "express";
-import logger from "./logger/logger";
 import dotenv from "dotenv";
+dotenv.config();
+import logger from "./logger/logger";
 import helmet from './startup/helmet';
 import cors from './startup/cors';
 import responseTime from './startup/response-time';
 import routes from './startup/routes';
 
 const app = express();
-dotenv.config();
 helmet(app);
 cors(app);
 responseTime(app);
