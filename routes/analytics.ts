@@ -99,7 +99,62 @@ router.route('/users/:userId/campaigns/:campaignId')
         const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = req.params;
         res.send("Work in progress");
     });
-
+router.route('/vendors')
+    .get(async (req: Request, res: Response) => {
+        let { id, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        const reportQuery = `SELECT DATE(sentTime) as Date, smsc, COUNT(_id) as Total,
+        SUM(credit) as BalanceDeducted, 
+        COUNTIF(status = 1) as Delivered, 
+        COUNTIF(status = 2) as Failed,
+        COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
+        COUNTIF(status = 9) as NDNC, 
+        COUNTIF(status = 17) as Blocked, 
+        COUNTIF(status = 7) as AutoFailed,
+        COUNTIF(status = 25) as Rejected,
+        ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
+        FROM \`msg91-reports.msg91_production.report_data\`
+        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
+        GROUP BY DATE(sentTime), smsc;`
+        const requestQuery = `SELECT DATE(requestDate) as Date, smsc, COUNT(_id) as Total,
+        SUM(credit) as BalanceDeducted, 
+        COUNTIF(reportStatus = 1) as Delivered, 
+        COUNTIF(reportStatus = 2) as Failed,
+        COUNTIF(reportStatus = 1) + COUNTIF(reportStatus= 2) as Sent, 
+        COUNTIF(reportStatus = 9) as NDNC, 
+        COUNTIF(reportStatus = 17) as Blocked, 
+        COUNTIF(reportStatus = 7) as AutoFailed,
+        COUNTIF(reportStatus = 25) as Rejected,
+        ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
+        FROM \`msg91-reports.msg91_production.request_data\`
+        WHERE (requestDate BETWEEN "${startDate}" AND "${endDate}") AND isSingleRequest = "1"
+        GROUP BY DATE(requestDate), smsc;`
+        // return;
+        const [[reportDataJob], [requestDataJob]] = await Promise.all([
+            bigquery.createQueryJob({
+                query: reportQuery,
+                location: process.env.DATA_SET_LOCATION,
+                // maximumBytesBilled: "1000"
+            }),
+            bigquery.createQueryJob({
+                query: requestQuery,
+                location: process.env.DATA_SET_LOCATION,
+                // maximumBytesBilled: "1000"
+            })
+        ]).catch(reason => {
+            console.error(reason);
+            return [[], []];
+        });
+        const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
+            console.error(reason)
+            return [[], []];
+        });
+        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["smsc"]}` } }), 'mergeKey');
+        res.send(rows.map((row: any) => {
+            delete row["mergeKey"];
+            return row;
+        }));
+        return;
+    })
 function isValidInterval(interval: string) {
     return Object.values(INTERVAL).some(value => value == interval.replace(/['"]+/g, ''));
 }
@@ -117,7 +172,6 @@ function getQuery(sqlQuery: string, options: any) {
     return sqlQuery;
 }
 function mergeRows(rows: any[], mergeKey: string) {
-    logger.info(rows);
     const map = new Map();
     rows.forEach(row => {
         let key = row[mergeKey];
@@ -131,9 +185,16 @@ function mergeRows(rows: any[], mergeKey: string) {
 }
 function mergeObject(one: any, two: any) {
     Object.keys(one).forEach(currKey => {
-        logger.info("ONE", one);
-        logger.info("TWO", two);
-        if (currKey == "DeliveryTime") return;
+
+        if (currKey == "DeliveryTime") {
+            if (one[currKey] && two[currKey]) {
+                one[currKey] = ((one[currKey] + two[currKey]) / 2);
+            } else {
+                one[currKey] ||= two[currKey];
+            }
+            delete two[currKey];
+            return;
+        };
         let value = one[currKey];
         switch (typeof value) {
             case 'number':
@@ -153,30 +214,29 @@ function mergeObject(one: any, two: any) {
                 break;
         }
     })
-    logger.info("MERGED", one);
     return one;
 }
 enum INTERVAL {
-    HOURLY = "hourly",
+    // HOURLY = "hourly",
     DAILY = "daily",
     // WEEKLY = "weekly",
     // MONTHLY = "monthly"
 }
-reportQueryMap.set(INTERVAL.HOURLY, `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
-user_pid as Company,
-SUM(credit) as BalanceDeducted, 
-COUNTIF(status = 1) as Delivered, 
-COUNTIF(status = 2) as Failed,
-COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
-COUNTIF(status = 9) as NDNC, 
-COUNTIF(status = 25) as Rejected,
-COUNTIF(status = 17) as Blocked, 
-COUNTIF(status = 7) as AutoFailed,
-ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
-FROM \`msg91-reports.msg91_production.report_data\`
-WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
-user_pid = "{userId}"
-GROUP BY DATE(sentTime), EXTRACT(HOUR FROM sentTime), user_pid;`)
+// reportQueryMap.set(INTERVAL.HOURLY, `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
+// user_pid as Company,
+// SUM(credit) as BalanceDeducted, 
+// COUNTIF(status = 1) as Delivered, 
+// COUNTIF(status = 2) as Failed,
+// COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
+// COUNTIF(status = 9) as NDNC, 
+// COUNTIF(status = 25) as Rejected,
+// COUNTIF(status = 17) as Blocked, 
+// COUNTIF(status = 7) as AutoFailed,
+// ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
+// FROM \`msg91-reports.msg91_production.report_data\`
+// WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
+// user_pid = "{userId}"
+// GROUP BY DATE(sentTime), EXTRACT(HOUR FROM sentTime), user_pid;`)
 
 reportQueryMap.set(INTERVAL.DAILY, `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
 user_pid as Company, 
