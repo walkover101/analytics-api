@@ -47,18 +47,9 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
 
 function fetchDocsFromMongo(job: jobType): Promise<any[]> {
     const lastDocumentId: string = getLastDocumentId(job);
-
-    switch (job) {
-        case jobType.REQUEST_DATA: {
-            return fetchRequestDataDocs(maxEndTime(), lastDocumentId);
-        }
-        case jobType.REPORT_DATA: {
-            return fetchReportDataDocs(maxEndTime(), lastDocumentId);
-        }
-        default: {
-            return Promise.resolve([]);
-        }
-    }
+    if (job === jobType.REQUEST_DATA) return fetchRequestDataDocs(maxEndTime(), lastDocumentId);
+    if (job === jobType.REPORT_DATA) return fetchReportDataDocs(maxEndTime(), lastDocumentId);
+    return Promise.resolve([]);
 }
 
 function fetchRequestDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
