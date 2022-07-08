@@ -1,6 +1,6 @@
 import rabbitmq, { Connection } from './services/rabbitmq-service';
 import logger from "./logger/logger";
-import utilityService from './services/utility-service';
+import { delay } from './services/utility-service';
 
 const rabbitConnection = rabbitmq();
 
@@ -26,7 +26,7 @@ async function startProducer(connection: Connection) {
         })
         let i = 0;
         while (condition) {
-            await utilityService.delay(2000);
+            await delay(2000);
             var msg = "Welcome World-" + (i++);
             try {
 

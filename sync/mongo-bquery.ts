@@ -4,7 +4,7 @@ import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
 import reportDataService from '../services/report-data-service';
-import utilityService from '../services/utility-service';
+import { delay } from '../services/utility-service';
 import { dirname } from 'path';
 
 const appDir = dirname(require.main?.filename || '');
@@ -41,17 +41,17 @@ export async function main() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await utilityService.delay((INTERVAL * 1000) / 2);
+                await delay((INTERVAL * 1000) / 2);
             } else {
                 logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
                 logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
-                await utilityService.delay(100);
+                await delay(100);
             }
         } catch (error) {
             logger.error(error);
-            await utilityService.delay(10000);
+            await delay(10000);
         }
 
     }
