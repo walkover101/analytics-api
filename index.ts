@@ -1,6 +1,5 @@
 import express from "express";
-import dotenv from "dotenv";
-dotenv.config();
+import "./startup/dotenv";
 import logger from "./logger/logger";
 import helmet from './startup/helmet';
 import cors from './startup/cors';
