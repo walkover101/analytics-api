@@ -1,17 +1,16 @@
-import amqp from 'amqplib';
+import { MongoClient } from 'mongodb';
 import logger from "../logger/logger";
 import EventEmitter from 'events';
-import { delay } from '../services/utility-service';
-export type Connection = amqp.Connection;
+import { delay } from './utility-service';
 
 const RETRY_INTERVAL = 5000; // in millis
-const RABBIT_CONNECTION_STRING = process.env.RABBIT_CONNECTION_STRING || '';
+const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || '';
 
-class RabbitConnection extends EventEmitter {
-    private static instance: RabbitConnection;
+class MongoService extends EventEmitter {
+    private static instance: MongoService;
     private gracefulClose: boolean = false;
     private connectionString: string;
-    private connection?: Connection;
+    private connection?: MongoClient;
 
     constructor(connectionString: string) {
         super();
@@ -20,18 +19,19 @@ class RabbitConnection extends EventEmitter {
         this.setupConnection();
     }
 
-    public static getSingletonInstance(connectionString: string): RabbitConnection {
-        return RabbitConnection.instance ||= new RabbitConnection(connectionString);
+    public static getSingletonInstance(connectionString: string): MongoService {
+        return MongoService.instance ||= new MongoService(connectionString);
     }
 
-    private async setupConnection(): Promise<Connection> {
+    private async setupConnection(): Promise<MongoClient> {
         try {
             this.gracefulClose = false;
-            this.connection = await amqp.connect(this.connectionString);
+            const client = new MongoClient(this.connectionString);
+            this.connection = await client.connect();
             this.initEventListeners();
             return this.connection;
         } catch (err) {
-            logger.error('[RABBIT](setupConnection)', err)
+            logger.error('[MONGO](setupConnection)', err)
             this.emit("retry");
             await delay(RETRY_INTERVAL);
             return this.setupConnection();
@@ -40,17 +40,17 @@ class RabbitConnection extends EventEmitter {
 
     private initEventListeners() {
         if (!this.connection) return;
-        logger.info(`[RABBIT](onConnectionReady) Connection established to ${this.connectionString}`);
+        logger.info(`[MONGO](onConnectionReady) Connection established to ${this.connectionString}`);
         this.emit("connect", this.connection);
 
-        this.connection.on("close", (error) => {
+        this.connection.on("serverClosed", (error) => {
             this.connection = undefined;
 
             if (this.gracefulClose) {
-                logger.info('[RABBIT](onConnectionClosed) Gracefully');
+                logger.info('[MONGO](onConnectionClosed) Gracefully');
                 this.emit("gracefulClose");
             } else {
-                logger.error('[RABBIT](onConnectionClosed) Abruptly', error);
+                logger.error('[MONGO](onConnectionClosed) Abruptly', error);
                 this.emit("error", error);
             }
 
@@ -61,12 +61,12 @@ class RabbitConnection extends EventEmitter {
     public closeConnection() {
         if (this.connection) {
             this.gracefulClose = true;
-            logger.info('[RABBIT](closeConnection) Closing connection...');
+            logger.info('[MONGO](closeConnection) Closing connection...');
             this.connection.close();
         }
     }
 }
 
-export default (connectionString: string = RABBIT_CONNECTION_STRING): RabbitConnection => {
-    return RabbitConnection.getSingletonInstance(connectionString);
+export default (connectionString: string = MONGO_CONNECTION_STRING): MongoService => {
+    return MongoService.getSingletonInstance(connectionString);
 }

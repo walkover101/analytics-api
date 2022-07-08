@@ -7,6 +7,7 @@ rabbitConnection.on("connect", (connection) => {
     logger.info("Got Connection");
     startConsumer(connection);
 })
+
 rabbitConnection.on("close", () => {
     logger.info("Local Rabbit Closed");
 })

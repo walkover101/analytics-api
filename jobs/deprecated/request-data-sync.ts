@@ -1,10 +1,10 @@
 import { MongoClient } from 'mongodb';
-import logger from "../logger/logger";
+import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
-import requestDataService from '../services/request-data-service';
-import { delay } from '../services/utility-service';
+import requestDataService from '../../services/request-data-service';
+import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
 
 const appDir = dirname(require.main?.filename || '');
