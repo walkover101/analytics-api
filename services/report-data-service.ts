@@ -1,5 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from '../startup/big-query';
+import logger from "../logger/logger";
+import msg91Dataset from './big-query-service';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
 
@@ -21,7 +22,7 @@ class ReportDataService {
             return this.reportDataTable.insert(rows, insertOptions);
         } catch (err: any) {
             if (err.name !== 'PartialFailureError') throw err;
-            console.log("[ReportDataService:insertMany](PartialFailureError)", err);
+            logger.log("[ReportDataService:insertMany](PartialFailureError)", err);
         }
     }
 }

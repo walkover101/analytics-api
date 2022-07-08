@@ -1,7 +1,8 @@
 import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
-import bigquery from '../startup/big-query';
+import bigquery from '../services/big-query-service';
 import { getDefaultDate } from '../utility';
+import logger from "../logger/logger";
 const router = express.Router();
 const reportQueryMap = new Map();
 const requestQueryMap = new Map();
@@ -15,8 +16,8 @@ router.route('/users/:userId')
             });
             return;
         }
-        console.log(startDate);
-        console.log(endDate);
+        logger.info(startDate);
+        logger.info(endDate);
         // const query = `SELECT DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
         // user_pid as Company, senderID as ID, SUM(credit) as Credit, 
         // COUNTIF(status = 1) as Delivered, COUNTIF(status = 2) as Failed,
@@ -32,7 +33,7 @@ router.route('/users/:userId')
             reportDataQuery = getQuery(reportQueryMap.get(interval), { startDate, endDate, userId });
             requestDataQuery = getQuery(requestQueryMap.get(interval), { startDate, endDate, userId });
         } catch (error: any) {
-            console.log(error);
+            logger.info(error);
             res.send(error && error.message);
             return [];
         }
@@ -59,14 +60,14 @@ router.route('/users/:userId')
                 // maximumBytesBilled: "1000"
             })
         ]).catch(reason => {
-            console.error(reason);
+            logger.error(reason);
             return [[], []];
         });
 
 
-        console.log(getDefaultDate());
+        logger.info(getDefaultDate());
         const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
-            console.error(reason)
+            logger.error(reason)
             return [[], []];
         });
         const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value } }), 'Date');
@@ -116,7 +117,7 @@ function getQuery(sqlQuery: string, options: any) {
     return sqlQuery;
 }
 function mergeRows(rows: any[], mergeKey: string) {
-    console.log(rows);
+    logger.info(rows);
     const map = new Map();
     rows.forEach(row => {
         let key = row[mergeKey];
@@ -130,8 +131,8 @@ function mergeRows(rows: any[], mergeKey: string) {
 }
 function mergeObject(one: any, two: any) {
     Object.keys(one).forEach(currKey => {
-        console.log("ONE", one);
-        console.log("TWO", two);
+        logger.info("ONE", one);
+        logger.info("TWO", two);
         if (currKey == "DeliveryTime") return;
         let value = one[currKey];
         switch (typeof value) {
@@ -152,7 +153,7 @@ function mergeObject(one: any, two: any) {
                 break;
         }
     })
-    console.log("MERGED", one);
+    logger.info("MERGED", one);
     return one;
 }
 enum INTERVAL {

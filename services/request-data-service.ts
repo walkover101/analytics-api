@@ -1,5 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from '../startup/big-query';
+import logger from "../logger/logger";
+import msg91Dataset from './big-query-service';
 
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
 
@@ -21,7 +22,7 @@ class RequestDataService {
             return this.requestDataTable.insert(rows, insertOptions);
         } catch (err: any) {
             if (err.name !== 'PartialFailureError') throw err;
-            console.log("[RequestDataService:insertMany](PartialFailureError)", err);
+            logger.log("[RequestDataService:insertMany](PartialFailureError)", err);
         }
     }
 }
