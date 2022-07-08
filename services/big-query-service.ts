@@ -18,12 +18,12 @@ function getMsg91Dataset() {
     return bigQuery.dataset(MSG91_DATASET_ID);
 }
 
-function prepareData(schema: Array<string>, doc: any) {
+function prepareDocument(schema: Array<string>, doc: any) {
     return _.pick({ ...doc, _id: doc?._id?.toString() }, schema);
 }
 
 export default getMsg91Dataset();
 export {
     bigQuery,
-    prepareData
+    prepareDocument
 }

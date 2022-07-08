@@ -91,7 +91,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        batch.push(requestDataService.prepareDataForBigQuery(doc));
+        batch.push(requestDataService.prepareDocument(doc));
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
             await requestDataService.insertMany(batch);

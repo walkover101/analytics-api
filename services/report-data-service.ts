@@ -1,6 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
 import logger from "../logger/logger";
-import msg91Dataset, { prepareData } from './big-query-service';
+import msg91Dataset, { prepareDocument } from './big-query-service';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
 const reportDataSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
@@ -27,8 +27,8 @@ class ReportDataService {
         }
     }
 
-    public prepareDataForBigQuery(doc: any) {
-        return prepareData(reportDataSchema, doc);
+    public prepareDocument(doc: any) {
+        return prepareDocument(reportDataSchema, doc);
     }
 }
 

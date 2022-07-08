@@ -88,7 +88,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await reportDataService.insertMany([reportDataService.prepareDataForBigQuery(doc)]);
+        await reportDataService.insertMany([reportDataService.prepareDocument(doc)]);
         // Update the pointer to the last processed document
         let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {
