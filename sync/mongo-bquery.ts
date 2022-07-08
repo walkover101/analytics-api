@@ -8,7 +8,6 @@ import utilityService from '../services/utility-service';
 import { dirname } from 'path';
 
 const appDir = dirname(require.main?.filename || '');
-const textReportSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'oppri', 'crcy', 'node_id'];
 dotenv.config();
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
@@ -42,17 +41,17 @@ export async function main() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await dummyWait((INTERVAL * 1000) / 2);
+                await utilityService.delay((INTERVAL * 1000) / 2);
             } else {
                 logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
                 logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
-                await dummyWait(100);
+                await utilityService.delay(100);
             }
         } catch (error) {
             logger.error(error);
-            await dummyWait(10000);
+            await utilityService.delay(10000);
         }
 
     }
@@ -89,7 +88,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        await reportDataService.insertMany([utilityService.prepareDataForBigQuery(textReportSchema, { ...doc, _id: doc?._id?.toString() })]);
+        await reportDataService.insertMany([reportDataService.prepareDataForBigQuery(doc)]);
         // Update the pointer to the last processed document
         let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {
@@ -133,14 +132,3 @@ function getLastDocument() {
         return undefined;
     }
 }
-function dummyWait(timeInMS: number) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            return resolve(true);
-        }, timeInMS);
-    });
-}
-function getCurrentTimeInUTC() {
-    return DateTime.now().toUTC().toUnixInteger();
-}
-

@@ -8,7 +8,6 @@ import utilityService from '../services/utility-service';
 import { dirname } from 'path';
 
 const appDir = dirname(require.main?.filename || '');
-const textRequestSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
 dotenv.config();
 const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
@@ -44,17 +43,17 @@ export default async function requestDataSync() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await dummyWait((INTERVAL * 1000) / 4);
+                await utilityService.delay((INTERVAL * 1000) / 4);
             } else {
                 logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
                 logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
-                await dummyWait(100);
+                await utilityService.delay(100);
             }
         } catch (error) {
             logger.error(error);
-            await dummyWait(10000);
+            await utilityService.delay(10000);
         }
 
     }
@@ -92,7 +91,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        batch.push(utilityService.prepareDataForBigQuery(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
+        batch.push(requestDataService.prepareDataForBigQuery(doc));
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
             await requestDataService.insertMany(batch);
@@ -151,14 +150,3 @@ function getLastDocument() {
         return undefined;
     }
 }
-function dummyWait(timeInMS: number) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            return resolve(true);
-        }, timeInMS);
-    });
-}
-function getCurrentTimeInUTC() {
-    return DateTime.now().toUTC().toUnixInteger();
-}
-

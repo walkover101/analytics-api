@@ -1,7 +1,7 @@
 import amqp from 'amqplib';
 import logger from "../logger/logger";
 import EventEmitter from 'events';
-import { delay } from '../utility';
+import utilityService from '../services/utility-service';
 export type Connection = amqp.Connection;
 
 const RETRY_INTERVAL = 5000; // in millis
@@ -33,7 +33,7 @@ class RabbitConnection extends EventEmitter {
         } catch (err) {
             logger.error('[RABBIT](getConnection)', err)
             this.emit("retry");
-            await delay(RETRY_INTERVAL);
+            await utilityService.delay(RETRY_INTERVAL);
             return this.setupConnection();
         }
     }

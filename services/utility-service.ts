@@ -1,5 +1,3 @@
-import * as _ from "lodash";
-
 class UtilityService {
     private static instance: UtilityService;
 
@@ -7,8 +5,12 @@ class UtilityService {
         return UtilityService.instance ||= new UtilityService();
     }
 
-    public prepareDataForBigQuery(schema: Array<string>, data: { [key: string]: any }) {
-        return _.pick(data, schema);
+    public delay(time = 1000) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                return resolve(true);
+            }, time)
+        });
     }
 }
 

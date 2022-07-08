@@ -1,8 +1,10 @@
 import { Table } from '@google-cloud/bigquery';
+import * as _ from "lodash";
 import logger from "../logger/logger";
-import msg91Dataset from './big-query-service';
+import msg91Dataset, { prepareData } from './big-query-service';
 
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
+const requestDataSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
 
 class RequestDataService {
     private static instance: RequestDataService;
@@ -24,6 +26,10 @@ class RequestDataService {
             if (err.name !== 'PartialFailureError') throw err;
             logger.log("[RequestDataService:insertMany](PartialFailureError)", err);
         }
+    }
+
+    public prepareDataForBigQuery(doc: any) {
+        return prepareData(requestDataSchema, doc);
     }
 }
 
