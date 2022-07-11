@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import requestDataService from '../../services/request-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
+import RequestData from '../../models/request-data.model';
+import reportDataService from '../../services/report-data-service';
+import ReportData from '../../models/report-data.model';
 
 const appDir = dirname(require.main?.filename || '');
 dotenv.config();
@@ -25,7 +28,7 @@ export default async function requestDataSync() {
     let connection = await client.connect();
     logger.info('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection(process.env.MONGO_COLLECTION_NAME || "");
+    const collection = db.collection(process.env.REQUEST_MONGO_COLLECTION_NAME || "");
     while (true) {
         try {
             // Read the timestamp from file and set it as startTime
@@ -59,10 +62,10 @@ export default async function requestDataSync() {
     }
 }
 
-// main()
-//     .then(logger.info)
-//     .catch(logger.error)
-//     .finally(() => client.close());
+requestDataSync()
+    .then(logger.info)
+    .catch(logger.error)
+    .finally(() => client.close());
 
 async function syncData(collection: any, startTime: DateTime, endTime: DateTime, docuemntId?: string) {
     const output = {
@@ -90,11 +93,14 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             continue;
         }
-
-        batch.push(requestDataService.prepareDocument(doc));
+        batch.push(doc);
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
-            await requestDataService.insertMany(batch);
+            await requestDataService.insertMany(batch.map(row => new RequestData(row)));
+            const reportData = batch.filter(row => row.isSingleRequest == "1");
+            await reportDataService.insertMany(reportData.map(row => {
+                return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate });
+            }));
             batch = [];
         } else {
             continue;

@@ -6,9 +6,12 @@ import dotenv from 'dotenv';
 import reportDataService from '../../services/report-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
+import ReportData from '../../models/report-data.model';
+import requestDataService from '../../services/request-data-service';
 
 const appDir = dirname(require.main?.filename || '');
 dotenv.config();
+const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
@@ -23,7 +26,7 @@ export async function main() {
     let connection = await client.connect();
     logger.info('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection(process.env.MONGO_COLLECTION_NAME || "");
+    const collection = db.collection(process.env.REPORT_MONGO_COLLECTION_NAME || "");
     while (true) {
         try {
             // Read the timestamp from file and set it as startTime
@@ -57,10 +60,10 @@ export async function main() {
     }
 }
 
-// main()
-//     .then(logger.info)
-//     .catch(logger.error)
-//     .finally(() => client.close());
+main()
+    .then(logger.info)
+    .catch(logger.error)
+    .finally(() => client.close());
 
 async function syncData(collection: any, startTime: DateTime, endTime: DateTime, docuemntId?: string) {
     const output = {
@@ -76,6 +79,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
     const docs = await collection.find(query).sort({ sentTime: 1 }).toArray();
     // logger.info(apps);
     let skip = !!docuemntId;
+    let batch = new Array();
     for (let i = 0; i < docs.length; i++) {
         const doc = docs[i];
         // Skip documents that have already been processed
@@ -87,14 +91,35 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             continue;
         }
+        batch.push(new ReportData(doc));
 
-        await reportDataService.insertMany([reportDataService.prepareDocument(doc)]);
+        if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
+            await reportDataService.insertMany(batch);
+            batch = [];
+        } else {
+            continue;
+        }
+
         // Update the pointer to the last processed document
         let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {
             output.timestamp = timestamp;
         }
         output.documentId = doc["_id"]?.toString();
+        try {
+            updatePointer(output.timestamp.toString(), output.documentId || undefined);
+
+        } catch (error) {
+            logger.error(error);
+            break;
+        }
+        // await reportDataService.insertMany([reportDataService.prepareDocument(doc)]);
+        // // Update the pointer to the last processed document
+        // let timestamp = DateTime.fromJSDate(doc.sentTime);
+        // if (timestamp?.isValid) {
+        //     output.timestamp = timestamp;
+        // }
+        // output.documentId = doc["_id"]?.toString();
     }
     return output;
 }
