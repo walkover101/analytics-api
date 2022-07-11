@@ -58,8 +58,10 @@ function getLastDocumentId(job: jobType) {
 
 function updateTrackers(job: jobType, lastDocument: any) {
     try {
+        const lastDocId = lastDocument?._id?.toString() || null;
+        logger.info(`[UPDATE TRACKERS] Updating lastDocumentId to ${lastDocId}...`);
         const config = getSyncJobConfig();
-        config[job].trackers.lastDocumentId = lastDocument?._id?.toString() || null;
+        config[job].trackers.lastDocumentId = lastDocId;
         writeFileSync(SNYC_JOB_CONFIG_FILE_PATH, JSON.stringify(config, null, 2));
     } catch (error) {
         logger.error(error);

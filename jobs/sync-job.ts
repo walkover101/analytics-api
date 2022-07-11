@@ -16,6 +16,8 @@ const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 
 async function initSynching(job: jobType) {
+    logger.info(`BATCH_SIZE: ${BATCH_SIZE} | MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | DELAY_INTERVAL: ${DELAY_INTERVAL}`);
+
     while (true) {
         try {
             const mongoDocs = await fetchDocsFromMongo(job);
@@ -33,16 +35,25 @@ async function initSynching(job: jobType) {
 }
 
 async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
+    logger.info(`[BATCH PROCESSING](Total Records: ${mongoDocs.length}) Initiating...`);
+
     for (let i = 0; i < mongoDocs.length; i += BATCH_SIZE) {
         const batch = mongoDocs.slice(i, i + BATCH_SIZE);
+        logger.info(`[BATCH PROCESSING] ${i}-${(i + BATCH_SIZE) - 1} records synching to big query...`);
         await insertBatchInBigQuery(job, batch);
+        logger.info('[BATCH PROCESSING] Batch synched.');
         updateTrackers(job, batch.pop());
     }
 }
 
 async function insertBatchInBigQuery(job: jobType, batch: any[]) {
-    if (job === jobType.REQUEST_DATA) await requestDataService.insertMany(batch);
-    if (job === jobType.REPORT_DATA) await reportDataService.insertMany(batch);
+    try {
+        if (job === jobType.REQUEST_DATA) await requestDataService.insertMany(batch);
+        if (job === jobType.REPORT_DATA) await reportDataService.insertMany(batch);
+    } catch (err: any) {
+        if (err.name !== 'PartialFailureError') throw err;
+        logger.error(err.message);
+    }
 }
 
 function fetchDocsFromMongo(job: jobType): Promise<any[]> {
@@ -58,6 +69,8 @@ function fetchRequestDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
         requestDate: { $lte: maxEndTime }
     }
 
+    logger.info(`[MONGO] Fetching docs...`);
+    logger.info(query);
     const collection = mongoConnection.db().collection(REQUEST_DATA_COLLECTION);
     return collection.find(query).limit(MONGO_DOCS_LIMIT).sort({ requestDate: 1 }).toArray();
 }
@@ -68,6 +81,8 @@ function fetchReportDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
         sentTime: { $lte: maxEndTime }
     }
 
+    logger.info(`[MONGO] Fetching docs...`);
+    logger.info(query);
     const collection = mongoConnection.db().collection(REPORT_DATA_COLLECTION);
     return collection.find(query).limit(MONGO_DOCS_LIMIT).sort({ requestDate: 1 }).toArray();
 }

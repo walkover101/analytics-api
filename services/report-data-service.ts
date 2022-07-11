@@ -18,13 +18,8 @@ class ReportDataService {
     }
 
     public insertMany(rows: Array<Object>) {
-        try {
-            const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
-            return this.reportDataTable.insert(rows, insertOptions);
-        } catch (err: any) {
-            if (err.name !== 'PartialFailureError') throw err;
-            logger.log("[ReportDataService:insertMany](PartialFailureError)", err);
-        }
+        const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
+        return this.reportDataTable.insert(rows, insertOptions);
     }
 
     public prepareDocument(doc: any) {
