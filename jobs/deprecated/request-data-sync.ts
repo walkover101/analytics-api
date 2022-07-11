@@ -28,7 +28,7 @@ export default async function requestDataSync() {
     let connection = await client.connect();
     logger.info('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection(process.env.REQUEST_MONGO_COLLECTION_NAME || "");
+    const collection = db.collection(process.env.REQUEST_DATA_COLLECTION || "");
     while (true) {
         try {
             // Read the timestamp from file and set it as startTime
