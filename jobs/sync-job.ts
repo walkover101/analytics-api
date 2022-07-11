@@ -16,7 +16,7 @@ const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 
 async function initSynching(job: jobType) {
-    logger.info(`BATCH_SIZE: ${BATCH_SIZE} | MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | DELAY_INTERVAL: ${DELAY_INTERVAL}`);
+    logger.info(`MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | BATCH_SIZE: ${BATCH_SIZE} | DELAY_INTERVAL: ${DELAY_INTERVAL}`);
 
     while (true) {
         try {
@@ -70,7 +70,7 @@ function fetchRequestDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
     }
 
     logger.info(`[MONGO] Fetching docs...`);
-    logger.info(query);
+    logger.info(JSON.stringify(query));
     const collection = mongoConnection.db().collection(REQUEST_DATA_COLLECTION);
     return collection.find(query).limit(MONGO_DOCS_LIMIT).sort({ requestDate: 1 }).toArray();
 }
@@ -82,7 +82,7 @@ function fetchReportDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
     }
 
     logger.info(`[MONGO] Fetching docs...`);
-    logger.info(query);
+    logger.info(`[MONGO] Query - ${JSON.stringify(query)}`);
     const collection = mongoConnection.db().collection(REPORT_DATA_COLLECTION);
     return collection.find(query).limit(MONGO_DOCS_LIMIT).sort({ requestDate: 1 }).toArray();
 }
