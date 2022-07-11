@@ -1,9 +1,8 @@
 import { Table } from '@google-cloud/bigquery';
-import logger from "../logger/logger";
-import msg91Dataset, { prepareDocument } from './big-query-service';
+import msg91Dataset from './big-query-service';
+import ReportData from '../models/report-data.model';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
-const reportDataSchema = ['_id', 'requestID', 'telNum', 'status', 'sentTime', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'deliveryTime', 'route', 'credit', 'retryCount', 'sentTimePeriod', 'crcy', 'node_id'];
 
 class ReportDataService {
     private static instance: ReportDataService;
@@ -17,13 +16,9 @@ class ReportDataService {
         return ReportDataService.instance ||= new ReportDataService();
     }
 
-    public insertMany(rows: Array<Object>) {
+    public insertMany(rows: Array<ReportData>) {
         const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
         return this.reportDataTable.insert(rows, insertOptions);
-    }
-
-    public prepareDocument(doc: any) {
-        return prepareDocument(reportDataSchema, doc);
     }
 }
 

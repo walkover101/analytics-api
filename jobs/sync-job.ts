@@ -6,6 +6,8 @@ import { getLastDocumentId, jobType, updateTrackers } from "../services/sync-job
 import { DateTime } from 'luxon';
 import requestDataService from "../services/request-data-service";
 import reportDataService from "../services/report-data-service";
+import ReportData from '../models/report-data.model';
+import RequestData from '../models/request-data.model';
 
 let mongoConnection: MongoClient;
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
@@ -48,8 +50,8 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
 
 async function insertBatchInBigQuery(job: jobType, batch: any[]) {
     try {
-        if (job === jobType.REQUEST_DATA) await requestDataService.insertMany(batch);
-        if (job === jobType.REPORT_DATA) await reportDataService.insertMany(batch);
+        if (job === jobType.REQUEST_DATA) await requestDataService.insertMany(batch.map(doc => new RequestData(doc)));
+        if (job === jobType.REPORT_DATA) await reportDataService.insertMany(batch.map(doc => new ReportData(doc)));
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(err.message);

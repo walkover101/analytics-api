@@ -1,10 +1,10 @@
 import { Table } from '@google-cloud/bigquery';
 import * as _ from "lodash";
 import logger from "../logger/logger";
-import msg91Dataset, { prepareDocument } from './big-query-service';
+import msg91Dataset from './big-query-service';
+import RequestData from '../models/request-data.model';
 
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
-const requestDataSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
 
 class RequestDataService {
     private static instance: RequestDataService;
@@ -18,7 +18,7 @@ class RequestDataService {
         return RequestDataService.instance ||= new RequestDataService();
     }
 
-    public insertMany(rows: Array<Object>) {
+    public insertMany(rows: Array<RequestData>) {
         try {
             const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
             return this.requestDataTable.insert(rows, insertOptions);
@@ -26,10 +26,6 @@ class RequestDataService {
             if (err.name !== 'PartialFailureError') throw err;
             logger.log("[RequestDataService:insertMany](PartialFailureError)", err);
         }
-    }
-
-    public prepareDocument(doc: any) {
-        return prepareDocument(requestDataSchema, doc);
     }
 }
 
