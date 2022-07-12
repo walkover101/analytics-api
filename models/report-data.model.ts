@@ -15,7 +15,8 @@ export default class ReportData {
     private 'sentTimePeriod': Date;
     private 'crcy': string;
     private 'node_id': string;
-    private 'oppri': number
+    private 'oppri': number;
+    private 'isSingleRequest': string;
 
     constructor(attr: any) {
         this._id = attr['_id'].toString();
@@ -35,5 +36,6 @@ export default class ReportData {
         this.crcy = attr['crcy'];
         this.node_id = attr['node_id'];
         this.oppri = parseFloat(attr['oppri'] || 0);
+        this.isSingleRequest = attr['isSingleRequest'];
     }
 }

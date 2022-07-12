@@ -1,8 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { MongoClient } from 'mongodb';
 import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import dotenv from 'dotenv';
 import reportDataService from '../../services/report-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
@@ -10,7 +11,6 @@ import ReportData from '../../models/report-data.model';
 import requestDataService from '../../services/request-data-service';
 
 const appDir = dirname(require.main?.filename || '');
-dotenv.config();
 const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes

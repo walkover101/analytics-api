@@ -1,8 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { MongoClient } from 'mongodb';
 import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import dotenv from 'dotenv';
 import requestDataService from '../../services/request-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
@@ -11,7 +12,6 @@ import reportDataService from '../../services/report-data-service';
 import ReportData from '../../models/report-data.model';
 
 const appDir = dirname(require.main?.filename || '');
-dotenv.config();
 const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
@@ -99,7 +99,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             await requestDataService.insertMany(batch.map(row => new RequestData(row)));
             const reportData = batch.filter(row => row.isSingleRequest == "1");
             await reportDataService.insertMany(reportData.map(row => {
-                return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate });
+                return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
             }));
             batch = [];
         } else {
