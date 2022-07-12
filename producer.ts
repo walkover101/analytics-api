@@ -1,12 +1,16 @@
-import rabbitmq, { Connection } from './startup/rabbitmq';
-import { delay } from './utility';
-const localRabbit = rabbitmq("amqps://mfdbfjvm:Vb_uzFbnTZ40f43D9cgaENNyiYsuO-vg@puffin.rmq2.cloudamqp.com/mfdbfjvm");
-localRabbit.on("connect", (connection) => {
-    console.log("Got Connection");
+import rabbitmq, { Connection } from './services/rabbitmq-service';
+import logger from "./logger/logger";
+import { delay } from './services/utility-service';
+
+const rabbitConnection = rabbitmq();
+
+rabbitConnection.on("connect", (connection) => {
+    logger.info("Got Connection");
     startProducer(connection);
 });
-localRabbit.on("error", (error) => {
-    console.log(error);
+
+rabbitConnection.on("error", (error) => {
+    logger.error(error);
 })
 
 async function startProducer(connection: Connection) {
@@ -28,13 +32,13 @@ async function startProducer(connection: Connection) {
 
                 channel.sendToQueue(queue, Buffer.from(msg));
             } catch (reason) {
-                console.log("Error");
+                logger.error("Error");
                 condition = false;
             }
-            console.log("[x] Sent %s", msg);
+            logger.info("[x] Sent %s", msg);
         }
 
     } catch (error) {
-        console.log("Error Occurred");
+        logger.error("Error Occurred");
     }
 }

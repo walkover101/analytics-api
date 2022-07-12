@@ -1,7 +1,8 @@
 import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
-import bigquery from '../startup/big-query';
+import bigquery from '../services/big-query-service';
 import { getDefaultDate } from '../utility';
+import logger from "../logger/logger";
 const router = express.Router();
 const reportQueryMap = new Map();
 const requestQueryMap = new Map();
@@ -19,8 +20,8 @@ router.route('/users/:userId')
             });
             return;
         }
-        console.log(startDate);
-        console.log(endDate);
+        logger.info(startDate);
+        logger.info(endDate);
         // const query = `SELECT DATE(sentTime) as Date, EXTRACT(HOUR FROM sentTime) as Hour,
         // user_pid as Company, senderID as ID, SUM(credit) as Credit, 
         // COUNTIF(status = 1) as Delivered, COUNTIF(status = 2) as Failed,
@@ -36,7 +37,7 @@ router.route('/users/:userId')
             reportDataQuery = getQuery(reportQueryMap.get(interval), { startDate, endDate, userId });
             requestDataQuery = getQuery(requestQueryMap.get(interval), { startDate, endDate, userId });
         } catch (error: any) {
-            console.log(error);
+            logger.info(error);
             res.send(error && error.message);
             return [];
         }
@@ -63,14 +64,14 @@ router.route('/users/:userId')
                 // maximumBytesBilled: "1000"
             })
         ]).catch(reason => {
-            console.error(reason);
+            logger.error(reason);
             return [[], []];
         });
 
 
-        console.log(getDefaultDate());
+        logger.info(getDefaultDate());
         const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
-            console.error(reason)
+            logger.error(reason)
             return [[], []];
         });
         const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value } }), 'Date');
@@ -144,11 +145,11 @@ router.route('/vendors')
                 // maximumBytesBilled: "1000"
             })
         ]).catch(reason => {
-            console.error(reason);
+            logger.error(reason);
             return [[], []];
         });
         const [[reportRows], [requestRows]] = await Promise.all([reportDataJob.getQueryResults(), requestDataJob.getQueryResults()]).catch(reason => {
-            console.error(reason)
+            logger.error(reason)
             return [[], []];
         });
         const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["smsc"]}` } }), 'mergeKey');

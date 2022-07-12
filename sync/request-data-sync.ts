@@ -1,12 +1,13 @@
 import { MongoClient } from 'mongodb';
+import logger from "../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
 import requestDataService from '../services/request-data-service';
-import utilityService from '../services/utility-service';
-const { dirname } = require('path');
-const appDir = dirname(require.main?.filename);
-const textRequestSchema = ['_id', 'requestID', 'telNum', 'reportStatus', 'sentTimeReport', 'providerSMSID', 'user_pid', 'senderID', 'smsc', 'requestRoute', 'campaign_name', 'campaign_pid', 'curRoute', 'expiry', 'isCopied', 'requestDate', 'userCountryCode', 'requestUserid', 'status', 'userCredit', 'isSingleRequest', 'deliveryTime', 'route', 'credit', 'oppri', 'crcy', 'node_id'];
+import { delay } from '../services/utility-service';
+import { dirname } from 'path';
+
+const appDir = dirname(require.main?.filename || '');
 dotenv.config();
 const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
@@ -19,10 +20,10 @@ const lastDocumentProcessed = `${appDir}/request-last-document.txt`;
 const dbName = process.env.MONGO_DB_NAME;
 
 export default async function requestDataSync() {
-    // console.log("Timestamp",getTimestamp());
+    // logger.info("Timestamp",getTimestamp());
     // Use connect method to connect to the server
     let connection = await client.connect();
-    console.log('Connected successfully to server');
+    logger.info('Connected successfully to server');
     const db = client.db(dbName);
     const collection = db.collection(process.env.MONGO_COLLECTION_NAME || "");
     while (true) {
@@ -40,27 +41,27 @@ export default async function requestDataSync() {
             const timeLimit = DateTime.now().minus({
                 minutes: LAG
             });
-            console.log(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
+            logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await dummyWait((INTERVAL * 1000) / 4);
+                await delay((INTERVAL * 1000) / 4);
             } else {
-                console.log("Syncing Data...");
+                logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
-                console.log(documentId);
+                logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
-                await dummyWait(100);
+                await delay(100);
             }
         } catch (error) {
-            console.error(error);
-            await dummyWait(10000);
+            logger.error(error);
+            await delay(10000);
         }
 
     }
 }
 
 // main()
-//     .then(console.log)
-//     .catch(console.error)
+//     .then(logger.info)
+//     .catch(logger.error)
 //     .finally(() => client.close());
 
 async function syncData(collection: any, startTime: DateTime, endTime: DateTime, docuemntId?: string) {
@@ -75,7 +76,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         }
     }
     const docs = await collection.find(query).sort({ requestDate: 1 }).toArray();
-    // console.log(apps);
+    // logger.info(apps);
     let skip = !!docuemntId;
     let batch = new Array();
     for (let i = 0; i < docs.length; i++) {
@@ -90,7 +91,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
 
-        batch.push(utilityService.prepareDataForBigQuery(textRequestSchema, { ...doc, _id: doc?._id?.toString() }));
+        batch.push(requestDataService.prepareDocument(doc));
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
             await requestDataService.insertMany(batch);
@@ -109,7 +110,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             updatePointer(output.timestamp.toString(), output.documentId || undefined);
 
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             break;
         }
     }
@@ -129,7 +130,7 @@ function getLastTimestamp() {
         let data = fs.readFileSync(timestampPointerFile, 'utf-8');
         return data.trim();
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         throw new Error("Please set the initial timestamp to sync data from in timestamp.txt file");
     }
 }
@@ -149,14 +150,3 @@ function getLastDocument() {
         return undefined;
     }
 }
-function dummyWait(timeInMS: number) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            return resolve(true);
-        }, timeInMS);
-    });
-}
-function getCurrentTimeInUTC() {
-    return DateTime.now().toUTC().toUnixInteger();
-}
-
