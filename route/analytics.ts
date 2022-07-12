@@ -5,6 +5,10 @@ import { getDefaultDate } from '../utility';
 const router = express.Router();
 const reportQueryMap = new Map();
 const requestQueryMap = new Map();
+const PROJECT_ID = process.env.GCP_PROJECT_ID;
+const DATA_SET = process.env.MSG91_DATASET_ID;
+const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
+const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
 router.route('/users/:userId')
     .get(async (req: Request, res: Response) => {
         let { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
@@ -111,7 +115,7 @@ router.route('/vendors')
         COUNTIF(status = 7) as AutoFailed,
         COUNTIF(status = 25) as Rejected,
         ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
-        FROM \`msg91-reports.msg91_production.report_data\`
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
         WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
         GROUP BY DATE(sentTime), smsc;`
         const requestQuery = `SELECT DATE(requestDate) as Date, smsc, COUNT(_id) as Total,
@@ -124,7 +128,7 @@ router.route('/vendors')
         COUNTIF(reportStatus = 7) as AutoFailed,
         COUNTIF(reportStatus = 25) as Rejected,
         ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
-        FROM \`msg91-reports.msg91_production.request_data\`
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\`
         WHERE (requestDate BETWEEN "${startDate}" AND "${endDate}") AND isSingleRequest = "1"
         GROUP BY DATE(requestDate), smsc;`
         // return;
@@ -148,12 +152,74 @@ router.route('/vendors')
             return [[], []];
         });
         const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["smsc"]}` } }), 'mergeKey');
-        res.send(rows.map((row:any)=> {
+        res.send(rows.map((row: any) => {
             delete row["mergeKey"];
             return row;
         }));
         return;
     })
+router.route('/profit')
+    .get(async (req: Request, res: Response) => {
+        let { id, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        const query = `SELECT DATE(sentTime) as Date, crcy as Currency, SUM(credit) as Credit,
+        SUM(oppri) as Cost,
+        (SUM(credit) - SUM(oppri)) as Profit
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
+        GROUP BY DATE(sentTime), crcy;`
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        const [rows] = await job.getQueryResults();
+        res.send(rows.map(row => {
+            return { ...row, "Date": row["Date"].value }
+        }))
+        return;
+    });
+router.route('/profit/users/:userId')
+    .get(async (req: Request, res: Response) => {
+        let { userId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        const query = `SELECT DATE(sentTime) as Date, user_pid as Company, SUM(credit) as Credit,
+        SUM(oppri) as Cost,
+        (SUM(credit) - SUM(oppri)) as Profit
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}"
+        GROUP BY DATE(sentTime), user_pid;`
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        const [rows] = await job.getQueryResults();
+        res.send(rows.map(row => {
+            return { ...row, "Date": row["Date"].value }
+        }))
+        return;
+    });
+router.route('/profit/vendors')
+    .get(async (req: Request, res: Response) => {
+        let { userId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        const query = `SELECT DATE(sentTime) as Date, smsc as Vendor,
+        crcy as Currency,
+        SUM(credit) as Credit,
+        SUM(oppri) as Cost,
+        (SUM(credit) - SUM(oppri)) as Profit
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}"
+        GROUP BY DATE(sentTime), smsc, crcy;`
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        const [rows] = await job.getQueryResults();
+        res.send(rows.map(row => {
+            return { ...row, "Date": row["Date"].value }
+        }))
+        return;
+    });
 function isValidInterval(interval: string) {
     return Object.values(INTERVAL).some(value => value == interval.replace(/['"]+/g, ''));
 }
@@ -192,7 +258,7 @@ function mergeObject(one: any, two: any) {
                 one[currKey] ||= two[currKey];
             }
             delete two[currKey];
-           return;
+            return;
         };
         let value = one[currKey];
         switch (typeof value) {
@@ -248,7 +314,7 @@ COUNTIF(status = 17) as Blocked,
 COUNTIF(status = 7) as AutoFailed,
 COUNTIF(status = 25) as Rejected,
 ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
-FROM \`msg91-reports.msg91_production.report_data\`
+FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
 WHERE (sentTime BETWEEN "{startDate}" AND "{endDate}") AND
 user_pid = "{userId}"
 GROUP BY DATE(sentTime), user_pid;`);
@@ -264,7 +330,7 @@ COUNTIF(reportStatus = 17) as Blocked,
 COUNTIF(reportStatus = 7) as AutoFailed,
 COUNTIF(reportStatus = 25) as Rejected,
 ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
-FROM \`msg91-reports.msg91_production.request_data\`
+FROM \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\`
 WHERE (requestDate BETWEEN "{startDate}" AND "{endDate}") AND isSingleRequest = "1" AND
 user_pid = "{userId}"
 GROUP BY DATE(requestDate), user_pid;`)
