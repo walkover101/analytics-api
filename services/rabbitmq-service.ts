@@ -3,6 +3,7 @@ import logger from "../logger/logger";
 import EventEmitter from 'events';
 import { delay } from '../services/utility-service';
 export type Connection = amqp.Connection;
+export type Channel = amqp.Channel;
 
 const RETRY_INTERVAL = 5000; // in millis
 const RABBIT_CONNECTION_STRING = process.env.RABBIT_CONNECTION_STRING || '';

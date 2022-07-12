@@ -6,9 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev ./index.ts",
-    "dev-job": "ts-node-dev ./jobs/index.ts",
     "start": "node ./dist/index.js",
+    "dev-job": "ts-node-dev ./jobs/index.ts",
     "job": "node ./dist/jobs/index.js",
+    "dev-consumer": "ts-node-dev ./consumers/index.ts",
+    "consumer": "node ./dist/consumers/index.js",
     "script": "node ./dist/script.js",
     "build": "tsc"
   },
