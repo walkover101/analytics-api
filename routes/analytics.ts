@@ -208,7 +208,7 @@ router.route('/profit/vendors')
         SUM(oppri) as Cost,
         (SUM(credit) - SUM(oppri)) as Profit
         FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
-        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}"
+        WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
         GROUP BY DATE(sentTime), smsc, crcy;`
         const [job] = await bigquery.createQueryJob({
             query: query,
@@ -282,7 +282,7 @@ function mergeObject(one: any, two: any) {
     })
     return one;
 }
-enum INTERVAL {
+export enum INTERVAL {
     // HOURLY = "hourly",
     DAILY = "daily",
     // WEEKLY = "weekly",
