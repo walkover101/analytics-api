@@ -99,9 +99,60 @@ router.route('/users/:userId')
     });
 
 router.route('/users/:userId/campaigns/:campaignId')
-    .get((req: Request, res: Response) => {
-        const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = req.params;
-        res.send("Work in progress");
+    .get(async (req: Request, res: Response) => {
+        const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = { ...req.query, ...req.params } as any;
+        const query = `SELECT DATE(requestDate) as Date,
+        user_pid as Company, 
+        campaign_pid as Campaign,
+        COUNT(_id) as Sent, 
+        SUM(credit) as BalanceDeducted, 
+        COUNTIF(reportStatus = 1) as Delivered, 
+        COUNTIF(reportStatus = 2) as Failed,
+        COUNTIF(reportStatus = 9) as NDNC, 
+        COUNTIF(reportStatus = 17) as Blocked, 
+        COUNTIF(reportStatus = 7) as AutoFailed,
+        COUNTIF(reportStatus = 25) as Rejected,
+        ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\`
+        WHERE (requestDate BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}" AND campaign_pid = "${campaignId}"
+        GROUP BY DATE(requestDate), user_pid, campaign_pid;`;
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        const [rows] = await job.getQueryResults();
+        return res.send(rows.map(row => {
+            return { ...row, "Date": row["Date"].value }
+        }));
+    });
+router.route('/users/:userId/campaigns')
+    .get(async (req: Request, res: Response) => {
+        const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = { ...req.query, ...req.params } as any;
+        const query = `SELECT DATE(requestDate) as Date,
+        user_pid as Company, 
+        campaign_pid as Campaign,
+        COUNT(_id) as Sent, 
+        SUM(credit) as BalanceDeducted, 
+        COUNTIF(reportStatus = 1) as Delivered, 
+        COUNTIF(reportStatus = 2) as Failed,
+        COUNTIF(reportStatus = 9) as NDNC, 
+        COUNTIF(reportStatus = 17) as Blocked, 
+        COUNTIF(reportStatus = 7) as AutoFailed,
+        COUNTIF(reportStatus = 25) as Rejected,
+        ROUND(SUM(IF(reportStatus = 1,TIMESTAMP_DIFF(deliveryTime, requestDate, SECOND),NULL))/COUNTIF(reportStatus = 1),0) as DeliveryTime
+        FROM \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\`
+        WHERE (requestDate BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}"
+        GROUP BY DATE(requestDate), user_pid, campaign_pid;`;
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        const [rows] = await job.getQueryResults();
+        return res.send(rows.map(row => {
+            return { ...row, "Date": row["Date"].value }
+        }));
     });
 router.route('/vendors')
     .get(async (req: Request, res: Response) => {
