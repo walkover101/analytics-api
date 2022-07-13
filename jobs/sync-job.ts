@@ -54,7 +54,8 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
         if (job === jobType.REPORT_DATA) await reportDataService.insertMany(batch.map(doc => new ReportData(doc)));
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
-        logger.error(err.message);
+        logger.error(`[JOB](insertBatchInBigQuery) PartialFailureError`);
+        logger.error(JSON.stringify(err));
     }
 }
 

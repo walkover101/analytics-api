@@ -16,7 +16,7 @@ async function start() {
         rabbitChannel.prefetch(BUFFER_SIZE);
         rabbitChannel.assertQueue(QUEUE_NAME, { durable: true });
         startConsumption();
-    } catch (error) {
+    } catch (error: any) {
         logger.error(error);
     }
 }
@@ -32,7 +32,7 @@ function startConsumption() {
         if (buffer.length === BUFFER_SIZE) {
             await processMsgs(buffer);
             logger.info(`[CONSUMER](DLR Log Details) Messages processed, send ackowledgement...`);
-            // rabbitChannel.ack(msg, true); // true: Multiple Ack
+            rabbitChannel.ack(msg, true); // true: Multiple Ack
             buffer = [];
             logger.info(`[CONSUMER](DLR Log Details) Buffer is empty, waiting for messages...`);
         }
@@ -41,9 +41,16 @@ function startConsumption() {
 
 async function processMsgs(msgs: any[]) {
     logger.info(`[CONSUMER](DLR Log Details) Buffer full, processing ${msgs.length} messages...`);
-    const dlrLogDetails: Array<DlrLogDetail> = msgs.map(msg => msg.map((dlrLogDetail: any) => new DlrLogDetail(dlrLogDetail)));
-    dlrLogDetailsService.insertMany(dlrLogDetails);
-    await delay(20 * 1000);
+
+    try {
+        const dlrLogDetails: Array<DlrLogDetail> = [];
+        msgs.forEach(msg => msg.map((dlrLogDetail: any) => dlrLogDetails.push(new DlrLogDetail(dlrLogDetail))));
+        await dlrLogDetailsService.insertMany(dlrLogDetails);
+    } catch (err: any) {
+        if (err.name !== 'PartialFailureError') throw err;
+        logger.error(`[CONSUMER](DLR Log Details) PartialFailureError`);
+        logger.error(JSON.stringify(err));
+    }
 }
 
 const dlrLogDetailsConsumer = () => {

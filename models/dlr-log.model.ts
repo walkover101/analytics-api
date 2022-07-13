@@ -8,7 +8,7 @@ export default class DlrLog {
     private remoteMx: string;
     private remoteIp: string;
     private contentSize: number;
-    private diffDeliveryTime: string;
+    private diffDeliveryTime: number;
     private openCount: number;
     private hostname: string;
     private outboundEmailId: number;
@@ -37,7 +37,7 @@ export default class DlrLog {
         this.remoteMx = attr['rmx'];
         this.remoteIp = attr['rip'];
         this.contentSize = parseInt(attr['csz']);
-        this.diffDeliveryTime = attr['ddt'];
+        this.diffDeliveryTime = parseFloat(attr['ddt']);
         this.openCount = parseInt(attr['oct'] || 0);
         this.hostname = attr['hnm'];
         this.outboundEmailId = parseInt(attr['oid']);

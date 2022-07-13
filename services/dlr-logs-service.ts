@@ -2,7 +2,7 @@ import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from './big-query-service';
 import DlrLog from '../models/dlr-log.model';
 
-const DLR_LOGS_TABLE_ID = process.env.DLR_LOGS_TABLE_ID || 'dlr-logs'
+const DLR_LOGS_TABLE_ID = process.env.DLR_LOGS_TABLE_ID || 'dlr_logs'
 
 class DlrLogsService {
     private static instance: DlrLogsService;
@@ -18,8 +18,7 @@ class DlrLogsService {
 
     public insertMany(rows: Array<DlrLog>) {
         const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
-        rows.map(dlrlog => console.log(dlrlog));
-        // return this.dlrLogsTable.insert(rows, insertOptions);
+        return this.dlrLogsTable.insert(rows, insertOptions);
     }
 }
 

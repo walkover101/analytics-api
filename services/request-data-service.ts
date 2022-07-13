@@ -1,6 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
 import * as _ from "lodash";
-import logger from "../logger/logger";
+
 import msg91Dataset from './big-query-service';
 import RequestData from '../models/request-data.model';
 
@@ -19,13 +19,8 @@ class RequestDataService {
     }
 
     public insertMany(rows: Array<RequestData>) {
-        try {
-            const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
-            return this.requestDataTable.insert(rows, insertOptions);
-        } catch (err: any) {
-            if (err.name !== 'PartialFailureError') throw err;
-            logger.log("[RequestDataService:insertMany](PartialFailureError)", err);
-        }
+        const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
+        return this.requestDataTable.insert(rows, insertOptions);
     }
 }
 
