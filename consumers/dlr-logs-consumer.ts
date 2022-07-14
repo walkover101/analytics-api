@@ -45,7 +45,7 @@ async function processMsgs(msgs: any[]) {
     try {
         const dlrLogs: Array<DlrLog> = [];
         msgs.map(msg => msg.map((dlrlog: any) => dlrLogs.push(new DlrLog(dlrlog))));
-        await dlrLogsService.insertMany(dlrLogs);
+        if (dlrLogs.length) await dlrLogsService.insertMany(dlrLogs);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(`[CONSUMER](DLR Logs) PartialFailureError`);
