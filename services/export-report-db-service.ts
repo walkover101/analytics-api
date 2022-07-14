@@ -1,5 +1,6 @@
 import { CollectionReference } from 'firebase-admin/firestore';
 import { db } from '../firebase';
+import ExportReport from '../models/export-report.model';
 
 const EXPORT_REPORT_COLLECTION = process.env.EXPORT_REPORT_COLLECTION || 'exports'
 
@@ -15,8 +16,17 @@ class ExportReportDBService {
         return ExportReportDBService.instance ||= new ExportReportDBService();
     }
 
-    public insert(doc: any) {
-        return this.collection.add(doc);
+    public insert(doc: ExportReport) {
+        return this.collection.add(JSON.parse(JSON.stringify(doc)));
+    }
+
+    public update(docId: string, params: any) {
+        let { status, files, err } = params;
+        const data: any = {};
+        if (status) data.status = status;
+        if (files) data.files = files;
+        if (err) data.err = err;
+        return this.collection.doc(docId).update(data);
     }
 }
 

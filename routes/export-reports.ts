@@ -1,21 +1,38 @@
 import express, { Request, Response } from 'express';
 import logger from '../logger/logger';
 import exportService from '../services/export-report-db-service';
-import { DateTime } from 'luxon';
+import reportDataService from '../services/report-data-service';
+import ExportReport, { EXPORT_STATUS } from '../models/export-report.model';
+import { formatDate } from '../services/utility-service';
 
 const router = express.Router();
 
 router.route('/').get(async (req: Request, res: Response) => {
     try {
-        const doc = await exportService.insert({
-            companyId: 'COMAPNY_ID_1',
-            startDate: DateTime.now().minus({ minutes: 48 * 60 }),
-            endDate: DateTime.now(),
-            route: 1,
-            downloadLinks: ['http://google.com']
-        });
+        let { companyId, route } = req.query;
+        let startDate = formatDate(req.query.startDate as string);
+        let endDate = formatDate(req.query.endDate as string);
+        if (!startDate) return res.status(400).send({ message: 'Start Date must be provided in MM-DD-YYYY format' });
+        if (!endDate) return res.status(400).send({ message: 'End Date must be provided in MM-DD-YYYY format' });
+        if (!companyId) return res.status(400).send({ message: 'Company Id is mandatory' });
+        logger.info('[EXPORT] Creating entry in firestore...');
+        const exportReport = new ExportReport(companyId as string, startDate, endDate, route as string);
+        const exportReportDoc = await exportService.insert(exportReport);
+        logger.info('[EXPORT] Sending response to client...');
+        res.send({ id: exportReportDoc.id });
 
-        res.send(doc.id);
+        try {
+            logger.info('[EXPORT] Creating job...');
+            const [exportJob] = await reportDataService.export(exportReportDoc.id, exportReport);
+            logger.info('[EXPORT] Job created. Processing query...');
+            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.PROCESSING });
+            await exportJob.getQueryResults();
+            logger.info('[EXPORT] Export completed.');
+            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.SUCCESS, files: [exportReportDoc.id] });
+        } catch (err: any) {
+            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.ERROR, err: err.message });
+            logger.error(err);
+        }
     } catch (err: any) {
         logger.error(err);
         res.status(500).send({ "error": err.message });
