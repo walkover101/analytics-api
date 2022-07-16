@@ -31,13 +31,11 @@ class ExportReportDBService {
     }
 
     public index(companyId?: string) {
-        const collectionRef = this.collection;
-
         if (companyId) {
-            collectionRef.where('companyId', '==', companyId);
+            return this.collection.where('companyId', '==', companyId).get();
         }
 
-        return collectionRef.get();
+        return this.collection.get();
     }
 }
 
