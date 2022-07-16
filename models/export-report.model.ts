@@ -10,23 +10,22 @@ export enum EXPORT_STATUS {
     ERROR = 'ERROR'
 }
 
-const DEFAULT_FIELDS = [
+const DEFAULT_FIELDS: { [key: string]: string } = {
     // from report-data
-    'status',
-    'sentTime',
-    'deliveryTime',
-    'requestID',
-    'route',
-    'telNum',
-    'credit',
-    'senderID',
+    status: 'reportData.status',
+    sentTime: 'reportData.sentTime',
+    deliveryTime: 'reportData.deliveryTime',
+    requestId: 'reportData.requestID',
+    route: 'reportData.route',
+    telNum: 'reportData.telNum',
+    credit: 'reportData.credit',
+    senderId: 'reportData.senderID',
 
     // from request-data
-    'campaign_name',
-    'scheduleDate',
-    'scheduleTime',
-    'msgData'
-];
+    campaignName: 'requestData.campaign_name',
+    scheduleDateTime: 'requestData.scheduleDateTime',
+    msgData: 'requestData.msgData'
+}
 
 export default class ExportReport {
     id?: string;
@@ -34,9 +33,9 @@ export default class ExportReport {
     startDate: DateTime;
     endDate: DateTime;
     status: EXPORT_STATUS = EXPORT_STATUS.PENDING;
-    fields: Array<string> = DEFAULT_FIELDS;
+    fields: Array<string>;
     files?: Array<string>;
-    route?: string;
+    route?: Array<string>;
     err?: string;
     createdAt: Date = new Date();
     updatedAt: Date = new Date();
@@ -45,14 +44,16 @@ export default class ExportReport {
         this.companyId = companyId;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.route = route;
+        if (route) this.route = route.split(',');
         this.fields = this.getValidFields(fields.split(','));
     }
 
     getValidFields(fields: Array<string>) {
         if (!fields.length) return [];
-        let result = intersection(DEFAULT_FIELDS, fields);
-        if (!result.length) result = DEFAULT_FIELDS;
+        const result: string[] = [];
+        let attrbs = intersection(Object.keys(DEFAULT_FIELDS), fields);
+        if (!attrbs.length) attrbs = Object.keys(DEFAULT_FIELDS);
+        attrbs.map(key => result.push(DEFAULT_FIELDS[key]));
         return result;
     }
 }

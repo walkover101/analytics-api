@@ -1,31 +1,33 @@
 export default class RequestData {
-    private '_id': string;
-    private 'requestID': string;
-    private 'telNum': string;
-    private 'reportStatus': number;
-    private 'sentTimeReport': Date;
-    private 'providerSMSID': string;
-    private 'user_pid': string;
-    private 'senderID': string;
-    private 'smsc': string;
-    private 'requestRoute': string;
-    private 'campaign_name': string;
-    private 'campaign_pid': string;
-    private 'curRoute': string;
-    private 'expiry': string;
-    private 'isCopied': string;
-    private 'requestDate': Date;
-    private 'userCountryCode': string;
-    private 'requestUserid': string;
-    private 'status': string;
-    private 'userCredit': string;
-    private 'isSingleRequest': string;
-    private 'deliveryTime': Date;
-    private 'route': string;
-    private 'credit': number;
-    private 'oppri': number;
-    private 'crcy': string;
-    private 'node_id': string;
+    _id: string;
+    requestID: string;
+    telNum: string;
+    reportStatus: number;
+    sentTimeReport: Date;
+    providerSMSID: string;
+    user_pid: string;
+    senderID: string;
+    smsc: string;
+    requestRoute: string;
+    campaign_name: string;
+    campaign_pid: string;
+    curRoute: string;
+    expiry: string;
+    isCopied: string;
+    requestDate: Date;
+    userCountryCode: string;
+    requestUserid: string;
+    status: string;
+    userCredit: string;
+    isSingleRequest: string;
+    deliveryTime: Date;
+    route: string;
+    credit: number;
+    oppri: number;
+    crcy: string;
+    node_id: string;
+    scheduleDateTime: Date;
+    msgData: string
 
     constructor(attr: any) {
         this._id = attr['_id'].toString();
@@ -55,5 +57,7 @@ export default class RequestData {
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.crcy = attr['crcy'];
         this.node_id = attr['node_id'];
+        this.scheduleDateTime = attr['scheduleDateTime'];
+        this.msgData = attr['msgData'];
     }
 }

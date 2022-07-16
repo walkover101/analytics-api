@@ -2,8 +2,11 @@ import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from './big-query-service';
 import ReportData from '../models/report-data.model';
 import ExportReport from '../models/export-report.model';
+import { getQuotedStrings } from './utility-service';
+import logger from '../logger/logger';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
+const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
 const GCS_BUCKET_NAME = 'msg91-analytics';
 const GCS_FOLDER_NAME = 'report-data-exports';
 
@@ -30,7 +33,9 @@ class ReportDataService {
         const header = true;
         const fieldDelimiter = ';';
         const fields = exportReport.fields;
-        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} WHERE user_pid = "${exportReport.companyId}" AND (DATE(sentTime) BETWEEN "${exportReport.startDate.toFormat('yyyy-MM-dd')}" AND "${exportReport.endDate.toFormat('yyyy-MM-dd')}") ${exportReport.route ? `AND route = "${exportReport.route}"` : ''}`;
+        const route = getQuotedStrings(exportReport.route);
+        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData  on reportData.requestId = requestData.requestId WHERE reportData.user_pid = "${exportReport.companyId}" AND (DATE(reportData.sentTime) BETWEEN "${exportReport.startDate.toFormat('yyyy-MM-dd')}" AND "${exportReport.endDate.toFormat('yyyy-MM-dd')}") ${route ? `AND reportData.route in (${route})` : ''}`;
+        logger.info(`Query: ${queryStatement}`);
         const query = `EXPORT DATA OPTIONS(uri='${exportFilePath}', format='${format}', overwrite=${overwrite}, header=${header}, field_delimiter='${fieldDelimiter}') AS ${queryStatement}`;
 
         return msg91Dataset.createQueryJob({ query });

@@ -16,7 +16,13 @@ function formatDate(date: string) {
     }
 }
 
+function getQuotedStrings(data: string[] | undefined) {
+    if (!data || !data.length) return null;
+    return "'" + data.join("','") + "'";
+}
+
 export {
     delay,
-    formatDate
+    formatDate,
+    getQuotedStrings
 }

@@ -1,31 +1,31 @@
 export default class DlrLog {
-    private id: string;
-    private senderDedicatedIpId: number;
-    private statusCode: number;
-    private enhancedStatusCode: string;
-    private resultState: string;
-    private reason: string;
-    private remoteMx: string;
-    private remoteIp: string;
-    private contentSize: number;
-    private diffDeliveryTime: number;
-    private openCount: number;
-    private hostname: string;
-    private outboundEmailId: number;
-    private recipientEmail: string;
-    private eventId: number;
-    private uid: string;
-    private companyId: number;
-    private subject: string;
-    private domain: string;
-    private senderEmail: string;
-    private mailTypeId: number;
-    private templateSlug: string;
-    private mailerRequestId: string;
-    private campaignId: number;
-    private clientRequestIp: string;
-    private createdAt: Date;
-    private updatedAt: Date;
+    id: string;
+    senderDedicatedIpId: number;
+    statusCode: number;
+    enhancedStatusCode: string;
+    resultState: string;
+    reason: string;
+    remoteMx: string;
+    remoteIp: string;
+    contentSize: number;
+    diffDeliveryTime: number;
+    openCount: number; // 0 always, calculate from dlr log details
+    hostname: string;
+    outboundEmailId: number;
+    recipientEmail: string;
+    eventId: number;
+    uid: string;
+    companyId: number;
+    subject: string;
+    domain: string;
+    senderEmail: string;
+    mailTypeId: number;
+    templateSlug: string;
+    mailerRequestId: string;
+    campaignId: number;
+    clientRequestIp: string;
+    createdAt: Date;
+    updatedAt: Date;
 
     constructor(attr: any) {
         this.id = attr['_id'];
