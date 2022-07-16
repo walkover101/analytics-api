@@ -38,6 +38,8 @@ export default class ExportReport {
     files?: Array<string>;
     route?: string;
     err?: string;
+    createdAt: Date = new Date();
+    updatedAt: Date = new Date();
 
     constructor(companyId: string, startDate: DateTime, endDate: DateTime, fields: string = '', route?: string) {
         this.companyId = companyId;

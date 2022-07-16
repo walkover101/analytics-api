@@ -7,7 +7,7 @@ import { formatDate } from '../services/utility-service';
 
 const router = express.Router();
 
-router.route('/').get(async (req: Request, res: Response) => {
+router.route('/').post(async (req: Request, res: Response) => {
     try {
         let { companyId, route, fields } = req.query;
         let startDate = formatDate(req.query.startDate as string);
@@ -39,4 +39,21 @@ router.route('/').get(async (req: Request, res: Response) => {
     }
 });
 
+router.route('/').get(async (req: Request, res: Response) => {
+    try {
+        let { companyId } = req.query;
+        logger.info(`[EXPORT](companyId: ${companyId}) Fetching records...`);
+        const snapshot = await exportService.index(companyId as string);
+        const docs = snapshot.docs;
+        const results = docs.map(doc => {
+            const document = doc.data();
+            document.id = doc.id;
+            return document;
+        });
+        res.send(results);
+    } catch (err: any) {
+        logger.error(err);
+        res.status(500).send({ "error": err.message });
+    }
+});
 export default router;

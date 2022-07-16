@@ -26,7 +26,18 @@ class ExportReportDBService {
         if (status) data.status = status;
         if (files) data.files = files;
         if (err) data.err = err;
+        data.updatedAt = new Date().toISOString();
         return this.collection.doc(docId).update(data);
+    }
+
+    public index(companyId?: string) {
+        const collectionRef = this.collection;
+
+        if (companyId) {
+            collectionRef.where('companyId', '==', companyId);
+        }
+
+        return collectionRef.get();
     }
 }
 
