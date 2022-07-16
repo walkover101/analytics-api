@@ -29,7 +29,8 @@ class ReportDataService {
         const overwrite = true;
         const header = true;
         const fieldDelimiter = ';';
-        const queryStatement = `select * from ${REPORT_DATA_TABLE_ID} WHERE user_pid = "${exportReport.companyId}" AND (DATE(sentTime) BETWEEN "${exportReport.startDate.toFormat('yyyy-MM-dd')}" AND "${exportReport.endDate.toFormat('yyyy-MM-dd')}") ${exportReport.route ? `AND route = "${exportReport.route}"` : ''} limit 1000`;
+        const fields = exportReport.fields;
+        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} WHERE user_pid = "${exportReport.companyId}" AND (DATE(sentTime) BETWEEN "${exportReport.startDate.toFormat('yyyy-MM-dd')}" AND "${exportReport.endDate.toFormat('yyyy-MM-dd')}") ${exportReport.route ? `AND route = "${exportReport.route}"` : ''}`;
         const query = `EXPORT DATA OPTIONS(uri='${exportFilePath}', format='${format}', overwrite=${overwrite}, header=${header}, field_delimiter='${fieldDelimiter}') AS ${queryStatement}`;
 
         return msg91Dataset.createQueryJob({ query });

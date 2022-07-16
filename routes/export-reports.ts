@@ -9,14 +9,14 @@ const router = express.Router();
 
 router.route('/').get(async (req: Request, res: Response) => {
     try {
-        let { companyId, route } = req.query;
+        let { companyId, route, fields } = req.query;
         let startDate = formatDate(req.query.startDate as string);
         let endDate = formatDate(req.query.endDate as string);
         if (!startDate) return res.status(400).send({ message: 'Start Date must be provided in MM-DD-YYYY format' });
         if (!endDate) return res.status(400).send({ message: 'End Date must be provided in MM-DD-YYYY format' });
         if (!companyId) return res.status(400).send({ message: 'Company Id is mandatory' });
         logger.info('[EXPORT] Creating entry in firestore...');
-        const exportReport = new ExportReport(companyId as string, startDate, endDate, route as string);
+        const exportReport = new ExportReport(companyId as string, startDate, endDate, fields as string, route as string);
         const exportReportDoc = await exportService.insert(exportReport);
         logger.info('[EXPORT] Sending response to client...');
         res.send({ id: exportReportDoc.id });
