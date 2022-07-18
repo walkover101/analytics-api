@@ -13,7 +13,7 @@ export default function (app: Application) {
   app.use("/", home);
   app.use("/analytics", analytics);
   app.use("/reports", reports);
-  app.use("/exports", exportReports);
+  app.use("/sms/exports", exportReports);
   app.use("/profits", profits);
   app.use(options);
   app.use(error);
