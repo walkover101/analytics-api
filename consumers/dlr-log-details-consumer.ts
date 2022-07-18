@@ -1,7 +1,7 @@
 import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import DlrLogDetail from '../models/dlr-log-detail.model';
-import dlrLogDetailsService from "../services/dlr-log-details-service";
+import dlrLogDetailsService from "../services/email/dlr-log-details-service";
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_DLR_LOG_DETAILS_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_DLR_LOG_DETAILS_QUEUE_NAME || 'dlr-log-details';
