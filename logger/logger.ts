@@ -1,6 +1,5 @@
 import { format, createLogger, transports } from 'winston';
 import { DateTime } from 'luxon';
-import "../startup/dotenv";
 const { timestamp, combine, printf, colorize } = format;
 const SERVICE_NAME = "msg91-analytics";
 

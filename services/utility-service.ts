@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon';
+
 function delay(time = 1000) {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -6,6 +8,21 @@ function delay(time = 1000) {
     });
 }
 
+function formatDate(date: string) {
+    try {
+        return DateTime.fromFormat(date, 'dd-MM-yyyy');
+    } catch (err) {
+        return null;
+    }
+}
+
+function getQuotedStrings(data: string[] | undefined) {
+    if (!data || !data.length) return null;
+    return "'" + data.join("','") + "'";
+}
+
 export {
-    delay
+    delay,
+    formatDate,
+    getQuotedStrings
 }

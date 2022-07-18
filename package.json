@@ -7,6 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev ./index.ts",
     "start": "node ./dist/index.js",
+    "dev-job": "ts-node-dev ./jobs/index.ts",
+    "job": "node ./dist/jobs/index.js",
+    "dev-consumer": "ts-node-dev ./consumers/index.ts",
+    "consumer": "node ./dist/consumers/index.js",
     "script": "node ./dist/script.js",
     "build": "tsc"
   },
@@ -33,6 +37,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
+    "firebase-admin": "^11.0.0",
     "helmet": "^5.1.0",
     "lodash": "^4.17.21",
     "luxon": "^2.4.0",

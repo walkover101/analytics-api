@@ -3,7 +3,7 @@ package-lock.json
 .env
 service-account.json
 dist
-timestamp.txt
-last-document.txt
+sync-jobs-config.json
 vineet*
 logs
+firebase-credentials.json

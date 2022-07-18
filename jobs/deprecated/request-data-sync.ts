@@ -1,29 +1,34 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { MongoClient } from 'mongodb';
-import logger from "../logger/logger";
+import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import dotenv from 'dotenv';
-import reportDataService from '../services/report-data-service';
-import { delay } from '../services/utility-service';
+import requestDataService from '../../services/request-data-service';
+import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
+import RequestData from '../../models/request-data.model';
+import reportDataService from '../../services/report-data-service';
+import ReportData from '../../models/report-data.model';
 
 const appDir = dirname(require.main?.filename || '');
-dotenv.config();
+const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
 const url = process.env.MONGO_CONNECTION_STRING || "";
 const client = new MongoClient(url);
-const timestampPointerFile = `${appDir}/timestamp.txt`;
-const lastDocumentProcessed = `${appDir}/last-document.txt`;
+const timestampPointerFile = `${appDir}/request-timestamp.txt`;
+const lastDocumentProcessed = `${appDir}/request-last-document.txt`;
 const dbName = process.env.MONGO_DB_NAME;
 
-export async function main() {
+export default async function requestDataSync() {
+    // logger.info("Timestamp",getTimestamp());
     // Use connect method to connect to the server
     let connection = await client.connect();
     logger.info('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection(process.env.MONGO_COLLECTION_NAME || "");
+    const collection = db.collection(process.env.REQUEST_DATA_COLLECTION || "");
     while (true) {
         try {
             // Read the timestamp from file and set it as startTime
@@ -41,7 +46,7 @@ export async function main() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await delay((INTERVAL * 1000) / 2);
+                await delay((INTERVAL * 1000) / 4);
             } else {
                 logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
@@ -57,10 +62,10 @@ export async function main() {
     }
 }
 
-// main()
-//     .then(logger.info)
-//     .catch(logger.error)
-//     .finally(() => client.close());
+requestDataSync()
+    .then(logger.info)
+    .catch(logger.error)
+    .finally(() => client.close());
 
 async function syncData(collection: any, startTime: DateTime, endTime: DateTime, docuemntId?: string) {
     const output = {
@@ -68,14 +73,15 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         timestamp: endTime
     }
     const query = {
-        sentTime: {
+        requestDate: {
             $gte: startTime,
             $lte: endTime
         }
     }
-    const docs = await collection.find(query).sort({ sentTime: 1 }).toArray();
+    const docs = await collection.find(query).sort({ requestDate: 1 }).toArray();
     // logger.info(apps);
     let skip = !!docuemntId;
+    let batch = new Array();
     for (let i = 0; i < docs.length; i++) {
         const doc = docs[i];
         // Skip documents that have already been processed
@@ -87,14 +93,32 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             continue;
         }
+        batch.push(doc);
 
-        await reportDataService.insertMany([reportDataService.prepareDocument(doc)]);
+        if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
+            await requestDataService.insertMany(batch.map(row => new RequestData(row)));
+            const reportData = batch.filter(row => row.isSingleRequest == "1");
+            await reportDataService.insertMany(reportData.map(row => {
+                return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
+            }));
+            batch = [];
+        } else {
+            continue;
+        }
+
         // Update the pointer to the last processed document
-        let timestamp = DateTime.fromJSDate(doc.sentTime);
+        let timestamp = DateTime.fromJSDate(doc.requestDate);
         if (timestamp?.isValid) {
             output.timestamp = timestamp;
         }
         output.documentId = doc["_id"]?.toString();
+        try {
+            updatePointer(output.timestamp.toString(), output.documentId || undefined);
+
+        } catch (error) {
+            logger.error(error);
+            break;
+        }
     }
     return output;
 }

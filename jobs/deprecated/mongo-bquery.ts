@@ -1,31 +1,32 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { MongoClient } from 'mongodb';
-import logger from "../logger/logger";
+import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import dotenv from 'dotenv';
-import requestDataService from '../services/request-data-service';
-import { delay } from '../services/utility-service';
+import reportDataService from '../../services/report-data-service';
+import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
+import ReportData from '../../models/report-data.model';
+import requestDataService from '../../services/request-data-service';
 
 const appDir = dirname(require.main?.filename || '');
-dotenv.config();
 const BATCH_SIZE = 1000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
 const url = process.env.MONGO_CONNECTION_STRING || "";
 const client = new MongoClient(url);
-const timestampPointerFile = `${appDir}/request-timestamp.txt`;
-const lastDocumentProcessed = `${appDir}/request-last-document.txt`;
+const timestampPointerFile = `${appDir}/timestamp.txt`;
+const lastDocumentProcessed = `${appDir}/last-document.txt`;
 const dbName = process.env.MONGO_DB_NAME;
 
-export default async function requestDataSync() {
-    // logger.info("Timestamp",getTimestamp());
+export async function main() {
     // Use connect method to connect to the server
     let connection = await client.connect();
     logger.info('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection(process.env.MONGO_COLLECTION_NAME || "");
+    const collection = db.collection(process.env.REPORT_DATA_COLLECTION || "");
     while (true) {
         try {
             // Read the timestamp from file and set it as startTime
@@ -43,7 +44,7 @@ export default async function requestDataSync() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await delay((INTERVAL * 1000) / 4);
+                await delay((INTERVAL * 1000) / 2);
             } else {
                 logger.info("Syncing Data...");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
@@ -59,10 +60,10 @@ export default async function requestDataSync() {
     }
 }
 
-// main()
-//     .then(logger.info)
-//     .catch(logger.error)
-//     .finally(() => client.close());
+main()
+    .then(logger.info)
+    .catch(logger.error)
+    .finally(() => client.close());
 
 async function syncData(collection: any, startTime: DateTime, endTime: DateTime, docuemntId?: string) {
     const output = {
@@ -70,12 +71,12 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         timestamp: endTime
     }
     const query = {
-        requestDate: {
+        sentTime: {
             $gte: startTime,
             $lte: endTime
         }
     }
-    const docs = await collection.find(query).sort({ requestDate: 1 }).toArray();
+    const docs = await collection.find(query).sort({ sentTime: 1 }).toArray();
     // logger.info(apps);
     let skip = !!docuemntId;
     let batch = new Array();
@@ -90,18 +91,17 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             continue;
         }
-
-        batch.push(requestDataService.prepareDocument(doc));
+        batch.push(new ReportData(doc));
 
         if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
-            await requestDataService.insertMany(batch);
+            await reportDataService.insertMany(batch);
             batch = [];
         } else {
             continue;
         }
 
         // Update the pointer to the last processed document
-        let timestamp = DateTime.fromJSDate(doc.requestDate);
+        let timestamp = DateTime.fromJSDate(doc.sentTime);
         if (timestamp?.isValid) {
             output.timestamp = timestamp;
         }
@@ -113,6 +113,13 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             logger.error(error);
             break;
         }
+        // await reportDataService.insertMany([reportDataService.prepareDocument(doc)]);
+        // // Update the pointer to the last processed document
+        // let timestamp = DateTime.fromJSDate(doc.sentTime);
+        // if (timestamp?.isValid) {
+        //     output.timestamp = timestamp;
+        // }
+        // output.documentId = doc["_id"]?.toString();
     }
     return output;
 }

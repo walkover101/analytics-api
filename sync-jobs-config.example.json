@@ -1,0 +1,12 @@
+{
+  "requestData": {
+    "trackers": {
+      "lastDocumentId": "SET_LAST_DOCUMENT_ID"
+    }
+  },
+  "reportData": {
+    "trackers": {
+      "lastDocumentId": "SET_LAST_DOCUMENT_ID"
+    }
+  }
+}
