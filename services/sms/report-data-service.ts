@@ -1,7 +1,7 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from '../../database/big-query-service';
 import ReportData from '../../models/report-data.model';
-import ExportReport from '../../models/export-report.model';
+import Download from '../../models/download.model';
 import { getQuotedStrings } from '../utility-service';
 import logger from '../../logger/logger';
 
@@ -27,7 +27,7 @@ class ReportDataService {
         return this.reportDataTable.insert(rows, insertOptions);
     }
 
-    public export(fileName: string, exportReport: ExportReport, format: string = 'CSV') {
+    public download(fileName: string, exportReport: Download, format: string = 'CSV') {
         const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${fileName}_*.csv`;
         const overwrite = true;
         const header = true;

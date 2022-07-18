@@ -1,22 +1,22 @@
 import { CollectionReference } from 'firebase-admin/firestore';
 import { db } from '../firebase';
-import ExportReport from '../models/export-report.model';
+import Download from '../models/download.model';
 
-const EXPORT_REPORT_COLLECTION = process.env.EXPORT_REPORT_COLLECTION || 'exports'
+const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
 
-class ExportReportDBService {
-    private static instance: ExportReportDBService;
+class DownloadsFsService {
+    private static instance: DownloadsFsService;
     private collection: CollectionReference;
 
     constructor() {
-        this.collection = db.collection(EXPORT_REPORT_COLLECTION);
+        this.collection = db.collection(DOWNLOADS_COLLECTION);
     }
 
-    public static getSingletonInstance(): ExportReportDBService {
-        return ExportReportDBService.instance ||= new ExportReportDBService();
+    public static getSingletonInstance(): DownloadsFsService {
+        return DownloadsFsService.instance ||= new DownloadsFsService();
     }
 
-    public insert(doc: ExportReport) {
+    public insert(doc: Download) {
         return this.collection.add(JSON.parse(JSON.stringify(doc)));
     }
 
@@ -39,4 +39,4 @@ class ExportReportDBService {
     }
 }
 
-export default ExportReportDBService.getSingletonInstance();
+export default DownloadsFsService.getSingletonInstance();

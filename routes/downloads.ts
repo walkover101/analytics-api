@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import logger from '../logger/logger';
-import exportService from '../services/export-report-db-service';
+import downloadsFsService from '../services/downloads-fs-service';
 import reportDataService from '../services/sms/report-data-service';
-import ExportReport, { EXPORT_STATUS } from '../models/export-report.model';
+import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 import { formatDate } from '../services/utility-service';
 
 const router = express.Router();
@@ -15,22 +15,22 @@ router.route('/:resourceType').post(async (req: Request, res: Response) => {
         if (!startDate) return res.status(400).send({ message: 'Start Date must be provided in MM-DD-YYYY format' });
         if (!endDate) return res.status(400).send({ message: 'End Date must be provided in MM-DD-YYYY format' });
         if (!companyId) return res.status(400).send({ message: 'Company Id is mandatory' });
-        logger.info('[EXPORT] Creating entry in firestore...');
-        const exportReport = new ExportReport(companyId as string, startDate, endDate, fields as string, route as string);
-        const exportReportDoc = await exportService.insert(exportReport);
-        logger.info('[EXPORT] Sending response to client...');
-        res.send({ id: exportReportDoc.id });
+        logger.info('[DOWNLOAD] Creating entry in firestore...');
+        const download = new Download(companyId as string, startDate, endDate, fields as string, route as string);
+        const downloadDoc = await downloadsFsService.insert(download);
+        logger.info('[DOWNLOAD] Sending response to client...');
+        res.send({ id: downloadDoc.id });
 
         try {
-            logger.info('[EXPORT] Creating job...');
-            const [exportJob] = await reportDataService.export(exportReportDoc.id, exportReport);
-            logger.info('[EXPORT] Job created. Processing query...');
-            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.PROCESSING });
+            logger.info('[DOWNLOAD] Creating job...');
+            const [exportJob] = await reportDataService.download(downloadDoc.id, download);
+            logger.info('[DOWNLOAD] Job created. Processing query...');
+            downloadsFsService.update(downloadDoc.id, { status: DOWNLOAD_STATUS.PROCESSING });
             await exportJob.getQueryResults();
-            logger.info('[EXPORT] Export completed.');
-            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.SUCCESS, files: [exportReportDoc.id] });
+            logger.info('[DOWNLOAD] Export completed.');
+            downloadsFsService.update(downloadDoc.id, { status: DOWNLOAD_STATUS.SUCCESS, files: [downloadDoc.id] });
         } catch (err: any) {
-            exportService.update(exportReportDoc.id, { status: EXPORT_STATUS.ERROR, err: err.message });
+            downloadsFsService.update(downloadDoc.id, { status: DOWNLOAD_STATUS.ERROR, err: err.message });
             logger.error(err);
         }
     } catch (err: any) {
@@ -42,8 +42,8 @@ router.route('/:resourceType').post(async (req: Request, res: Response) => {
 router.route('/:resourceType').get(async (req: Request, res: Response) => {
     try {
         let { companyId } = req.query;
-        logger.info(`[EXPORT](companyId: ${companyId}) Fetching records...`);
-        const snapshot = await exportService.index(companyId as string);
+        logger.info(`[DOWNLOAD](companyId: ${companyId}) Fetching records...`);
+        const snapshot = await downloadsFsService.index(companyId as string);
         const docs = snapshot.docs;
         const results = docs.map(doc => {
             const document = doc.data();

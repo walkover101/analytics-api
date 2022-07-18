@@ -1,9 +1,8 @@
 
-import { time } from 'console';
 import { intersection } from 'lodash';
 import { DateTime } from 'luxon';
 
-export enum EXPORT_STATUS {
+export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
     PROCESSING = 'PROCESSING',
     SUCCESS = 'SUCCESS',
@@ -27,12 +26,12 @@ const DEFAULT_FIELDS: { [key: string]: string } = {
     msgData: 'requestData.msgData'
 }
 
-export default class ExportReport {
+export default class Download {
     id?: string;
     companyId: string;
     startDate: DateTime;
     endDate: DateTime;
-    status: EXPORT_STATUS = EXPORT_STATUS.PENDING;
+    status: DOWNLOAD_STATUS = DOWNLOAD_STATUS.PENDING;
     fields: Array<string>;
     files?: Array<string>;
     route?: Array<string>;
