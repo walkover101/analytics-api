@@ -2,10 +2,10 @@ import logger from "../logger/logger";
 import { MongoClient, ObjectId } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay } from "../services/utility-service";
-import { getLastDocumentId, jobType, updateTrackers } from "../services/sync-jobs-config-service";
+import { getLastDocumentId, jobType, updateTrackers } from "../services/sms/sync-jobs-config-service";
 import { DateTime } from 'luxon';
-import requestDataService from "../services/request-data-service";
-import reportDataService from "../services/report-data-service";
+import requestDataService from "../services/sms/request-data-service";
+import reportDataService from "../services/sms/report-data-service";
 import ReportData from '../models/report-data.model';
 import RequestData from '../models/request-data.model';
 

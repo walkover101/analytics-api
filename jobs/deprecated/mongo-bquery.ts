@@ -4,11 +4,11 @@ import { MongoClient } from 'mongodb';
 import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import reportDataService from '../../services/report-data-service';
+import reportDataService from '../../services/sms/report-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
 import ReportData from '../../models/report-data.model';
-import requestDataService from '../../services/request-data-service';
+import requestDataService from '../../services/sms/request-data-service';
 
 const appDir = dirname(require.main?.filename || '');
 const BATCH_SIZE = 1000;

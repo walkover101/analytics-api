@@ -1,4 +1,4 @@
-import logger from "../logger/logger";
+import logger from "../../logger/logger";
 import { resolve } from 'path'
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { DateTime } from 'luxon';

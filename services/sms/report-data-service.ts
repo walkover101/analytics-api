@@ -1,9 +1,9 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from '../database/big-query-service';
-import ReportData from '../models/report-data.model';
-import ExportReport from '../models/export-report.model';
-import { getQuotedStrings } from './utility-service';
-import logger from '../logger/logger';
+import msg91Dataset from '../../database/big-query-service';
+import ReportData from '../../models/report-data.model';
+import ExportReport from '../../models/export-report.model';
+import { getQuotedStrings } from '../utility-service';
+import logger from '../../logger/logger';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'

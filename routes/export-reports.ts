@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import logger from '../logger/logger';
 import exportService from '../services/export-report-db-service';
-import reportDataService from '../services/report-data-service';
+import reportDataService from '../services/sms/report-data-service';
 import ExportReport, { EXPORT_STATUS } from '../models/export-report.model';
 import { formatDate } from '../services/utility-service';
 

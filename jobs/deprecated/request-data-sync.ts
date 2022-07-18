@@ -4,11 +4,11 @@ import { MongoClient } from 'mongodb';
 import logger from "../../logger/logger";
 import fs from 'fs';
 import { DateTime } from 'luxon';
-import requestDataService from '../../services/request-data-service';
+import requestDataService from '../../services/sms/request-data-service';
 import { delay } from '../../services/utility-service';
 import { dirname } from 'path';
 import RequestData from '../../models/request-data.model';
-import reportDataService from '../../services/report-data-service';
+import reportDataService from '../../services/sms/report-data-service';
 import ReportData from '../../models/report-data.model';
 
 const appDir = dirname(require.main?.filename || '');
