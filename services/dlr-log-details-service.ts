@@ -1,5 +1,5 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from './big-query-service';
+import msg91Dataset from '../database/big-query-service';
 import DlrLogDetail from '../models/dlr-log-detail.model';
 
 const DLR_LOG_DETAILS_TABLE_ID = process.env.DLR_LOG_DETAILS_TABLE_ID || 'dlr_log_details'

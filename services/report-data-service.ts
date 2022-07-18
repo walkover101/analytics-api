@@ -1,5 +1,5 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from './big-query-service';
+import msg91Dataset from '../database/big-query-service';
 import ReportData from '../models/report-data.model';
 import ExportReport from '../models/export-report.model';
 import { getQuotedStrings } from './utility-service';

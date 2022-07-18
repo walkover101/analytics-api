@@ -1,6 +1,6 @@
 import logger from "../logger/logger";
 import { MongoClient, ObjectId } from 'mongodb';
-import mongoService from '../services/mongo-service';
+import mongoService from '../database/mongo-service';
 import { delay } from "../services/utility-service";
 import { getLastDocumentId, jobType, updateTrackers } from "../services/sync-jobs-config-service";
 import { DateTime } from 'luxon';

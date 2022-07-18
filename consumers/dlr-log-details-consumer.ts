@@ -1,6 +1,5 @@
-import rabbitmqService, { Connection, Channel } from '../services/rabbitmq-service';
+import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
-import { delay } from '../services/utility-service';
 import DlrLogDetail from '../models/dlr-log-detail.model';
 import dlrLogDetailsService from "../services/dlr-log-details-service";
 

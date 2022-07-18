@@ -1,7 +1,7 @@
 import { Table } from '@google-cloud/bigquery';
 import * as _ from "lodash";
 
-import msg91Dataset from './big-query-service';
+import msg91Dataset from '../database/big-query-service';
 import RequestData from '../models/request-data.model';
 
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'

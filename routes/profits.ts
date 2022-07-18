@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import logger from "../logger/logger";
 const router = express.Router();
 import { getDefaultDate } from '../utility';
-import bigquery from '../services/big-query-service';
+import bigquery from '../database/big-query-service';
 import { INTERVAL } from './analytics';
 import { DateTime } from 'luxon';
 const PROJECT_ID = process.env.GCP_PROJECT_ID;

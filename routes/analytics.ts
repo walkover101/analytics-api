@@ -1,6 +1,6 @@
 import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
-import bigquery from '../services/big-query-service';
+import bigquery from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
 import logger from "../logger/logger";
 const router = express.Router();

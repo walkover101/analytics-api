@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 import logger from "../logger/logger";
 import EventEmitter from 'events';
-import { delay } from './utility-service';
+import { delay } from '../services/utility-service';
 
 const RETRY_INTERVAL = 5000; // in millis
 const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || '';

@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import logger from "../logger/logger";
-import { bigQuery } from '../services/big-query-service';
+import { bigQuery } from '../database/big-query-service';
 const router = express.Router();
 
 router.get("/", async (_req: Request, res: Response) => {
