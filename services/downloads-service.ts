@@ -1,6 +1,8 @@
 import { CollectionReference } from 'firebase-admin/firestore';
 import { db } from '../firebase';
+import logger from '../logger/logger';
 import Download from '../models/download.model';
+import reportDataService from './sms/report-data-service';
 
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
 
@@ -17,13 +19,19 @@ class DownloadsFsService {
     }
 
     public insert(doc: Download) {
+        logger.info('[DOWNLOAD] Creating entry in firestore...');
         return this.collection.add(JSON.parse(JSON.stringify(doc)));
     }
 
     public update(docId: string, params: any) {
         let { status, files, err } = params;
         const data: any = {};
-        if (status) data.status = status;
+
+        if (status) {
+            data.status = status;
+            logger.info(`[DOWNLOAD] Updating status to ${status}...`);
+        }
+
         if (files) data.files = files;
         if (err) data.err = err;
         data.updatedAt = new Date().toISOString();
@@ -36,6 +44,10 @@ class DownloadsFsService {
         }
 
         return this.collection.get();
+    }
+
+    public createJob(download: Download) {
+        return reportDataService.download(download);
     }
 }
 

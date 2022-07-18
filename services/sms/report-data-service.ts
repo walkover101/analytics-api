@@ -27,14 +27,15 @@ class ReportDataService {
         return this.reportDataTable.insert(rows, insertOptions);
     }
 
-    public download(fileName: string, exportReport: Download, format: string = 'CSV') {
-        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${fileName}_*.csv`;
+    public download(download: Download, format: string = 'CSV') {
+        logger.info('[DOWNLOAD] Creating job...');
+        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}_*.csv`;
         const overwrite = true;
         const header = true;
         const fieldDelimiter = ';';
-        const fields = exportReport.fields;
-        const route = getQuotedStrings(exportReport.route);
-        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData  on reportData.requestId = requestData.requestId WHERE reportData.user_pid = "${exportReport.companyId}" AND (DATE(reportData.sentTime) BETWEEN "${exportReport.startDate.toFormat('yyyy-MM-dd')}" AND "${exportReport.endDate.toFormat('yyyy-MM-dd')}") ${route ? `AND reportData.route in (${route})` : ''}`;
+        const fields = download.fields;
+        const route = getQuotedStrings(download.route);
+        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData  on reportData.requestId = requestData.requestId WHERE reportData.user_pid = "${download.companyId}" AND (DATE(reportData.sentTime) BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}") ${route ? `AND reportData.route in (${route})` : ''}`;
         logger.info(`Query: ${queryStatement}`);
         const query = `EXPORT DATA OPTIONS(uri='${exportFilePath}', format='${format}', overwrite=${overwrite}, header=${header}, field_delimiter='${fieldDelimiter}') AS ${queryStatement}`;
 
