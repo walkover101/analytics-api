@@ -22,7 +22,7 @@ export default class Download {
     startDate: DateTime;
     endDate: DateTime;
     status: DOWNLOAD_STATUS = DOWNLOAD_STATUS.PENDING;
-    fields: Array<string>;
+    fields?: Array<string>;
     file?: string;
     query?: { [key: string]: string };
     err?: string;
@@ -35,6 +35,6 @@ export default class Download {
         this.startDate = startDate;
         this.endDate = endDate;
         this.query = query;
-        this.fields = fields.split(',');
+        if (fields && fields.length) this.fields = fields.split(',');
     }
 }

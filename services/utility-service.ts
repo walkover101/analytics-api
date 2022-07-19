@@ -22,7 +22,7 @@ function getQuotedStrings(data: string[] | undefined) {
     return "'" + data.join("','") + "'";
 }
 
-function getValidFields(permittedFields: { [key: string]: string }, fields: Array<string>) {
+function getValidFields(permittedFields: { [key: string]: string }, fields: Array<string> = []) {
     if (!permittedFields || !fields.length) return [];
     const result: string[] = [];
     let attrbs = intersection(Object.keys(permittedFields), fields);
