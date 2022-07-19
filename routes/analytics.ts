@@ -74,7 +74,8 @@ router.route('/users/:userId')
             logger.error(reason)
             return [[], []];
         });
-        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value } }), 'Date');
+        let rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value } }), 'Date');
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
         const total = {
             "Message": 0,
             "Delivered": 0,
@@ -86,10 +87,10 @@ router.route('/users/:userId')
         const data = rows.map((row: any, index: any) => {
             total["Message"] += row["Sent"];
             total["Delivered"] += row["Delivered"];
-            total["TotalCredits"] += row["BalanceDeducted"];
+            total["TotalCredits"] += Number((row["BalanceDeducted"]).toFixed(3));
             total["Filtered"] = total["Message"] - total["Delivered"];
             totalDeliveryTime += row["DeliveryTime"] || 0;
-            total["AvgDeliveryTime"] = totalDeliveryTime / (index + 1);
+            total["AvgDeliveryTime"] = Number((totalDeliveryTime / (index + 1)).toFixed(3));
             return row;
         })
         res.send({
@@ -121,10 +122,12 @@ router.route('/users/:userId/campaigns/:campaignId')
             location: process.env.DATA_SET_LOCATION,
             // maximumBytesBilled: "1000"
         });
-        const [rows] = await job.getQueryResults();
-        return res.send(rows.map(row => {
+        let [rows] = await job.getQueryResults();
+        rows = rows.map(row => {
             return { ...row, "Date": row["Date"].value }
-        }));
+        });
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
     });
 router.route('/users/:userId/campaigns')
     .get(async (req: Request, res: Response) => {
@@ -149,10 +152,12 @@ router.route('/users/:userId/campaigns')
             location: process.env.DATA_SET_LOCATION,
             // maximumBytesBilled: "1000"
         });
-        const [rows] = await job.getQueryResults();
-        return res.send(rows.map(row => {
+        let [rows] = await job.getQueryResults();
+        rows = rows.map(row => {
             return { ...row, "Date": row["Date"].value }
-        }));
+        });
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
     });
 router.route('/vendors')
     .get(async (req: Request, res: Response) => {
@@ -203,11 +208,13 @@ router.route('/vendors')
             logger.error(reason)
             return [[], []];
         });
-        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["SMSC"]}` } }), 'mergeKey');
-        res.send(rows.map((row: any) => {
+        let rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["SMSC"]}` } }), 'mergeKey');
+        rows = rows.map((row: any) => {
             delete row["mergeKey"];
             return row;
-        }));
+        });
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
         return;
     })
 router.route('/profit')
@@ -224,10 +231,12 @@ router.route('/profit')
             location: process.env.DATA_SET_LOCATION,
             // maximumBytesBilled: "1000"
         });
-        const [rows] = await job.getQueryResults();
-        res.send(rows.map(row => {
+        let [rows] = await job.getQueryResults();
+        rows = rows.map(row => {
             return { ...row, "Date": row["Date"].value }
-        }))
+        })
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
         return;
     });
 router.route('/profit/users/:userId')
@@ -244,10 +253,12 @@ router.route('/profit/users/:userId')
             location: process.env.DATA_SET_LOCATION,
             // maximumBytesBilled: "1000"
         });
-        const [rows] = await job.getQueryResults();
-        res.send(rows.map(row => {
+        let [rows] = await job.getQueryResults();
+        rows.map(row => {
             return { ...row, "Date": row["Date"].value }
-        }))
+        })
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
         return;
     });
 router.route('/profit/vendors')
@@ -266,10 +277,12 @@ router.route('/profit/vendors')
             location: process.env.DATA_SET_LOCATION,
             // maximumBytesBilled: "1000"
         });
-        const [rows] = await job.getQueryResults();
-        res.send(rows.map(row => {
+        let [rows] = await job.getQueryResults();
+        rows = rows.map(row => {
             return { ...row, "Date": row["Date"].value }
-        }))
+        });
+        rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
+        res.send(rows);
         return;
     });
 function isValidInterval(interval: string) {
