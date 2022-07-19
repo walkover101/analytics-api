@@ -203,7 +203,7 @@ router.route('/vendors')
             logger.error(reason)
             return [[], []];
         });
-        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["smsc"]}` } }), 'mergeKey');
+        const rows: any = mergeRows([...reportRows, ...requestRows].map((row: any) => { return { ...row, "Date": row["Date"].value, "mergeKey": `${row["Date"].value}-${row["SMSC"]}` } }), 'mergeKey');
         res.send(rows.map((row: any) => {
             delete row["mergeKey"];
             return row;
