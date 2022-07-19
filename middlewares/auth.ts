@@ -35,21 +35,33 @@ class Cache {
 const cache = new Cache();
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
     let token = req.header('Authorization')?.replace('Bearer ', '');
-    if (token) {
-        try {
-            const secret = await getJWTSecret();
-            const decoded: any = jwt.verify(token, secret);
-            req.query.companyId = decoded?.companyId as string;
-        } catch (error) {
-            const payload = await admin.auth().verifyIdToken(token, false);
-            if (!await isAdmin(payload?.email)) {
-                return res.status(403).send("Forbidden");
-            }
-        }
-        next();
-    } else {
+    if (!token) {
         logger.error("Token not found");
         return res.status(401).send("Token not found");
+    }
+    try {
+        const secret = await getJWTSecret();
+        const decoded: any = jwt.verify(token, secret);
+        req.query.companyId = decoded?.companyId as string;
+    } catch (error) {
+        const email = await getFirebaseEmail(token);
+        if (!email) {
+            return res.status(401).send("Invalid Token");
+        }
+        if (!await isAdmin(email)) {
+            return res.status(403).send("Forbidden");
+        }
+    }
+    next();
+
+}
+async function getFirebaseEmail(token: string) {
+    try {
+        const payload = await admin.auth().verifyIdToken(token, false);
+        return payload?.email;
+    } catch (error) {
+        logger.error(error);
+        return null;
     }
 }
 async function getJWTSecret() {
