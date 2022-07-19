@@ -157,7 +157,7 @@ router.route('/users/:userId/campaigns')
 router.route('/vendors')
     .get(async (req: Request, res: Response) => {
         let { id, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
-        const reportQuery = `SELECT DATE(sentTime) as Date, smsc, COUNT(_id) as Total,
+        const reportQuery = `SELECT DATE(sentTime) as Date, smsc as SMSC, COUNT(_id) as Total,
         SUM(credit) as BalanceDeducted, 
         COUNTIF(status = 1) as Delivered, 
         COUNTIF(status = 2) as Failed,
@@ -170,7 +170,7 @@ router.route('/vendors')
         FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
         WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
         GROUP BY DATE(sentTime), smsc;`
-        const requestQuery = `SELECT DATE(requestDate) as Date, smsc, COUNT(_id) as Total,
+        const requestQuery = `SELECT DATE(requestDate) as Date, smsc as SMSC, COUNT(_id) as Total,
         SUM(credit) as BalanceDeducted, 
         COUNTIF(reportStatus = 1) as Delivered, 
         COUNTIF(reportStatus = 2) as Failed,
