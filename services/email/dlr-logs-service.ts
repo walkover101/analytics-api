@@ -6,8 +6,9 @@ import Download from '../../models/download.model';
 import { getQuotedStrings, getValidFields } from '../utility-service';
 
 const DLR_LOGS_TABLE_ID = process.env.DLR_LOGS_TABLE_ID || 'dlr_logs'
-const GCS_BUCKET_NAME = 'msg91-analytics';
-const GCS_FOLDER_NAME = 'email-exports';
+const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
+const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
+const GCS_FOLDER_NAME = process.env.GCS_EMAIL_EXPORTS_FOLDER || 'email-exports';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     senderDedicatedIpId: 'dlrLog.senderDedicatedIpId',
     statusCode: 'dlrLog.statusCode',
@@ -54,7 +55,9 @@ class DlrLogsService {
 
     public download(download: Download, format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}_*.csv.gz`;
+        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}`;
+        const exportFilePath = `gs://${filePath}_ *.csv.gz`;
+        download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv.gz`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${DLR_LOGS_TABLE_ID} as dlrLog WHERE ${whereClause}`;

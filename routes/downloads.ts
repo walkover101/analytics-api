@@ -26,7 +26,7 @@ router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
             const [exportJob] = await downloadsService.createJob(download);
             downloadsService.update(download.id, { status: DOWNLOAD_STATUS.PROCESSING });
             await exportJob.getQueryResults();
-            downloadsService.update(download.id, { status: DOWNLOAD_STATUS.SUCCESS, file: `${downloadDoc.id}_000000000000.csv.gz` });
+            downloadsService.update(download.id, { status: DOWNLOAD_STATUS.SUCCESS, file: download.file });
         } catch (err: any) {
             downloadsService.update(download.id, { status: DOWNLOAD_STATUS.ERROR, err: err.message });
             logger.error(err);

@@ -7,8 +7,9 @@ import logger from '../../logger/logger';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
-const GCS_BUCKET_NAME = 'msg91-analytics';
-const GCS_FOLDER_NAME = 'sms-exports';
+const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
+const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
+const GCS_FOLDER_NAME = process.env.GCS_SMS_EXPORTS_FOLDER || 'sms-exports';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
     status: 'reportData.status',
@@ -45,7 +46,9 @@ class ReportDataService {
 
     public download(download: Download, format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}_*.csv.gz`;
+        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}`;
+        const exportFilePath = `gs://${filePath}_ *.csv.gz`;
+        download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv.gz`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData on reportData.requestId = requestData.requestId WHERE ${whereClause}`;
