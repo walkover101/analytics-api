@@ -2,13 +2,29 @@ import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from '../../database/big-query-service';
 import ReportData from '../../models/report-data.model';
 import Download from '../../models/download.model';
-import { getQuotedStrings } from '../utility-service';
+import { getQuotedStrings, getValidFields } from '../utility-service';
 import logger from '../../logger/logger';
 
 const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
 const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
 const GCS_BUCKET_NAME = 'msg91-analytics';
-const GCS_FOLDER_NAME = 'report-data-exports';
+const GCS_FOLDER_NAME = 'sms-exports';
+const PERMITTED_FIELDS: { [key: string]: string } = {
+    // from report-data
+    status: 'reportData.status',
+    sentTime: 'reportData.sentTime',
+    deliveryTime: 'reportData.deliveryTime',
+    requestId: 'reportData.requestID',
+    route: 'reportData.route',
+    telNum: 'reportData.telNum',
+    credit: 'reportData.credit',
+    senderId: 'reportData.senderID',
+
+    // from request-data
+    campaignName: 'requestData.campaign_name',
+    scheduleDateTime: 'requestData.scheduleDateTime',
+    msgData: 'requestData.msgData'
+};
 
 class ReportDataService {
     private static instance: ReportDataService;
@@ -33,13 +49,26 @@ class ReportDataService {
         const overwrite = true;
         const header = true;
         const fieldDelimiter = ';';
-        const fields = download.fields;
-        const route = getQuotedStrings(download.route);
-        const queryStatement = `select ${fields.join(',')} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData  on reportData.requestId = requestData.requestId WHERE reportData.user_pid = "${download.companyId}" AND (DATE(reportData.sentTime) BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}") ${route ? `AND reportData.route in (${route})` : ''}`;
+        const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
+        const whereClause = this.getWhereClause(download);
+        const queryStatement = `select ${fields} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData on reportData.requestId = requestData.requestId WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
         const query = `EXPORT DATA OPTIONS(uri='${exportFilePath}', format='${format}', overwrite=${overwrite}, header=${header}, field_delimiter='${fieldDelimiter}') AS ${queryStatement}`;
 
         return msg91Dataset.createQueryJob({ query });
+    }
+
+    private getWhereClause(download: Download) {
+        const query: { [key: string]: string } = download.query || {};
+
+        // mandatory conditions
+        let conditions = `reportData.user_pid = "${download.companyId}"`;
+        conditions += ` AND (DATE(reportData.sentTime) BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+
+        // optional conditions
+        if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.split(','))})`;
+
+        return conditions;
     }
 }
 

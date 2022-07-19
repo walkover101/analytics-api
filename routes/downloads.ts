@@ -7,18 +7,20 @@ import { formatDate } from '../services/utility-service';
 
 const router = express.Router();
 
-router.route('/:resourceType').post(async (req: Request, res: Response) => {
+
+router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
     try {
         let { companyId, route, fields } = req.query;
+        let resourceType = req.params[0];
         let startDate = formatDate(req.query.startDate as string);
         let endDate = formatDate(req.query.endDate as string);
         if (!startDate) return res.status(400).send({ message: 'Start Date must be provided in MM-DD-YYYY format' });
         if (!endDate) return res.status(400).send({ message: 'End Date must be provided in MM-DD-YYYY format' });
         if (!companyId) return res.status(400).send({ message: 'Company Id is mandatory' });
-        const download = new Download(companyId as string, startDate, endDate, fields as string, route as string);
+        const download = new Download(resourceType as string, companyId as string, startDate, endDate, fields as string, req.query);
         const downloadDoc = await downloadsService.insert(download);
         download.id = downloadDoc.id;
-        res.send({ id: download.id });
+        res.send(download);
 
         try {
             const [exportJob] = await downloadsService.createJob(download);
