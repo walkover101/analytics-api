@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
     try {
-        let { companyId, route, fields } = req.query;
+        let { companyId, fields } = req.query;
         let resourceType = req.params[0];
         let startDate = formatDate(req.query.startDate as string);
         let endDate = formatDate(req.query.endDate as string);
@@ -26,7 +26,7 @@ router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
             const [exportJob] = await downloadsService.createJob(download);
             downloadsService.update(download.id, { status: DOWNLOAD_STATUS.PROCESSING });
             await exportJob.getQueryResults();
-            downloadsService.update(download.id, { status: DOWNLOAD_STATUS.SUCCESS, files: [downloadDoc.id] });
+            downloadsService.update(download.id, { status: DOWNLOAD_STATUS.SUCCESS, file: `${downloadDoc.id}_000000000000.csv.gz` });
         } catch (err: any) {
             downloadsService.update(download.id, { status: DOWNLOAD_STATUS.ERROR, err: err.message });
             logger.error(err);

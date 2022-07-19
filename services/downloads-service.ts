@@ -25,7 +25,7 @@ class DownloadsFsService {
     }
 
     public update(docId: string, params: any) {
-        let { status, files, err } = params;
+        let { status, file, err } = params;
         const data: any = {};
 
         if (status) {
@@ -33,7 +33,7 @@ class DownloadsFsService {
             logger.info(`[DOWNLOAD] Updating status to ${status}...`);
         }
 
-        if (files) data.files = files;
+        if (file) data.file = file;
         if (err) data.err = err;
         data.updatedAt = new Date().toISOString();
         return this.collection.doc(docId).update(data);

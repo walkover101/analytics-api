@@ -23,7 +23,7 @@ export default class Download {
     endDate: DateTime;
     status: DOWNLOAD_STATUS = DOWNLOAD_STATUS.PENDING;
     fields: Array<string>;
-    files?: Array<string>;
+    file?: string;
     query?: { [key: string]: string };
     err?: string;
     createdAt: Date = new Date();

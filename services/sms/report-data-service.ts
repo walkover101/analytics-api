@@ -45,17 +45,12 @@ class ReportDataService {
 
     public download(download: Download, format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}_*.csv`;
-        const overwrite = true;
-        const header = true;
-        const fieldDelimiter = ';';
+        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}_*.csv.gz`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData on reportData.requestId = requestData.requestId WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
-        const query = `EXPORT DATA OPTIONS(uri='${exportFilePath}', format='${format}', overwrite=${overwrite}, header=${header}, field_delimiter='${fieldDelimiter}') AS ${queryStatement}`;
-
-        return msg91Dataset.createQueryJob({ query });
+        return msg91Dataset.createQueryJob({ query: this.prepareExportQuery(download.id, queryStatement, exportFilePath, format) });
     }
 
     private getWhereClause(download: Download) {
@@ -69,6 +64,27 @@ class ReportDataService {
         if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.split(','))})`;
 
         return conditions;
+    }
+
+    private prepareExportQuery(downloadId: string = '', query: string, exportPath: string, format: string) {
+        return `
+            BEGIN
+                CREATE TEMP TABLE _SESSION.${downloadId} AS (
+                    WITH temptable AS (${query})
+                    SELECT * FROM temptable
+                );
+                
+                EXPORT DATA OPTIONS(
+                    uri='${exportPath}',
+                    format='${format}',
+                    compression='GZIP',
+                    overwrite=true,
+                    header=true,
+                    field_delimiter=';'
+                ) AS
+                SELECT * FROM _SESSION.${downloadId};
+            END;
+        `;
     }
 }
 
