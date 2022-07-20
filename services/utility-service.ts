@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import { intersection } from 'lodash';
+import { ObjectId } from 'mongodb';
 
 function delay(time = 1000) {
     return new Promise((resolve) => {
@@ -30,9 +31,18 @@ function getValidFields(permittedFields: { [key: string]: string } = {}, fields:
     return result;
 }
 
+function isValidObjectId(id: string) {
+    try {
+        return new ObjectId(id).toString() === id;
+    } catch {
+        return false;
+    }
+}
+
 export {
     delay,
     formatDate,
     getQuotedStrings,
-    getValidFields
+    getValidFields,
+    isValidObjectId
 }
