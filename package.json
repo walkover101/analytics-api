@@ -44,6 +44,8 @@
     "luxon": "^2.4.0",
     "mongodb": "^4.7.0",
     "response-time": "^2.3.2",
+    "sequelize": "^6.21.3",
+    "sqlite3": "^5.0.9",
     "winston": "^3.7.2"
   }
 }
