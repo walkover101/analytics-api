@@ -1,4 +1,5 @@
 import logger from "../logger/logger";
+import firebaseLogger from '../logger/firebase-logger';
 import { MongoClient, ObjectId } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay } from "../services/utility-service";
@@ -6,7 +7,6 @@ import * as trackersService from "../services/sms/trackers-service";
 import { DateTime } from 'luxon';
 import requestDataService from "../services/sms/request-data-service";
 import reportDataService from "../services/sms/report-data-service";
-import logToFirebase from '../services/firebase-logger-service';
 import ReportData from '../models/report-data.model';
 import RequestData from '../models/request-data.model';
 import { jobType } from "../models/trackers.model";
@@ -63,7 +63,7 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(`[JOB](insertBatchInBigQuery) PartialFailureError`);
         logger.error(JSON.stringify(err.errors));
-        logToFirebase(job, err.errors);
+        firebaseLogger.log(err.errors, `${job}SyncErrors`);
     }
 }
 
