@@ -1,8 +1,8 @@
 export default class DlrLogDetail {
-    private id: string;
-    private eventId: number;
-    private uid: string;
-    private createdAt: Date;
+    id: string;
+    eventId: number;
+    uid: string;
+    createdAt: Date;
 
     constructor(attr: any) {
         this.id = attr['_id'];

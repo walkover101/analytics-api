@@ -1,7 +1,5 @@
 
-import { intersection } from 'lodash';
 import { DateTime } from 'luxon';
-import { getQuotedStrings } from '../services/utility-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
