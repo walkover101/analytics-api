@@ -42,6 +42,7 @@
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "luxon": "^2.4.0",
+    "minimist": "^1.2.6",
     "mongodb": "^4.7.0",
     "response-time": "^2.3.2",
     "sequelize": "^6.21.3",

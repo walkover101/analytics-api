@@ -61,7 +61,7 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(`[JOB](insertBatchInBigQuery) PartialFailureError`);
-        logger.error(JSON.stringify(err));
+        logger.error(JSON.stringify(err.errors));
     }
 }
 
@@ -106,21 +106,28 @@ function maxEndTime() {
     return DateTime.now().minus({ minutes: LAG });
 }
 
-function start(job: jobType) {
-    logger.info(`[JOB](${job}SyncJob) Initiated...`);
+async function start(job: jobType, lastDocumentId: string, forceReplace: boolean) {
+    try {
+        logger.info(`[JOB](${job}SyncJob) Initiated...`);
+        if (lastDocumentId && forceReplace) await trackersService.upsert(job, lastDocumentId);
+        if (lastDocumentId && !forceReplace) await trackersService.create(job, lastDocumentId);
 
-    mongoService().on("connect", (connection: MongoClient) => {
-        mongoConnection = connection;
-        initSynching(job);
-    });
+        mongoService().on("connect", (connection: MongoClient) => {
+            mongoConnection = connection;
+            initSynching(job);
+        });
+    } catch (err: any) {
+        if (err.message === 'Validation error') logger.error('lastDocumentId already exists. Use -f to force replace the current id');
+        else logger.error(err);
+    }
 }
 
-const requestDataSyncJob = () => {
-    start(jobType.REQUEST_DATA);
+const requestDataSyncJob = (lastDocumentId: string, forceReplace: boolean) => {
+    start(jobType.REQUEST_DATA, lastDocumentId, forceReplace);
 }
 
-const reportDataSyncJob = () => {
-    start(jobType.REPORT_DATA);
+const reportDataSyncJob = (lastDocumentId: string, forceReplace: boolean) => {
+    start(jobType.REPORT_DATA, lastDocumentId, forceReplace);
 }
 
 export {

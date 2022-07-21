@@ -10,7 +10,13 @@ function upsert(job: jobType, lastDocumentId: any) {
     return Tracker.upsert({ jobType: job, lastDocumentId });
 }
 
+function create(job: jobType, lastDocumentId: any) {
+    logger.info(`[INIT TRACKERS] Updating lastDocumentId to ${lastDocumentId}...`);
+    return Tracker.create({ jobType: job, lastDocumentId });
+}
+
 export {
     get,
-    upsert
+    upsert,
+    create
 }
