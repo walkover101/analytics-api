@@ -8,7 +8,7 @@ const sequelize = new Sequelize({
 
 export default async function () {
     try {
-        await sequelize.sync({ force: true })
+        await sequelize.sync()
         logger.info("Sequelize Synced.");
     } catch (err: any) {
         logger.error(`Failed to sync sequelize: ${err.message}`);

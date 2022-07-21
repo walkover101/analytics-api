@@ -2,17 +2,12 @@ import logger from "../../logger/logger";
 import Tracker, { jobType } from "../../models/trackers.model";
 
 async function get(job: jobType) {
-    try {
-        return await Tracker.findByPk(job);
-    } catch (err: any) {
-        logger.error(`Unable to fetch tracker ${err.message}`);
-        return null
-    }
+    return Tracker.findByPk(job);
 }
 
-async function upsert(job: jobType, lastDocumentId: any) {
-    // const lastDocId = lastDocument?._id?.toString() || null;
-    return await Tracker.upsert({ jobType: job, lastDocumentId });
+function upsert(job: jobType, lastDocumentId: any) {
+    logger.info(`[UPDATE TRACKERS] Updating lastDocumentId to ${lastDocumentId}...`);
+    return Tracker.upsert({ jobType: job, lastDocumentId });
 }
 
 export {
