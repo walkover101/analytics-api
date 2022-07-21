@@ -22,13 +22,11 @@ function getAvailableJobs() {
 
 function main() {
     const jobName = process.argv[2];
-    const lastDocumentId = argv.ldi;
-    const forceReplace = argv.f;
 
     if (invalidJobName(jobName))
         return logger.error(`Valid job name is required\n\nAvailable jobs: \n${getAvailableJobs()}`);
 
-    Jobs[jobName](lastDocumentId, forceReplace);
+    Jobs[jobName](argv);
 }
 
 main();

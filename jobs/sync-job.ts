@@ -108,11 +108,16 @@ function maxEndTime() {
     return DateTime.now().minus({ minutes: LAG });
 }
 
-async function start(job: jobType, lastDocumentId: string, forceReplace: boolean) {
+function initTrackers(job: jobType, lastDocumentId: string, forceReplace: boolean) {
+    if (!lastDocumentId) return;
+    if (forceReplace) return trackersService.upsert(job, lastDocumentId);
+    return trackersService.create(job, lastDocumentId);
+}
+
+async function start(job: jobType, args: any) {
     try {
         logger.info(`[JOB](${job}SyncJob) Initiated...`);
-        if (lastDocumentId && forceReplace) await trackersService.upsert(job, lastDocumentId);
-        if (lastDocumentId && !forceReplace) await trackersService.create(job, lastDocumentId);
+        await initTrackers(job, args.ldi, args.f)
 
         mongoService().on("connect", (connection: MongoClient) => {
             mongoConnection = connection;
@@ -124,13 +129,8 @@ async function start(job: jobType, lastDocumentId: string, forceReplace: boolean
     }
 }
 
-const requestDataSyncJob = (lastDocumentId: string, forceReplace: boolean) => {
-    start(jobType.REQUEST_DATA, lastDocumentId, forceReplace);
-}
-
-const reportDataSyncJob = (lastDocumentId: string, forceReplace: boolean) => {
-    start(jobType.REPORT_DATA, lastDocumentId, forceReplace);
-}
+const requestDataSyncJob = (args: any) => start(jobType.REQUEST_DATA, args);
+const reportDataSyncJob = (args: any) => start(jobType.REPORT_DATA, args);
 
 export {
     requestDataSyncJob,
