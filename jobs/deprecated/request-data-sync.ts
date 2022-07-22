@@ -46,12 +46,13 @@ export default async function requestDataSync() {
             });
             logger.info(`Time Limit : ${timeLimit}, End Time : ${endTime}, Diff : ${timeLimit.diff(endTime, 'minute').minutes}`)
             if (timeLimit.diff(endTime, 'minute').minutes <= 0) {
-                await delay((INTERVAL * 1000) / 4);
+                await delay((INTERVAL * 1000));
             } else {
                 logger.info("Syncing Data...");
-                console.time("processing-time");
+                let start = performance.now();
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
-                console.timeEnd("processing-time");
+                let end = performance.now();
+                logger.info(`Processing Time : ${end-start}ms`)
                 logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
                 await delay(100);
