@@ -50,8 +50,8 @@ export async function main() {
                 let start = performance.now();
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
                 let end = performance.now();
-                logger.info(`Processing Time : ${end-start}ms`)
-                logger.info(documentId);
+                logger.info(`Processing Time : ${parseInt((end - start).toString())}ms`)
+                logger.info(`Last Processed Document : ${documentId}`);
                 updatePointer(timestamp.toString(), documentId || undefined);
                 await delay(100);
             }

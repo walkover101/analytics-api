@@ -52,8 +52,8 @@ export default async function requestDataSync() {
                 let start = performance.now();
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
                 let end = performance.now();
-                logger.info(`Processing Time : ${end-start}ms`)
-                logger.info(documentId);
+                logger.info(`Processing Time : ${parseInt((end - start).toString())}ms`)
+                logger.info(`Last Processed Document : ${documentId}`);
                 updatePointer(timestamp.toString(), documentId || undefined);
                 await delay(100);
             }
@@ -100,13 +100,18 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         batch.push(doc);
 
         if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
-            await requestDataService.insertMany(batch.map(row => new RequestData(row)));
+            const requestData = batch.map(row => new RequestData(row));
+            const tasks = [];
+            const insertRequest = requestDataService.insertMany(requestData);
+            tasks.push(insertRequest);
             const reportData = batch.filter(row => row.isSingleRequest == "1");
             if (reportData.length > 0) {
-                await reportDataService.insertMany(reportData.map(row => {
+                const insertReport = reportDataService.insertMany(reportData.map(row => {
                     return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
                 }));
+                tasks.push(insertReport);
             }
+            await Promise.all(tasks);
             batch = [];
         } else {
             continue;
