@@ -10,14 +10,14 @@ const router = express.Router();
 
 router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
     try {
-        let { companyId, fields } = req.query;
+        let { companyId, fields, timezone } = req.query;
         let resourceType = req.params[0];
         let startDate = formatDate(req.query.startDate as string);
         let endDate = formatDate(req.query.endDate as string);
         if (!startDate) return res.status(400).send({ message: 'Start Date must be provided in MM-DD-YYYY format' });
         if (!endDate) return res.status(400).send({ message: 'End Date must be provided in MM-DD-YYYY format' });
         if (!companyId) return res.status(400).send({ message: 'Company Id is mandatory' });
-        const download = new Download(resourceType as string, companyId as string, startDate, endDate, fields as string, req.query);
+        const download = new Download(resourceType as string, companyId as string, startDate, endDate, timezone as string, fields as string, req.query);
         const downloadDoc = await downloadsService.insert(download);
         download.id = downloadDoc.id;
         res.send(download);

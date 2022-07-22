@@ -67,7 +67,6 @@ class DownloadsFsService {
                 EXPORT DATA OPTIONS(
                     uri='${exportPath}',
                     format='${format}',
-                    compression='GZIP',
                     overwrite=true,
                     header=true,
                     field_delimiter=';'
