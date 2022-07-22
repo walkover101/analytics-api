@@ -57,8 +57,8 @@ class DlrLogsService {
     public download(download: Download, format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
         const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}`;
-        const exportFilePath = `gs://${filePath}_ *.csv.gz`;
-        download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv.gz`;
+        const exportFilePath = `gs://${filePath}_ *.csv`;
+        download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${DLR_LOGS_TABLE_ID} as dlrLog WHERE ${whereClause}`;
@@ -71,7 +71,7 @@ class DlrLogsService {
 
         // mandatory conditions
         let conditions = `dlrLog.companyId = ${download.companyId}`;
-        conditions += ` AND (DATE(dlrLog.createdAt) BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+        conditions += ` AND (DATETIME(dlrLog.createdAt, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
         if (query.senderDedicatedIpId) conditions += ` AND dlrLog.senderDedicatedIpId in (${query.senderDedicatedIpId.split(',')})`;
