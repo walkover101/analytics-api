@@ -95,12 +95,14 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         }
         batch.push(doc);
 
-        if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
+        if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
             await requestDataService.insertMany(batch.map(row => new RequestData(row)));
             const reportData = batch.filter(row => row.isSingleRequest == "1");
-            await reportDataService.insertMany(reportData.map(row => {
-                return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
-            }));
+            if (reportData.length > 0) {
+                await reportDataService.insertMany(reportData.map(row => {
+                    return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
+                }));
+            }
             batch = [];
         } else {
             continue;

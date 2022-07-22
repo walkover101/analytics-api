@@ -93,7 +93,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         }
         batch.push(new ReportData(doc));
 
-        if (batch.length >= BATCH_SIZE || i == (docs.length - 1)) {
+        if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
             await reportDataService.insertMany(batch);
             batch = [];
         } else {
