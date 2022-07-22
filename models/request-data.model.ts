@@ -34,7 +34,7 @@ export default class RequestData {
         this.requestID = attr['requestID'];
         this.telNum = attr['telNum'];
         this.reportStatus = attr['reportStatus'];
-        this.sentTimeReport = attr['sentTimeReport'];
+        this.sentTimeReport = attr['sentTimeReport'] || null;
         this.providerSMSID = attr['providerSMSID'];
         this.user_pid = attr['user_pid'];
         this.senderID = attr['senderID'];
@@ -45,19 +45,19 @@ export default class RequestData {
         this.curRoute = attr['curRoute'];
         this.expiry = attr['expiry'];
         this.isCopied = attr['isCopied'];
-        this.requestDate = attr['requestDate'];
+        this.requestDate = attr['requestDate'] || null;
         this.userCountryCode = attr['userCountryCode'];
         this.requestUserid = attr['requestUserid'];
         this.status = attr['status'];
         this.userCredit = attr['userCredit'];
         this.isSingleRequest = attr['isSingleRequest'];
-        this.deliveryTime = attr['deliveryTime'];
+        this.deliveryTime = attr['deliveryTime'] || null;
         this.route = attr['route'];
         this.credit = parseFloat(attr['credit']);
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.crcy = attr['crcy'];
         this.node_id = attr['node_id'];
-        this.scheduleDateTime = attr['scheduleDateTime'];
+        this.scheduleDateTime = attr['scheduleDateTime'] || null;
         this.msgData = attr['msgData'];
     }
 }
