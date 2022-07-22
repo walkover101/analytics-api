@@ -12,7 +12,7 @@ import reportDataService from '../../services/sms/report-data-service';
 import ReportData from '../../models/report-data.model';
 
 const appDir = dirname(require.main?.filename || '');
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 5000;
 const LAG = 48 * 60;  // Hours * Minutes
 const INTERVAL = 5   // Minutes
 // Connection URL
