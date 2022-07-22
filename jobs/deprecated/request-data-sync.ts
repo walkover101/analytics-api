@@ -98,19 +98,22 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             continue;
         }
         batch.push(doc);
-
         if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
-            const requestData = batch.map(row => new RequestData(row));
             const tasks = [];
-            const insertRequest = requestDataService.insertMany(requestData);
-            tasks.push(insertRequest);
-            const reportData = batch.filter(row => row.isSingleRequest == "1");
+            let requestData: any[] = [];
+            let reportData: any[] = [];
+            batch.forEach((row) => {
+                requestData.push(new RequestData(row));
+                if (row.isSingleRequest == "1") {
+                    reportData.push(new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid }))
+                }
+            })
             if (reportData.length > 0) {
-                const insertReport = reportDataService.insertMany(reportData.map(row => {
-                    return new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid });
-                }));
+                const insertReport = reportDataService.insertMany(reportData);
                 tasks.push(insertReport);
             }
+            const insertRequest = requestDataService.insertMany(requestData);
+            tasks.push(insertRequest);
             await Promise.all(tasks);
             batch = [];
         } else {
