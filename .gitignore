@@ -3,7 +3,7 @@ package-lock.json
 .env
 service-account.json
 dist
-sync-jobs-config.json
 vineet*
 logs
 firebase-credentials.json
+analytics.sqlite

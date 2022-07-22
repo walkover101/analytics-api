@@ -5,12 +5,14 @@ import helmet from './startup/helmet';
 import cors from './startup/cors';
 import responseTime from './startup/response-time';
 import routes from './startup/routes';
+import sequelize from './database/sequelize-service';
 
 const app = express();
 helmet(app);
 cors(app);
 responseTime(app);
 routes(app);
+sequelize();
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () =>

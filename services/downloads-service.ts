@@ -55,6 +55,27 @@ class DownloadsFsService {
                 return reportDataService.download(download);
         }
     }
+
+    public getExportQuery(downloadId: string = '', query: string, exportPath: string, format: string) {
+        return `
+            BEGIN
+                CREATE TEMP TABLE _SESSION.${downloadId} AS (
+                    WITH temptable AS (${query})
+                    SELECT * FROM temptable
+                );
+                
+                EXPORT DATA OPTIONS(
+                    uri='${exportPath}',
+                    format='${format}',
+                    compression='GZIP',
+                    overwrite=true,
+                    header=true,
+                    field_delimiter=';'
+                ) AS
+                SELECT * FROM _SESSION.${downloadId};
+            END;
+        `;
+    }
 }
 
 export default DownloadsFsService.getSingletonInstance();

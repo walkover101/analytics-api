@@ -1,13 +1,15 @@
 import logger from "../logger/logger";
+import firebaseLogger from '../logger/firebase-logger';
 import { MongoClient, ObjectId } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay } from "../services/utility-service";
-import { getLastDocumentId, jobType, updateTrackers } from "../services/sms/sync-jobs-config-service";
+import * as trackersService from "../services/sms/trackers-service";
 import { DateTime } from 'luxon';
 import requestDataService from "../services/sms/request-data-service";
 import reportDataService from "../services/sms/report-data-service";
 import ReportData from '../models/report-data.model';
 import RequestData from '../models/request-data.model';
+import { jobType } from "../models/trackers.model";
 
 let mongoConnection: MongoClient;
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
@@ -44,7 +46,12 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
         logger.info(`[BATCH PROCESSING] ${i}-${(i + BATCH_SIZE) - 1} records synching to big query...`);
         await insertBatchInBigQuery(job, batch);
         logger.info('[BATCH PROCESSING] Batch synched.');
-        updateTrackers(job, batch.pop());
+        const lastDocId = batch.pop()?._id?.toString();
+
+        await trackersService.upsert(job, lastDocId).catch(err => {
+            logger.error(err);
+            process.exit(1);
+        });
     }
 }
 
@@ -55,15 +62,22 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(`[JOB](insertBatchInBigQuery) PartialFailureError`);
-        logger.error(JSON.stringify(err));
+        logger.error(JSON.stringify(err.errors));
+        firebaseLogger.log(err.errors, `${job}SyncErrors`);
     }
 }
 
-function fetchDocsFromMongo(job: jobType): Promise<any[]> {
-    const lastDocumentId: string = getLastDocumentId(job);
-    if (job === jobType.REQUEST_DATA) return fetchRequestDataDocs(maxEndTime(), lastDocumentId);
-    if (job === jobType.REPORT_DATA) return fetchReportDataDocs(maxEndTime(), lastDocumentId);
-    return Promise.resolve([]);
+async function fetchDocsFromMongo(job: jobType): Promise<any[]> {
+    try {
+        const tracker: any = await trackersService.get(job);
+        if (!tracker?.lastDocumentId) throw 'lastDocumentId is required.';
+        if (job === jobType.REQUEST_DATA) return fetchRequestDataDocs(maxEndTime(), tracker.lastDocumentId);
+        if (job === jobType.REPORT_DATA) return fetchReportDataDocs(maxEndTime(), tracker.lastDocumentId);
+        return Promise.resolve([]);
+    } catch (err: any) {
+        logger.error(err);
+        process.exit(1);
+    }
 }
 
 function fetchRequestDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
@@ -94,22 +108,29 @@ function maxEndTime() {
     return DateTime.now().minus({ minutes: LAG });
 }
 
-function start(job: jobType) {
-    logger.info(`[JOB](${job}SyncJob) Initiated...`);
-
-    mongoService().on("connect", (connection: MongoClient) => {
-        mongoConnection = connection;
-        initSynching(job);
-    });
+function initTrackers(job: jobType, lastDocumentId: string, forceReplace: boolean) {
+    if (!lastDocumentId) return;
+    if (forceReplace) return trackersService.upsert(job, lastDocumentId);
+    return trackersService.create(job, lastDocumentId);
 }
 
-const requestDataSyncJob = () => {
-    start(jobType.REQUEST_DATA);
+async function start(job: jobType, args: any) {
+    try {
+        logger.info(`[JOB](${job}SyncJob) Initiated...`);
+        await initTrackers(job, args.ldi, args.f)
+
+        mongoService().on("connect", (connection: MongoClient) => {
+            mongoConnection = connection;
+            initSynching(job);
+        });
+    } catch (err: any) {
+        if (err.message === 'Validation error') logger.error('lastDocumentId already exists. Use -f to force replace the current id');
+        else logger.error(err);
+    }
 }
 
-const reportDataSyncJob = () => {
-    start(jobType.REPORT_DATA);
-}
+const requestDataSyncJob = (args: any) => start(jobType.REQUEST_DATA, args);
+const reportDataSyncJob = (args: any) => start(jobType.REPORT_DATA, args);
 
 export {
     requestDataSyncJob,

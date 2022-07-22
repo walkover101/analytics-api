@@ -3,6 +3,7 @@ import msg91Dataset from '../../database/big-query-service';
 import logger from '../../logger/logger';
 import DlrLog from '../../models/dlr-log.model';
 import Download from '../../models/download.model';
+import downloadsService from '../downloads-service';
 import { getQuotedStrings, getValidFields } from '../utility-service';
 
 const DLR_LOGS_TABLE_ID = process.env.DLR_LOGS_TABLE_ID || 'dlr_logs'
@@ -62,7 +63,7 @@ class DlrLogsService {
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${DLR_LOGS_TABLE_ID} as dlrLog WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
-        return msg91Dataset.createQueryJob({ query: this.prepareExportQuery(download.id, queryStatement, exportFilePath, format) });
+        return msg91Dataset.createQueryJob({ query: downloadsService.getExportQuery(download.id, queryStatement, exportFilePath, format) });
     }
 
     private getWhereClause(download: Download) {
@@ -88,27 +89,6 @@ class DlrLogsService {
         if (query.subject) conditions += ` AND UPPER(dlrLog.subject) LIKE '%${query.subject.toUpperCase()}%'`;
 
         return conditions;
-    }
-
-    private prepareExportQuery(downloadId: string = '', query: string, exportPath: string, format: string) {
-        return `
-            BEGIN
-                CREATE TEMP TABLE _SESSION.${downloadId} AS (
-                    WITH temptable AS (${query})
-                    SELECT * FROM temptable
-                );
-                
-                EXPORT DATA OPTIONS(
-                    uri='${exportPath}',
-                    format='${format}',
-                    compression='GZIP',
-                    overwrite=true,
-                    header=true,
-                    field_delimiter=';'
-                ) AS
-                SELECT * FROM _SESSION.${downloadId};
-            END;
-        `;
     }
 }
 
