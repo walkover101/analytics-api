@@ -47,7 +47,9 @@ export async function main() {
                 await delay((INTERVAL * 1000) / 2);
             } else {
                 logger.info("Syncing Data...");
+                console.time("processing-time");
                 const { timestamp, documentId } = await syncData(collection, startTime, endTime, getLastDocument());
+                console.timeEnd("processing-time");
                 logger.info(documentId);
                 updatePointer(timestamp.toString(), documentId || undefined);
                 await delay(100);
@@ -77,6 +79,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         }
     }
     const docs = await collection.find(query).sort({ sentTime: 1 }).toArray();
+    logger.info(`Processing ${docs?.length} documents...`)
     // logger.info(apps);
     let skip = !!docuemntId;
     let batch = new Array();
@@ -84,7 +87,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         const doc = docs[i];
         // Skip documents that have already been processed
         if (skip) {
-            if (doc._id == docuemntId) {
+            if (doc?._id == docuemntId) {
                 skip = false;
             } else {
                 skip = true;
