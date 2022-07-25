@@ -2,6 +2,7 @@ import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
 import bigquery from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
+import { DateTime } from 'luxon';
 import logger from "../logger/logger";
 const router = express.Router();
 const reportQueryMap = new Map();
@@ -10,6 +11,113 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
+
+router.route(`/`)
+    .get(async (req: Request, res: Response) => {
+        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        console.log(companyId);
+        if (!companyId && !vendorIds) {
+            return res.status(400).send("nodeIds or companyId is required");
+        }
+        if (companyId) {
+            // Handle request for company Id
+            return res.send(await getCompanyAnalytics(companyId, startDate, endDate, route));
+        }
+        if (vendorIds) {
+            return res.send(await getVendorAnalytics(idsToArray(vendorIds), startDate, endDate, route));
+        }
+    });
+
+async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, route?: number) {
+    const query = `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
+    user_pid as Company, 
+    ROUND(SUM(credit),2) as BalanceDeducted, 
+    COUNTIF(status = 1) as Delivered, 
+    COUNTIF(status = 2) as Failed,
+    COUNTIF(status = 9) as NDNC, 
+    COUNTIF(status = 17) as Blocked, 
+    COUNTIF(status = 7) as AutoFailed,
+    COUNTIF(status = 25) as Rejected,
+    ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
+    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND
+    user_pid = "${companyId}" ${route ? "AND route = " + route : ""}
+    GROUP BY DATE(sentTime), user_pid;`
+
+    let result = await runQuery(query);
+    result = result.map(row => {
+        row['Date'] = row['Date']?.value;
+        return row;
+    });
+    // Sort the result
+    result = result.sort((leftRow: any, rightRow: any) => new Date(leftRow['Date']).getTime() - new Date(rightRow['Date']).getTime());
+    const total = {
+        "Message": 0,
+        "Delivered": 0,
+        "TotalCredits": 0,
+        "Filtered": 0,
+        "AvgDeliveryTime": 0
+    }
+    let totalDeliveryTime = 0;
+    result = result.map((row: any, index: any) => {
+        total["Message"] += row["Sent"];
+        total["Delivered"] += row["Delivered"];
+        total["TotalCredits"] += parseFloat(Number(row["BalanceDeducted"]).toFixed(3));
+        total["Filtered"] = total["Message"] - total["Delivered"];
+        totalDeliveryTime += row["DeliveryTime"] || 0;
+        total["AvgDeliveryTime"] = parseFloat(Number(totalDeliveryTime / (index + 1)).toFixed(3));
+        return row;
+    })
+
+
+    return { data: result, total };
+}
+async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
+    const query = `SELECT DATE(sentTime) as Date, SMSC, COUNT(_id) as Total,
+    SUM(credit) as BalanceDeducted, 
+    COUNTIF(status = 1) as Delivered,
+    COUNTIF(status = 2) as Failed,
+    COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
+    COUNTIF(status = 9) as NDNC, 
+    COUNTIF(status = 17) as Blocked, 
+    COUNTIF(status = 7) as AutoFailed,
+    COUNTIF(status = 25) as Rejected,
+    ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
+    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
+    AND smsc IN (${vendors.join()})
+    ${route ? "AND route = " + route : ""}
+    GROUP BY DATE(sentTime), smsc;`
+    let result = await runQuery(query);
+    result = result.map(row => {
+        row['Date'] = row['Date']?.value;
+        return row;
+    });
+    // Sort the result
+    result = result.sort((leftRow: any, rightRow: any) => new Date(leftRow['Date']).getTime() - new Date(rightRow['Date']).getTime());
+    return result;
+}
+async function runQuery(query: string) {
+    try {
+        const [job] = await bigquery.createQueryJob({
+            query: query,
+            location: process.env.DATA_SET_LOCATION,
+            // maximumBytesBilled: "1000"
+        });
+        let [rows] = await job.getQueryResults();
+        return rows;
+    } catch (error) {
+        throw error;
+    }
+
+}
+function idsToArray(ids: string) {
+    const idArray = ids.split(",");
+    return idArray.map(id => id.trim());
+}
+
+// Old Version
+
 router.route('/users/:userId')
     .get(async (req: Request, res: Response) => {
         let { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
@@ -42,6 +150,11 @@ router.route('/users/:userId')
             return [];
         }
 
+
+        if (userId) {
+            // Handle request for company Id
+            return res.send(await getCompanyAnalytics(userId, startDate, endDate));
+        }
         // const [reportDataJob] = await bigquery.createQueryJob({
         //     query: reportDataQuery,
         //     location: process.env.DATA_SET_LOCATION,
