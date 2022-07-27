@@ -29,21 +29,38 @@ router.route(`/`)
     });
 
 async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, route?: number) {
-    const query = `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
+    const defaultQuery = `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
     user_pid as Company, 
     ROUND(SUM(credit),2) as BalanceDeducted, 
-    COUNTIF(status = 1) as Delivered, 
-    COUNTIF(status = 2) as Failed,
+    COUNTIF(status = 1 OR status = 3 OR status = 26) as Delivered, 
+    COUNTIF(status = 2 OR status = 13 OR status = 7) as Failed,
     COUNTIF(status = 9) as NDNC, 
     COUNTIF(status = 17) as Blocked, 
     COUNTIF(status = 7) as AutoFailed,
-    COUNTIF(status = 25) as Rejected,
+    COUNTIF(status = 25 OR status = 16) as Rejected,
     ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
     FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
     WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND
-    user_pid = "${companyId}" ${route ? "AND route = " + route : ""}
+    user_pid = "${companyId}"
     GROUP BY DATE(sentTime), user_pid;`
 
+    const routeQuery = `SELECT COUNT(report._id) as Sent, DATE(sentTime) as Date,
+    report.user_pid as Company, 
+    ROUND(SUM(report.credit),2) as BalanceDeducted, 
+    COUNTIF(report.status = 1 OR report.status = 3 OR report.status = 26) as Delivered, 
+    COUNTIF(report.status = 2 OR report.status = 13 OR report.status = 7) as Failed,
+    COUNTIF(report.status = 9) as NDNC, 
+    COUNTIF(report.status = 17) as Blocked, 
+    COUNTIF(report.status = 7) as AutoFailed,
+    COUNTIF(report.status = 25 OR report.status = 16) as Rejected,
+    ROUND(SUM(IF(report.status = 1,TIMESTAMP_DIFF(report.deliveryTime, report.sentTime, SECOND),NULL))/COUNTIF(report.status = 1),0) as DeliveryTime FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS report
+    INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
+    ON report.requestID = request._id
+    WHERE (report.sentTime BETWEEN "${startDate}" AND "${endDate}") AND (request.requestDate BETWEEN "${startDate}" AND "${endDate}")
+    AND report.user_pid = "${companyId}" AND request.requestUserid = "${companyId}"
+    AND request.curRoute = "${route}"
+    GROUP BY DATE(report.sentTime),report.user_pid;`
+    const query = route != null ? routeQuery : defaultQuery;
     let result = await runQuery(query);
     result = result.map(row => {
         row['Date'] = row['Date']?.value;
