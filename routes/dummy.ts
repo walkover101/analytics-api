@@ -1,11 +1,18 @@
 import express, { Request, Response } from "express";
 import logger from "../logger/logger";
+import ReportData from '../models/report-data.model';
 
 const router = express.Router();
 
-router.get("/", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
     try {
-        return res.send({ info: 'test' });
+        const result: any = [];
+
+        req.body.mobileNumbers?.forEach((mobileNumber: any) => {
+            result.push(new ReportData({ telNum: mobileNumber }));
+        })
+
+        return res.send(result);
     } catch (err) {
         logger.error(err);
     }

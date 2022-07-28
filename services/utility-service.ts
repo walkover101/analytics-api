@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { intersection } from 'lodash';
 import { ObjectId } from 'mongodb';
+const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
 function delay(time = 1000) {
     return new Promise((resolve) => {
@@ -39,10 +40,27 @@ function isValidObjectId(id: string) {
     }
 }
 
+function extractCountryCode(mobileNumber: string) {
+    let country, countryCode = '0';
+
+    try {
+        const parsedNum = phoneUtil.parseAndKeepRawInput(`+${mobileNumber}`);
+        if (!phoneUtil.isValidNumber(parsedNum)) throw 'INVALID';
+        country = phoneUtil.getRegionCodeForNumber(parsedNum);
+        countryCode = parsedNum.getCountryCode();
+    } catch (err) {
+        country = 'INVALID';
+        countryCode = '0';
+    }
+
+    return { country, countryCode };
+}
+
 export {
     delay,
     formatDate,
     getQuotedStrings,
     getValidFields,
-    isValidObjectId
+    isValidObjectId,
+    extractCountryCode
 }
