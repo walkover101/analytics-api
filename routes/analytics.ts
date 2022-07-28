@@ -114,7 +114,7 @@ async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDat
     result = result.sort((leftRow: any, rightRow: any) => new Date(leftRow['Date']).getTime() - new Date(rightRow['Date']).getTime());
     return result;
 }
-async function runQuery(query: string) {
+export async function runQuery(query: string) {
     try {
         const [job] = await bigquery.createQueryJob({
             query: query,
