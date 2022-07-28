@@ -71,7 +71,7 @@ export async function getUserProfit(startDate: DateTime, endDate: DateTime, user
     AND request.curRoute = "${route}"
     GROUP BY DATE(report.sentTime),report.user_pid;`
     const query = route != null ? routeQuery : defaultQuery;
-    let [rows] = await runQuery(query);
+    let rows = await runQuery(query);
     rows = rows.map((row: any) => {
         return { ...row, "Date": row["Date"].value }
     });
@@ -101,7 +101,7 @@ export async function getVendorProfit(startDate: DateTime, endDate: DateTime, ve
     AND request.curRoute = "${route}"
     GROUP BY DATE(report.sentTime),report.smsc,report.crcy;`
     const query = route != null ? routeQuery : defaultQuery;
-    let [rows] = await runQuery(query);
+    let rows = await runQuery(query);
     rows = rows.map((row: any) => {
         return { ...row, "Date": row["Date"].value }
     });
@@ -118,7 +118,7 @@ export async function getOverallProfit(startDate: DateTime, endDate: DateTime, r
     GROUP BY DATE(sentTime), crcy;`
     const routeQuery = defaultQuery;
     const query = route != null ? routeQuery : defaultQuery;
-    let [rows] = await runQuery(query);
+    let rows = await runQuery(query);
     rows = rows.map((row: any) => {
         return { ...row, "Date": row["Date"].value }
     });
