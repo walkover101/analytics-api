@@ -11,7 +11,10 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
-
+type options = {
+    route?: number,
+    timeZone?: string
+}
 router.route(`/`)
     .get(async (req: Request, res: Response) => {
         let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
@@ -21,30 +24,22 @@ router.route(`/`)
         }
         if (companyId) {
             // Handle request for company Id
-            return res.send(await getCompanyAnalytics(companyId, startDate, endDate, route));
+            return res.send(await getCompanyAnalytics(companyId, startDate, endDate, { route }));
         }
         if (vendorIds) {
             return res.send(await getVendorAnalytics(idsToArray(vendorIds), startDate, endDate, route));
         }
     });
 
-async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, route?: number) {
-    const defaultQuery = `SELECT COUNT(_id) as Sent, DATE(sentTime) as Date,
-    user_pid as Company, 
-    ROUND(SUM(credit),2) as BalanceDeducted, 
-    COUNTIF(status = 1 OR status = 3 OR status = 26) as Delivered, 
-    COUNTIF(status = 2 OR status = 13 OR status = 7) as Failed,
-    COUNTIF(status = 9) as NDNC, 
-    COUNTIF(status = 17) as Blocked, 
-    COUNTIF(status = 7) as AutoFailed,
-    COUNTIF(status = 25 OR status = 16) as Rejected,
-    ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
-    WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND
-    user_pid = "${companyId}"
-    GROUP BY DATE(sentTime), user_pid;`
-
-    const routeQuery = `SELECT COUNT(report._id) as Sent, DATE(sentTime) as Date,
+async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opt?: options) {
+    try {
+        startDate = DateTime.fromISO(startDate as any);
+        endDate = DateTime.fromISO(endDate as any);
+    } catch (error) {
+        throw error;
+    }
+    const { route, timeZone = "Asia/Kolkata" } = opt || {};
+    const query = `SELECT COUNT(report._id) as Sent, DATE(request.requestDate) as Date,
     report.user_pid as Company, 
     ROUND(SUM(report.credit),2) as BalanceDeducted, 
     COUNTIF(report.status = 1 OR report.status = 3 OR report.status = 26) as Delivered, 
@@ -56,11 +51,12 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
     ROUND(SUM(IF(report.status = 1,TIMESTAMP_DIFF(report.deliveryTime, report.sentTime, SECOND),NULL))/COUNTIF(report.status = 1),0) as DeliveryTime FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS report
     INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
     ON report.requestID = request._id
-    WHERE (report.sentTime BETWEEN "${startDate}" AND "${endDate}") AND (request.requestDate BETWEEN "${startDate}" AND "${endDate}")
+    WHERE (report.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}") 
+    AND (DATETIME(request.requestDate,"${timeZone}") BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}","${timeZone}") AND DATETIME("${endDate.plus({ days: 1 }).toFormat('yyyy-MM-dd')}","${timeZone}"))
     AND report.user_pid = "${companyId}" AND request.requestUserid = "${companyId}"
-    AND request.curRoute = "${route}"
-    GROUP BY DATE(report.sentTime),report.user_pid;`
-    const query = route != null ? routeQuery : defaultQuery;
+    ${route != null ? `AND request.curRoute = "${route}"` : ""}
+    GROUP BY DATE(request.requestDate),report.user_pid;`
+    console.log(query);
     let result = await runQuery(query);
     result = result.map(row => {
         row['Date'] = row['Date']?.value;
@@ -75,17 +71,22 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
         "Filtered": 0,
         "AvgDeliveryTime": 0
     }
-    let totalDeliveryTime = 0;
-    result = result.map((row: any, index: any) => {
-        total["Message"] += row["Sent"];
-        total["Delivered"] += row["Delivered"];
-        total["TotalCredits"] += parseFloat(Number(row["BalanceDeducted"]).toFixed(3));
-        total["Filtered"] = total["Message"] - total["Delivered"];
-        totalDeliveryTime += row["DeliveryTime"] || 0;
-        total["AvgDeliveryTime"] = parseFloat(Number(totalDeliveryTime / (index + 1)).toFixed(3));
-        return row;
-    })
-
+    try {
+        let totalDeliveryTime = 0;
+        result = result.map((row: any, index: any) => {
+            total["Message"] += row["Sent"];
+            total["Delivered"] += row["Delivered"];
+            total["TotalCredits"] += parseFloat(row["BalanceDeducted"]);
+            total["Filtered"] = total["Message"] - total["Delivered"];
+            totalDeliveryTime += row["DeliveryTime"] || 0;
+            total["AvgDeliveryTime"] = parseFloat(Number(totalDeliveryTime / (index + 1)).toString());
+            return row;
+        })
+        total["TotalCredits"] = Number(parseFloat(total["TotalCredits"].toString()).toFixed(3));
+        total["AvgDeliveryTime"] = Number(parseFloat(total["AvgDeliveryTime"].toString()).toFixed(3));
+    } catch (error) {
+        logger.error(error);
+    }
 
     return { data: result, total };
 }
