@@ -52,7 +52,7 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
     INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
     ON report.requestID = request._id
     WHERE (report.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}") 
-    AND (DATETIME(request.requestDate,"${timeZone}") BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}","${timeZone}") AND DATETIME("${endDate.plus({ days: 1 }).toFormat('yyyy-MM-dd')}","${timeZone}"))
+    AND (DATETIME(request.requestDate,"${timeZone}") BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}","${timeZone}") AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}","${timeZone}"))
     AND report.user_pid = "${companyId}" AND request.requestUserid = "${companyId}"
     ${route != null ? `AND request.curRoute = "${route}"` : ""}
     GROUP BY DATE(request.requestDate),report.user_pid;`
