@@ -38,10 +38,11 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
     } catch (error) {
         throw error;
     }
+    // Don't add credit if request gets blocked or NDNC
     const { route, timeZone = "Asia/Kolkata" } = opt || {};
     const query = `SELECT COUNT(report._id) as Sent, DATE(request.requestDate) as Date,
     report.user_pid as Company, 
-    ROUND(SUM(report.credit),2) as BalanceDeducted, 
+    ROUND(SUM(IF(report.status = 17 OR report.status = 9,0,report.credit)),2) as BalanceDeducted, 
     COUNTIF(report.status = 1 OR report.status = 3 OR report.status = 26) as Delivered, 
     COUNTIF(report.status = 2 OR report.status = 13 OR report.status = 7) as Failed,
     COUNTIF(report.status = 9) as NDNC, 
@@ -92,7 +93,7 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
 }
 async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
     const query = `SELECT DATE(sentTime) as Date, SMSC, COUNT(_id) as Total,
-    SUM(credit) as BalanceDeducted, 
+    ROUND(SUM(IF(status = 17 OR status = 9,0,credit)),2) as BalanceDeducted, 
     COUNTIF(status = 1) as Delivered,
     COUNTIF(status = 2) as Failed,
     COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
