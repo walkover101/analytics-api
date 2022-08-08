@@ -13,7 +13,9 @@ function delay(time = 1000) {
 
 function formatDate(date: string) {
     try {
-        return DateTime.fromFormat(date, 'dd-MM-yyyy');
+        const result = DateTime.fromFormat(date, 'dd-MM-yyyy');
+        if (result?.isValid) return result;
+        return null;
     } catch (err) {
         return null;
     }
@@ -25,13 +27,14 @@ function getQuotedStrings(data: string[] | undefined) {
 }
 
 function getValidFields(permittedFields: { [key: string]: string } = {}, fields: Array<string> = []) {
-    const result: { withoutAlias: string[], withAlias: string[] } = { withoutAlias: [], withAlias: [] };
-    let attrbs = intersection(Object.keys(permittedFields), fields);
+    const result: { withoutAlias: string[], withAlias: string[], onlyAlias: string[] } = { withoutAlias: [], withAlias: [], onlyAlias: [] };
+    let attrbs = fields.filter(field => field in permittedFields);
     if (!attrbs.length) attrbs = Object.keys(permittedFields);
 
     attrbs.forEach(key => {
         result.withAlias.push(`${permittedFields[key]} as ${key}`);
         result.withoutAlias.push(permittedFields[key]);
+        result.onlyAlias.push(key);
     });
 
     return result;
