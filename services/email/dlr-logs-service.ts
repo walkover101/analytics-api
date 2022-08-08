@@ -59,7 +59,7 @@ class DlrLogsService {
         const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${download.id}`;
         const exportFilePath = `gs://${filePath}_ *.csv`;
         download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
-        const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
+        const fields = getValidFields(PERMITTED_FIELDS, download.fields).withAlias.join(',');
         const whereClause = this.getWhereClause(download);
         const queryStatement = `select ${fields} from ${DLR_LOGS_TABLE_ID} as dlrLog WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);

@@ -25,10 +25,15 @@ function getQuotedStrings(data: string[] | undefined) {
 }
 
 function getValidFields(permittedFields: { [key: string]: string } = {}, fields: Array<string> = []) {
-    const result: string[] = [];
+    const result: { withoutAlias: string[], withAlias: string[] } = { withoutAlias: [], withAlias: [] };
     let attrbs = intersection(Object.keys(permittedFields), fields);
     if (!attrbs.length) attrbs = Object.keys(permittedFields);
-    attrbs.map(key => result.push(permittedFields[key]));
+
+    attrbs.forEach(key => {
+        result.withAlias.push(`${permittedFields[key]} as ${key}`);
+        result.withoutAlias.push(permittedFields[key]);
+    });
+
     return result;
 }
 

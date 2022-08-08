@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import logger from '../logger/logger';
 import downloadsService from '../services/downloads-service';
-import reportDataService from '../services/sms/report-data-service';
 import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 import { formatDate } from '../services/utility-service';
 
