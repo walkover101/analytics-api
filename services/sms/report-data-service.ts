@@ -52,7 +52,7 @@ class ReportDataService {
         download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).join(',');
         const whereClause = this.getWhereClause(download);
-        const queryStatement = `select ${fields} from ${REPORT_DATA_TABLE_ID} as reportData left join ${REQUEST_DATA_TABLE_ID} as requestData on reportData.requestId = requestData.requestId WHERE ${whereClause}`;
+        const queryStatement = `select ${fields} from ${REPORT_DATA_TABLE_ID} as reportData right join ${REQUEST_DATA_TABLE_ID} as requestData on reportData.requestId = requestData.requestId WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
         return msg91Dataset.createQueryJob({ query: downloadsService.getExportQuery(download.id, queryStatement, exportFilePath, format) });
     }
@@ -61,8 +61,9 @@ class ReportDataService {
         const query: { [key: string]: string } = download.query || {};
 
         // mandatory conditions
-        let conditions = `reportData.user_pid = "${download.companyId}"`;
+        let conditions = `reportData.user_pid = "${download.companyId}" AND requestData.requestUserid = "${download.companyId}"`;
         conditions += ` AND (DATETIME(reportData.sentTime, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+        conditions += ` AND (DATETIME(requestData.requestDate, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
         if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.split(','))})`;
