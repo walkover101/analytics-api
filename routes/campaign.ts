@@ -5,6 +5,7 @@ import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
 import { runQuery } from './analytics';
+import { getQuotedStrings } from '../services/utility-service';
 const router = express.Router();
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
@@ -15,17 +16,19 @@ type options = {
     timeZone?: string
 }
 router.route(`/`)
-    .post((req: Request, res: Response) => {
+    .post(async (req: Request, res: Response) => {
         let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = { ...req.query, ...req.params } as any;
         let body = req.body;
         let smsNodeIds = body?.sms;
-        if(!companyId){
+        if (!companyId) {
             res.status(401).send("comapnyId is required");
         }
-        if(smsNodeIds.length <= 0){
+        if (smsNodeIds.length <= 0) {
             res.status(401).send("nodeIds required");
         }
-        return getSMSAnalytics(companyId,smsNodeIds,startDate,endDate);
+        let output: any = {};
+        output.sms = await getSMSAnalytics(companyId, smsNodeIds, startDate, endDate);
+        res.send(output);
     })
 
 async function getSMSAnalytics(companyId: string, nodeIds: [string], startDate: DateTime, endDate: DateTime, opt?: options) {
@@ -43,7 +46,9 @@ async function getSMSAnalytics(companyId: string, nodeIds: [string], startDate: 
     }
     // Don't add credit if request gets blocked or NDNC
     const { route, timeZone = "Asia/Kolkata" } = opt || {};
-    const query = `SELECT COUNT(report._id) as Sent, DATE(request.requestDate) as Date,
+    const query = `SELECT COUNT(report._id) as Sent,
+    request.node_id,
+    DATE(request.requestDate) as Date,
     report.user_pid as Company, 
     ROUND(SUM(IF(report.status = 17 OR report.status = 9,0,report.credit)),2) as BalanceDeducted, 
     COUNTIF(report.status = 1 OR report.status = 3 OR report.status = 26) as Delivered, 
@@ -58,9 +63,9 @@ async function getSMSAnalytics(companyId: string, nodeIds: [string], startDate: 
     WHERE (report.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}") 
     AND (DATETIME(request.requestDate,"${timeZone}") BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}","${timeZone}") AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}","${timeZone}"))
     AND report.user_pid = "${companyId}" AND request.requestUserid = "${companyId}"
-    AND request.node_id IN (${nodeIds.join()})
+    AND request.node_id IN (${getQuotedStrings(nodeIds)})
     ${route != null ? `AND request.curRoute = "${route}"` : ""}
-    GROUP BY DATE(request.requestDate),report.user_pid;`
+    GROUP BY DATE(request.requestDate),report.user_pid,request.node_id;`
     console.log(query);
     let result = await runQuery(query);
     result = result.map(row => {
@@ -96,10 +101,10 @@ async function getSMSAnalytics(companyId: string, nodeIds: [string], startDate: 
     return { data: result, total };
 }
 
-function concat(array:[any]){
+function concat(array: [any]) {
     let output = "";
-    array.forEach(element=>{
-        output += ","+element;
+    array.forEach(element => {
+        output += "," + element;
     });
     return output;
 }
