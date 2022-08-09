@@ -49,22 +49,40 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
     return { data, total };
 }
 
-async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
-    const query = `SELECT DATE(sentTime) as Date, SMSC, COUNT(_id) as Total,
-    ROUND(SUM(IF(status = 17 OR status = 9,0,credit)),2) as BalanceDeducted, 
-    COUNTIF(status = 1) as Delivered,
-    COUNTIF(status = 2) as Failed,
-    COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
-    COUNTIF(status = 9) as NDNC, 
-    COUNTIF(status = 17) as Blocked, 
-    COUNTIF(status = 7) as AutoFailed,
-    COUNTIF(status = 25) as Rejected,
-    ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
-    WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
-    AND smsc IN (${vendors.join()})
-    ${route ? "AND route = " + route : ""}
-    GROUP BY DATE(sentTime), smsc;`
+router.route("/vendors")
+    .get(async (req: Request, res: Response) => {
+        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        (!vendorIds) ? vendorIds = [] : vendorIds = idsToArray(vendorIds);
+        return res.send(await getVendorAnalytics(vendorIds, startDate, endDate, route));
+    });
+
+async function getCompanyAnalyticsOld(companyId: string, startDate: DateTime, endDate: DateTime, opt?: any) {
+    try {
+        startDate = DateTime.fromISO(startDate as any);
+        endDate = DateTime.fromISO(endDate as any);
+    } catch (error) {
+        throw error;
+    }
+    // Don't add credit if request gets blocked or NDNC
+    const { route, timeZone = "Asia/Kolkata" } = opt || {};
+    const query = `SELECT COUNT(report._id) as Sent, DATE(request.requestDate) as Date,
+    report.user_pid as Company, 
+    ROUND(SUM(IF(report.status = 17 OR report.status = 9,0,report.credit)),2) as BalanceDeducted, 
+    COUNTIF(report.status = 1 OR report.status = 3 OR report.status = 26) as Delivered, 
+    COUNTIF(report.status = 2 OR report.status = 13 OR report.status = 7) as Failed,
+    COUNTIF(report.status = 9) as NDNC, 
+    COUNTIF(report.status = 17) as Blocked, 
+    COUNTIF(report.status = 7) as AutoFailed,
+    COUNTIF(report.status = 25 OR report.status = 16) as Rejected,
+    ROUND(SUM(IF(report.status = 1,TIMESTAMP_DIFF(report.deliveryTime, report.sentTime, SECOND),NULL))/COUNTIF(report.status = 1),0) as DeliveryTime FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS report
+    INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
+    ON report.requestID = request._id
+    WHERE (report.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}") 
+    AND (DATETIME(request.requestDate,"${timeZone}") BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}","${timeZone}") AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}","${timeZone}"))
+    AND report.user_pid = "${companyId}" AND request.requestUserid = "${companyId}"
+    ${route != null ? `AND request.curRoute = "${route}"` : ""}
+    GROUP BY DATE(request.requestDate),report.user_pid;`
+    console.log(query);
     let result = await runQuery(query);
     result = result.map(row => {
         row['Date'] = row['Date']?.value;
@@ -72,8 +90,53 @@ async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDat
     });
     // Sort the result
     result = result.sort((leftRow: any, rightRow: any) => new Date(leftRow['Date']).getTime() - new Date(rightRow['Date']).getTime());
-    return result;
+    const total = {
+        "Message": 0,
+        "Delivered": 0,
+        "TotalCredits": 0,
+        "Filtered": 0,
+        "AvgDeliveryTime": 0
+    }
+    try {
+        let totalDeliveryTime = 0;
+        result = result.map((row: any, index: any) => {
+            total["Message"] += row["Sent"];
+            total["Delivered"] += row["Delivered"];
+            total["TotalCredits"] += parseFloat(row["BalanceDeducted"]);
+            total["Filtered"] = total["Message"] - total["Delivered"];
+            totalDeliveryTime += row["DeliveryTime"] || 0;
+            total["AvgDeliveryTime"] = parseFloat(Number(totalDeliveryTime / (index + 1)).toString());
+            return row;
+        })
+        total["TotalCredits"] = Number(parseFloat(total["TotalCredits"].toString()).toFixed(3));
+        total["AvgDeliveryTime"] = Number(parseFloat(total["AvgDeliveryTime"].toString()).toFixed(3));
+    } catch (error) {
+        logger.error(error);
+    }
+
+    return { data: result, total };
 }
+
+async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
+    const query = `SELECT STRING(DATE(sentTime)) as Date, SMSC, COUNT(_id) as Total,
+    ROUND(SUM(IF(status = 17 OR status = 9,0,credit)),2) as BalanceDeducted, 
+    COUNTIF(status = 1 OR status = 3 OR status = 26) as Delivered,
+    COUNTIF(status = 2 OR status = 13 OR status = 7) as Failed,
+    COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
+    COUNTIF(status = 9) as NDNC, 
+    COUNTIF(status = 17) as Blocked, 
+    COUNTIF(status = 7) as AutoFailed,
+    COUNTIF(status = 25 OR status = 16) as Rejected,
+    ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
+    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
+    ${vendors.length > 0 ? "AND smsc IN (" + getQuotedStrings(vendors) + ")" : ""}
+    ${route ? "AND route = " + route : ""}
+    GROUP BY Date, smsc
+    ORDER BY Date;`
+    return { data: await runQuery(query) };
+}
+
 export async function runQuery(query: string) {
     try {
         const [job] = await bigquery.createQueryJob({
