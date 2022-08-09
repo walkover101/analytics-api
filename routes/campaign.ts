@@ -1,11 +1,9 @@
-import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
-import bigquery from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
 import { runQuery } from './analytics';
-import { getQuotedStrings } from '../services/utility-service';
+import { getQuotedStrings, splitAndTrim } from '../services/utility-service';
 const router = express.Router();
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
@@ -16,10 +14,9 @@ type options = {
     timeZone?: string
 }
 router.route(`/`)
-    .post(async (req: Request, res: Response) => {
-        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = { ...req.query, ...req.params } as any;
-        let body = req.body;
-        let smsNodeIds = body?.sms;
+    .get(async (req: Request, res: Response) => {
+        let { companyId, nodeIds, smsNodeIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = { ...req.query, ...req.params } as any;
+        smsNodeIds = smsNodeIds?splitAndTrim(smsNodeIds):[];
         if (!companyId) {
             res.status(401).send("comapnyId is required");
         }

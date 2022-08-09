@@ -7,6 +7,7 @@ import campaign from '../routes/campaign';
 import profits from '../routes/profits';
 import options from "../middlewares/options";
 import error from "../middlewares/error";
+import { authenticate } from "../middlewares/auth";
 
 export default function (app: Application) {
   app.use(express.json());
@@ -14,11 +15,11 @@ export default function (app: Application) {
   app.use("/", home);
   app.use("/dummy", dummy);
   app.use("/analytics", analytics); // Temp for compatibility
-  app.use("/analytics/sms", analytics);
-  app.use("/exports", downloads);
-  app.use("/mail/exports", downloads);
-  app.use("/profits/sms", profits);
-  app.use("/campaigns",campaign);
+  app.use("/analytics/sms", authenticate, analytics);
+  app.use("/exports", authenticate, downloads);
+  app.use("/mail/exports", authenticate, downloads);
+  app.use("/profits/sms", authenticate, profits);
+  app.use("/campaigns", authenticate, campaign);
   app.use(options);
   app.use(error);
 }

@@ -63,12 +63,16 @@ function extractCountryCode(mobileNumber: string) {
 
     return { country, countryCode };
 }
-
+function splitAndTrim(ids: string) {
+    const idArray = ids.split(",");
+    return idArray.map(id => id.trim());
+}
 export {
     delay,
     formatDate,
     getQuotedStrings,
     getValidFields,
     isValidObjectId,
-    extractCountryCode
+    extractCountryCode,
+    splitAndTrim
 }
