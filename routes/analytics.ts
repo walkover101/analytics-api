@@ -4,6 +4,7 @@ import bigquery from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
+import { getQuotedStrings } from '../services/utility-service';
 const router = express.Router();
 const reportQueryMap = new Map();
 const requestQueryMap = new Map();
@@ -30,7 +31,12 @@ router.route(`/`)
             return res.send(await getVendorAnalytics(idsToArray(vendorIds), startDate, endDate, route));
         }
     });
-
+router.route("/vendors")
+    .get(async (req: Request, res: Response) => {
+        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        (!vendorIds) ? vendorIds = [] : vendorIds = idsToArray(vendorIds);
+        return res.send(await getVendorAnalytics(vendorIds, startDate, endDate, route));
+    });
 async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opt?: options) {
     try {
         startDate = DateTime.fromISO(startDate as any);
@@ -92,30 +98,25 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
     return { data: result, total };
 }
 async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
-    const query = `SELECT DATE(sentTime) as Date, SMSC, COUNT(_id) as Total,
+    const query = `SELECT STRING(DATE(sentTime)) as Date, SMSC, COUNT(_id) as Total,
     ROUND(SUM(IF(status = 17 OR status = 9,0,credit)),2) as BalanceDeducted, 
-    COUNTIF(status = 1) as Delivered,
-    COUNTIF(status = 2) as Failed,
+    COUNTIF(status = 1 OR status = 3 OR status = 26) as Delivered,
+    COUNTIF(status = 2 OR status = 13 OR status = 7) as Failed,
     COUNTIF(status = 1) + COUNTIF(status= 2) as Sent, 
     COUNTIF(status = 9) as NDNC, 
     COUNTIF(status = 17) as Blocked, 
     COUNTIF(status = 7) as AutoFailed,
-    COUNTIF(status = 25) as Rejected,
+    COUNTIF(status = 25 OR status = 16) as Rejected,
     ROUND(SUM(IF(status = 1,TIMESTAMP_DIFF(deliveryTime, sentTime, SECOND),NULL))/COUNTIF(status = 1),0) as DeliveryTime
     FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
     WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
-    AND smsc IN (${vendors.join()})
+    ${vendors.length > 0 ? "AND smsc IN (" + getQuotedStrings(vendors) + ")" : ""}
     ${route ? "AND route = " + route : ""}
-    GROUP BY DATE(sentTime), smsc;`
-    let result = await runQuery(query);
-    result = result.map(row => {
-        row['Date'] = row['Date']?.value;
-        return row;
-    });
-    // Sort the result
-    result = result.sort((leftRow: any, rightRow: any) => new Date(leftRow['Date']).getTime() - new Date(rightRow['Date']).getTime());
-    return result;
+    GROUP BY Date, smsc
+    ORDER BY Date;`
+    return { data: await runQuery(query) };
 }
+
 export async function runQuery(query: string) {
     try {
         const [job] = await bigquery.createQueryJob({

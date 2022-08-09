@@ -13,9 +13,11 @@ export default function (app: Application) {
   app.use(express.urlencoded({ extended: true }));
   app.use("/", home);
   app.use("/dummy", dummy);
-  app.use("/analytics", analytics);
+  app.use("/analytics", analytics); // Temp for compatibility
+  app.use("/analytics/sms", analytics);
   app.use("/exports", downloads);
-  app.use("/profits", profits);
+  app.use("/mail/exports", downloads);
+  app.use("/profits/sms", profits);
   app.use("/campaigns",campaign);
   app.use(options);
   app.use(error);
