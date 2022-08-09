@@ -1,43 +1,62 @@
-import { RowBatch } from '@google-cloud/bigquery';
 import express, { Request, Response } from 'express';
 import bigquery from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
-import { getQuotedStrings } from '../services/utility-service';
+import { formatDate, getQuotedStrings, getValidFields } from '../services/utility-service';
+
 const router = express.Router();
 const reportQueryMap = new Map();
 const requestQueryMap = new Map();
+const DEFAULT_TIMEZONE: string = '+05:30';
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
-type options = {
-    route?: number,
-    timeZone?: string
-}
+const DEFAULT_GROUP_BY = 'Date';
+const PERMITTED_GROUPINGS: { [key: string]: string } = {
+    // from report-data
+    country: 'reportData.countryCode',
+
+    // from request-data
+    Date: 'STRING(DATE(requestData.requestDate))',
+    nodeId: 'requestData.node_id'
+};
+
 router.route(`/`)
     .get(async (req: Request, res: Response) => {
-        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
-        console.log(companyId);
-        if (!companyId && !vendorIds) {
-            return res.status(400).send("nodeIds or companyId is required");
-        }
-        if (companyId) {
-            // Handle request for company Id
-            return res.send(await getCompanyAnalytics(companyId, startDate, endDate, { route }));
-        }
-        if (vendorIds) {
-            return res.send(await getVendorAnalytics(idsToArray(vendorIds), startDate, endDate, route));
+        try {
+            const params = { ...req.query, ...req.params } as any;
+            let { companyId, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
+            if (!companyId && !vendorIds) return res.status(400).send("vendorIds or companyId is required");
+            const fromDate = formatDate(startDate);
+            const toDate = formatDate(endDate);
+            if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
+            if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
+            if (companyId) return res.send(await getCompanyAnalytics(companyId, fromDate, toDate, params));
+            if (vendorIds) return res.send(await getVendorAnalytics(idsToArray(vendorIds), fromDate, toDate, route));
+        } catch (error) {
+            logger.error(error);
+            res.status(400).send(error);
         }
     });
+
+async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
+    let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
+    const query: string = getAnalyticsQuery(companyId, startDate, endDate, groupBy.split(','), opts);
+    const data = await runQuery(query);
+    const total = calculateTotalAggr(data);
+    return { data, total };
+}
+
 router.route("/vendors")
     .get(async (req: Request, res: Response) => {
         let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         (!vendorIds) ? vendorIds = [] : vendorIds = idsToArray(vendorIds);
         return res.send(await getVendorAnalytics(vendorIds, startDate, endDate, route));
     });
-async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opt?: options) {
+
+async function getCompanyAnalyticsOld(companyId: string, startDate: DateTime, endDate: DateTime, opt?: any) {
     try {
         startDate = DateTime.fromISO(startDate as any);
         endDate = DateTime.fromISO(endDate as any);
@@ -97,6 +116,7 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
 
     return { data: result, total };
 }
+
 async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDate: DateTime, route?: number) {
     const query = `SELECT STRING(DATE(sentTime)) as Date, SMSC, COUNT(_id) as Total,
     ROUND(SUM(IF(status = 17 OR status = 9,0,credit)),2) as BalanceDeducted, 
@@ -532,4 +552,73 @@ FROM \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\`
 WHERE (requestDate BETWEEN "{startDate}" AND "{endDate}") AND isSingleRequest = "1" AND
 user_pid = "{userId}"
 GROUP BY DATE(requestDate), user_pid;`)
+
+function getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, groupings: string[], opts: { [key: string]: string } = {}) {
+    const { timeZone = DEFAULT_TIMEZONE } = opts;
+    const whereClause = getWhereClause(companyId, startDate, endDate, timeZone, opts);
+    const validFields = getValidFields(PERMITTED_GROUPINGS, groupings);
+    const groupBy = validFields.onlyAlias.join(',');
+    const groupByAttribs = validFields.withAlias.join(',');
+
+    const query = `SELECT ${groupByAttribs}, ${aggregateAttribs()}
+    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS reportData
+    INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS requestData
+    ON reportData.requestID = requestData._id
+    WHERE ${whereClause}
+    GROUP BY ${groupBy}
+    ORDER BY ${groupBy};`;
+
+    logger.info(query);
+    return query;
+}
+
+function getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+    // mandatory conditions
+    let conditions = `reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
+    conditions += ` AND (reportData.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
+    conditions += ` AND (DATETIME(requestData.requestDate, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
+
+    // optional conditions
+    if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.split(','))})`;
+
+    return conditions;
+}
+
+function aggregateAttribs() {
+    // Don't add credit if request gets blocked or NDNC
+
+    return `COUNT(reportData._id) as Sent,
+    ROUND(SUM(IF(reportData.status in (17, 9), 0, reportData.credit)), 2) as BalanceDeducted,
+    COUNTIF(reportData.status in (1, 3, 26)) as Delivered,
+    COUNTIF(reportData.status in (2, 13, 7)) as Failed,
+    COUNTIF(reportData.status in (25, 16)) as Rejected,
+    COUNTIF(reportData.status = 9) as NDNC,
+    COUNTIF(reportData.status = 17) as Blocked,
+    COUNTIF(reportData.status = 7) as AutoFailed,
+    ROUND(SUM(IF(reportData.status = 1, TIMESTAMP_DIFF(reportData.deliveryTime, reportData.sentTime, SECOND), NULL))/COUNTIF(reportData.status = 1), 0) as DeliveryTime`;
+}
+
+function calculateTotalAggr(data: any) {
+    let totalDeliveryTime = 0;
+    const total = {
+        "Message": 0,
+        "Delivered": 0,
+        "TotalCredits": 0,
+        "Filtered": 0,
+        "AvgDeliveryTime": 0
+    }
+
+    data.forEach((row: any) => {
+        total["Message"] += row["Sent"] || 0;
+        total["Delivered"] += row["Delivered"] || 0;
+        total["TotalCredits"] += row["BalanceDeducted"] || 0;
+        totalDeliveryTime += row["DeliveryTime"] || 0;
+    })
+
+    total["Filtered"] = total["Message"] - total["Delivered"];
+    total["TotalCredits"] = Number(total["TotalCredits"].toFixed(3));
+    total["AvgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
+    return total;
+}
+
 export default router;
