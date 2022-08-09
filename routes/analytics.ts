@@ -32,8 +32,8 @@ router.route(`/`)
             if (!companyId && !vendorIds) return res.status(400).send("vendorIds or companyId is required");
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);
-            if (!fromDate) throw 'Start Date must be provided in dd-MM-yyyy format';
-            if (!toDate) throw 'End Date must be provided in dd-MM-yyyy format';
+            if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
+            if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
             if (companyId) return res.send(await getCompanyAnalytics(companyId, fromDate, toDate, params));
             if (vendorIds) return res.send(await getVendorAnalytics(idsToArray(vendorIds), fromDate, toDate, route));
         } catch (error) {

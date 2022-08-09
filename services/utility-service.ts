@@ -13,7 +13,7 @@ function delay(time = 1000) {
 
 function formatDate(date: string) {
     try {
-        const result = DateTime.fromFormat(date, 'dd-MM-yyyy');
+        const result = DateTime.fromFormat(date, 'yyyy-MM-dd');
         if (result?.isValid) return result;
         return null;
     } catch (err) {
