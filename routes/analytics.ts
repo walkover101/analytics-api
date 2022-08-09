@@ -16,7 +16,6 @@ const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
 const DEFAULT_GROUP_BY = 'Date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
-    companyId: 'reportData.user_pid',
     country: 'reportData.countryCode',
 
     // from request-data
@@ -43,7 +42,8 @@ router.route(`/`)
     });
 
 async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
-    const query: string = getAnalyticsQuery(companyId, startDate, endDate, [opts.groupBy || DEFAULT_GROUP_BY], opts);
+    let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
+    const query: string = getAnalyticsQuery(companyId, startDate, endDate, groupBy.split(','), opts);
     const data = await runQuery(query);
     const total = calculateTotalAggr(data);
     return { data, total };
