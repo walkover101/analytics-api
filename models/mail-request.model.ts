@@ -2,7 +2,7 @@ import { getHashCode } from "../services/utility-service";
 
 export default class MailRequest {
     requestId: string; //Unique for each mail request. (outboundEmailId + recipientEmail)
-    companyId: number; //Id of the company which requested this mail.
+    companyId: string; //Id of the company which requested this mail.
     subject: string; //Email Subject
     domain: string; //Email Domain: walkover.in
     senderEmail: string; //Sender Email Address
@@ -30,7 +30,7 @@ export default class MailRequest {
         this.recipientEmail = attr['rem'];
         this.outboundEmailId = parseInt(attr['oid']);
         this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
-        this.companyId = parseInt(attr['cid']);
+        this.companyId = attr['cid'];
         this.requestTime = attr['mct'] && new Date(attr['mct']);
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
     }

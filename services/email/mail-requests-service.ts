@@ -5,6 +5,7 @@ import MailRequest from '../../models/mail-request.model';
 import Download from '../../models/download.model';
 import downloadsService from '../downloads-service';
 import { getQuotedStrings, getValidFields } from '../utility-service';
+import { MAIL_REP_TABLE_ID } from './mail-reports-service';
 
 const MAIL_REQ_TABLE_ID = process.env.MAIL_REQ_TABLE_ID || 'mail_request'
 const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
@@ -26,19 +27,15 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     createdAt: 'mailRequest.createdAt',
 
     // Mail Report
-    // senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
-    // statusCode: 'mailReport.statusCode',
-    // enhancedStatusCode: 'mailReport.enhancedStatusCode',
-    // resultState: 'mailReport.resultState',
-    // reason: 'mailReport.reason',
-    // remoteMX: 'mailReport.remoteMX',
-    // remoteIP: 'mailReport.remoteIP',
-    // contentSize: 'mailReport.contentSize',
-    // hostname: 'mailReport.hostname',
-
-    // diffDeliveryTime: 'mailRequest.diffDeliveryTime',
-    // uid: 'mailRequest.uid',
-    // updatedAt: 'mailRequest.updatedAt'
+    senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
+    statusCode: 'mailReport.statusCode',
+    enhancedStatusCode: 'mailReport.enhancedStatusCode',
+    resultState: 'mailReport.resultState',
+    reason: 'mailReport.reason',
+    remoteMX: 'mailReport.remoteMX',
+    remoteIP: 'mailReport.remoteIP',
+    contentSize: 'mailReport.contentSize',
+    hostname: 'mailReport.hostname'
 };
 
 class MailRequestsService {
@@ -65,7 +62,7 @@ class MailRequestsService {
         download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).withAlias.join(',');
         const whereClause = this.getWhereClause(download);
-        const queryStatement = `select ${fields} from ${MAIL_REQ_TABLE_ID} as mailRequest WHERE ${whereClause}`;
+        const queryStatement = `select ${fields} from ${MAIL_REQ_TABLE_ID} as mailRequest right join ${MAIL_REP_TABLE_ID} as mailReport WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
         return msg91Dataset.createQueryJob({ query: downloadsService.getExportQuery(download.id, queryStatement, exportFilePath, format) });
     }
@@ -87,11 +84,11 @@ class MailRequestsService {
         if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.split(','))})`;
         if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.split(',')})`;
 
-        // if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.split(',')})`;
-        // if (query.eventId) conditions += ` AND mailReport.eventId in (${query.eventId.split(',')})`;
-        // if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.split(','))})`;
-        // if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.split(','))})`;
-        // if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.split(','))})`;
+        if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.split(',')})`;
+        if (query.eventId) conditions += ` AND mailReport.eventId in (${query.eventId.split(',')})`;
+        if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.split(','))})`;
+        if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.split(','))})`;
+        if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.split(','))})`;
 
         return conditions;
     }

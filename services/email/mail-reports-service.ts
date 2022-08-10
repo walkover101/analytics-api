@@ -2,7 +2,7 @@ import { Table } from '@google-cloud/bigquery';
 import msg91Dataset from '../../database/big-query-service';
 import MailReport from '../../models/mail-report.model';
 
-const MAIL_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'mail_response'
+export const MAIL_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'mail_report'
 
 class MailReportsService {
     private static instance: MailReportsService;
