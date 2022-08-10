@@ -11,6 +11,7 @@ const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const GCS_FOLDER_NAME = process.env.GCS_EMAIL_EXPORTS_FOLDER || 'email-exports';
 const PERMITTED_FIELDS: { [key: string]: string } = {
+    // Mail Request
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
     domain: 'mailRequest.domain',
@@ -24,18 +25,20 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     clientRequestIP: 'mailRequest.clientRequestIP',
     createdAt: 'mailRequest.createdAt',
 
-    senderDedicatedIpId: 'mailRequest.senderDedicatedIpId',
-    statusCode: 'mailRequest.statusCode',
-    enhancedStatusCode: 'mailRequest.enhancedStatusCode',
-    resultState: 'mailRequest.resultState',
-    reason: 'mailRequest.reason',
-    remoteMx: 'mailRequest.remoteMx',
-    remoteIp: 'mailRequest.remoteIp',
-    contentSize: 'mailRequest.contentSize',
-    diffDeliveryTime: 'mailRequest.diffDeliveryTime',
-    hostname: 'mailRequest.hostname',
-    uid: 'mailRequest.uid',
-    updatedAt: 'mailRequest.updatedAt'
+    // Mail Report
+    // senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
+    // statusCode: 'mailReport.statusCode',
+    // enhancedStatusCode: 'mailReport.enhancedStatusCode',
+    // resultState: 'mailReport.resultState',
+    // reason: 'mailReport.reason',
+    // remoteMX: 'mailReport.remoteMX',
+    // remoteIP: 'mailReport.remoteIP',
+    // contentSize: 'mailReport.contentSize',
+    // hostname: 'mailReport.hostname',
+
+    // diffDeliveryTime: 'mailRequest.diffDeliveryTime',
+    // uid: 'mailRequest.uid',
+    // updatedAt: 'mailRequest.updatedAt'
 };
 
 class MailRequestsService {
@@ -84,11 +87,11 @@ class MailRequestsService {
         if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.split(','))})`;
         if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.split(',')})`;
 
-        if (query.senderDedicatedIpId) conditions += ` AND mailRequest.senderDedicatedIpId in (${query.senderDedicatedIpId.split(',')})`;
-        if (query.eventId) conditions += ` AND mailRequest.eventId in (${query.eventId.split(',')})`;
-        if (query.remoteMx) conditions += ` AND mailRequest.remoteMx in (${getQuotedStrings(query.remoteMx.split(','))})`;
-        if (query.remoteIp) conditions += ` AND mailRequest.remoteIp in (${getQuotedStrings(query.remoteIp.split(','))})`;
-        if (query.hostname) conditions += ` AND mailRequest.hostname in (${getQuotedStrings(query.hostname.split(','))})`;
+        // if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.split(',')})`;
+        // if (query.eventId) conditions += ` AND mailReport.eventId in (${query.eventId.split(',')})`;
+        // if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.split(','))})`;
+        // if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.split(','))})`;
+        // if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.split(','))})`;
 
         return conditions;
     }

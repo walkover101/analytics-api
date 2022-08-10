@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
-import { intersection } from 'lodash';
 import { ObjectId } from 'mongodb';
+const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
 function delay(time = 1000) {
@@ -40,6 +40,10 @@ function getValidFields(permittedFields: { [key: string]: string } = {}, fields:
     return result;
 }
 
+function getHashCode(str: string) {
+    return new Hashes.SHA1().hex(str);
+}
+
 function isValidObjectId(id: string) {
     try {
         return new ObjectId(id).toString() === id;
@@ -74,5 +78,6 @@ export {
     getValidFields,
     isValidObjectId,
     extractCountryCode,
-    splitAndTrim
+    splitAndTrim,
+    getHashCode
 }
