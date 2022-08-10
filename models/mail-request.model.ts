@@ -1,17 +1,17 @@
 export default class MailRequest {
-    id: string;
-    companyId: number;
-    subject: string;
-    domain: string;
-    senderEmail: string;
-    recipientEmail: string;
-    outboundEmailId: number;
-    mailTypeId: number;
-    templateSlug: string;
+    id: string; //Unique for each mail request. (outboundEmailId + recipientEmail)
+    companyId: number; //Id of the company which requested this mail.
+    subject: string; //Email Subject
+    domain: string; //Email Domain: walkover.in
+    senderEmail: string; //Sender Email Address
+    recipientEmail: string; //Recipient Email Address
+    outboundEmailId: number; //Unique Id is generated for each request (All recipients, cc, bcc of that mail will have same id) in MySQL.
+    mailTypeId: number; //1 =>Transactional, 2 =>Notification, 3 =>Promotional
+    templateSlug: string; //Id of email template
     mailerRequestId: string;
-    nodeId: number;
-    clientRequestIP: string;
-    createdAt: Date;
+    nodeId: number; //Node Id used in campaign
+    clientRequestIP: string; //Client IP
+    createdAt: Date; //Timestamp when this mail was requested to be sent.
 
     senderDedicatedIpId: number;
     statusCode: number;
