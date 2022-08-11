@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", async (req: Request, res: Response) => {
     try {
-        const result: any = '';
+        const result: any = req.body.data.splitAndTrim(',');
         return res.send(result);
     } catch (err) {
         logger.error(err);

@@ -66,7 +66,7 @@ class ReportDataService {
         conditions += ` AND (DATETIME(requestData.requestDate, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
-        if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.split(','))})`;
+        if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.splitAndTrim(','))})`;
 
         return conditions;
     }

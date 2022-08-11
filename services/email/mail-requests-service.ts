@@ -76,19 +76,19 @@ class MailRequestsService {
 
         // optional conditions
         if (query.subject) conditions += ` AND UPPER(mailRequest.subject) LIKE '%${query.subject.toUpperCase()}%'`;
-        if (query.domain) conditions += ` AND mailRequest.domain in (${getQuotedStrings(query.domain.split(','))})`;
-        if (query.senderEmail) conditions += ` AND mailRequest.senderEmail in (${getQuotedStrings(query.senderEmail.split(','))})`;
-        if (query.recipientEmail) conditions += ` AND mailRequest.recipientEmail in (${getQuotedStrings(query.recipientEmail.split(','))})`;
-        if (query.mailTypeId) conditions += ` AND mailRequest.mailTypeId in (${query.mailTypeId.split(',')})`;
-        if (query.templateSlug) conditions += ` AND mailRequest.templateSlug in (${getQuotedStrings(query.templateSlug.split(','))})`;
-        if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.split(','))})`;
-        if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.split(',')})`;
+        if (query.domain) conditions += ` AND mailRequest.domain in (${getQuotedStrings(query.domain.splitAndTrim(','))})`;
+        if (query.senderEmail) conditions += ` AND mailRequest.senderEmail in (${getQuotedStrings(query.senderEmail.splitAndTrim(','))})`;
+        if (query.recipientEmail) conditions += ` AND mailRequest.recipientEmail in (${getQuotedStrings(query.recipientEmail.splitAndTrim(','))})`;
+        if (query.mailTypeId) conditions += ` AND mailRequest.mailTypeId in (${query.mailTypeId.splitAndTrim(',')})`;
+        if (query.templateSlug) conditions += ` AND mailRequest.templateSlug in (${getQuotedStrings(query.templateSlug.splitAndTrim(','))})`;
+        if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.splitAndTrim(','))})`;
+        if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.splitAndTrim(',')})`;
 
-        if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.split(',')})`;
-        if (query.eventId) conditions += ` AND mailReport.eventId in (${query.eventId.split(',')})`;
-        if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.split(','))})`;
-        if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.split(','))})`;
-        if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.split(','))})`;
+        if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.splitAndTrim(',')})`;
+        if (query.eventId) conditions += ` AND mailReport.eventId in (${query.eventId.splitAndTrim(',')})`;
+        if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.splitAndTrim(','))})`;
+        if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.splitAndTrim(','))})`;
+        if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.splitAndTrim(','))})`;
 
         return conditions;
     }

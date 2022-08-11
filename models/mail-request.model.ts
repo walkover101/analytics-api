@@ -13,7 +13,6 @@ export default class MailRequest {
     mailerRequestId: string;
     nodeId: number; //Node Id used in campaign
     clientRequestIP: string; //Client IP
-    requestTime: Date; //Timestamp when this mail was requested to be sent.	
     createdAt: Date; //Timestamp when this mail was requested to be sent.
 
     constructor(attr: any) {
@@ -31,6 +30,6 @@ export default class MailRequest {
         this.outboundEmailId = parseInt(attr['oid']);
         this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
-        this.createdAt = this.requestTime = attr['created_at'] && new Date(attr['created_at']);
+        this.createdAt = attr['created_at'] && new Date(attr['created_at']);
     }
 }

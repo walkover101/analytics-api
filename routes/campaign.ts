@@ -3,7 +3,7 @@ import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
 import { runQuery } from './analytics';
-import { getQuotedStrings, splitAndTrim } from '../services/utility-service';
+import { getQuotedStrings } from '../services/utility-service';
 const router = express.Router();
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
@@ -16,7 +16,8 @@ type options = {
 router.route(`/`)
     .get(async (req: Request, res: Response) => {
         let { companyId, nodeIds, smsNodeIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = { ...req.query, ...req.params } as any;
-        smsNodeIds = smsNodeIds?splitAndTrim(smsNodeIds):[];
+        smsNodeIds = smsNodeIds?.splitAndTrim(',') || [];
+
         if (!companyId) {
             res.status(401).send("comapnyId is required");
         }

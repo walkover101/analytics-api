@@ -34,7 +34,7 @@ router.route(`/`)
             if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
             if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
             if (companyId) return res.send(await getCompanyAnalytics(companyId, fromDate, toDate, params));
-            if (vendorIds) return res.send(await getVendorAnalytics(idsToArray(vendorIds), fromDate, toDate, route));
+            if (vendorIds) return res.send(await getVendorAnalytics(vendorIds.splitAndTrim(','), fromDate, toDate, route));
         } catch (error) {
             logger.error(error);
             res.status(400).send(error);
@@ -43,7 +43,7 @@ router.route(`/`)
 
 async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
     let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
-    const query: string = getAnalyticsQuery(companyId, startDate, endDate, groupBy.split(','), opts);
+    const query: string = getAnalyticsQuery(companyId, startDate, endDate, groupBy.splitAndTrim(','), opts);
     const data = await runQuery(query);
     const total = calculateTotalAggr(data);
     return { data, total };
@@ -52,7 +52,7 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
 router.route("/vendors")
     .get(async (req: Request, res: Response) => {
         let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
-        (!vendorIds) ? vendorIds = [] : vendorIds = idsToArray(vendorIds);
+        (!vendorIds) ? vendorIds = [] : vendorIds = vendorIds.splitAndTrim(',');
         return res.send(await getVendorAnalytics(vendorIds, startDate, endDate, route));
     });
 
@@ -150,10 +150,6 @@ export async function runQuery(query: string) {
         throw error;
     }
 
-}
-function idsToArray(ids: string) {
-    const idArray = ids.split(",");
-    return idArray.map(id => id.trim());
 }
 
 // Old Version
@@ -579,7 +575,7 @@ function getWhereClause(companyId: string, startDate: DateTime, endDate: DateTim
     conditions += ` AND (DATETIME(requestData.requestDate, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
 
     // optional conditions
-    if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.split(','))})`;
+    if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
 
     return conditions;
 }
