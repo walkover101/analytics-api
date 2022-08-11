@@ -71,9 +71,10 @@ class MailRequestsService {
         const query: { [key: string]: string } = download.query || {};
 
         // mandatory conditions
-        let conditions = `mailRequest.companyId = '${download.companyId}' AND mailReport.companyId = '${download.companyId}'`;
-        conditions += ` AND (DATETIME(mailRequest.createdAt, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")
-         AND (DATETIME(mailReport.requestTime, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+        let conditions = `mailRequest.companyId = '${download.companyId}'`;
+        conditions += ` AND mailReport.companyId = '${download.companyId}'`;
+        conditions += ` AND (DATETIME(mailRequest.createdAt, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+        conditions += ` AND (DATETIME(mailReport.requestTime, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
         if (query.subject) conditions += ` AND UPPER(mailRequest.subject) LIKE '%${query.subject.toUpperCase()}%'`;

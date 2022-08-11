@@ -61,7 +61,8 @@ class ReportDataService {
         const query: { [key: string]: string } = download.query || {};
 
         // mandatory conditions
-        let conditions = `reportData.user_pid = "${download.companyId}" AND requestData.requestUserid = "${download.companyId}"`;
+        let conditions = `reportData.user_pid = "${download.companyId}"`;
+        conditions += ` AND requestData.requestUserid = "${download.companyId}"`;
         conditions += ` AND (DATETIME(reportData.sentTime, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
         conditions += ` AND (DATETIME(requestData.requestDate, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
