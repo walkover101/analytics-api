@@ -9,9 +9,9 @@ const router = express.Router();
 const DEFAULT_TIMEZONE: string = '+05:30';
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
-const REQUEST_TABLE = process.env.MAIL_REQUEST_TABLE_ID;
-const REPORT_TABLE = process.env.MAIL_REPORT_TABLE_ID;
-const EVENT_TABLE = process.env.MAIL_EVENT_TABLE_ID;
+const REQUEST_TABLE = process.env.MAIL_REQ_TABLE_ID;
+const REPORT_TABLE = process.env.MAIL_REP_TABLE_ID;
+const EVENT_TABLE = process.env.MAIL_EVENTS_TABLE_ID;
 const DEFAULT_GROUP_BY = 'Date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
