@@ -31,7 +31,7 @@ export default class MailReport {
         this.hostname = attr['hnm'];
 
         //common in all three email models
-        this.recipientEmail = attr['rem'];
+        this.recipientEmail = attr['rem']?.toLowerCase();
         this.outboundEmailId = parseInt(attr['oid']);
         this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
         this.companyId = attr['cid'];

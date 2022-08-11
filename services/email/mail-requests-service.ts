@@ -62,7 +62,7 @@ class MailRequestsService {
         download.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
         const fields = getValidFields(PERMITTED_FIELDS, download.fields).withAlias.join(',');
         const whereClause = this.getWhereClause(download);
-        const queryStatement = `select ${fields} from ${MAIL_REQ_TABLE_ID} as mailRequest right join ${MAIL_REP_TABLE_ID} as mailReport WHERE ${whereClause}`;
+        const queryStatement = `select ${fields} from ${MAIL_REQ_TABLE_ID} as mailRequest right join ${MAIL_REP_TABLE_ID} as mailReport ON mailRequest.requestId = mailReport.requestId WHERE ${whereClause}`;
         logger.info(`Query: ${queryStatement}`);
         return msg91Dataset.createQueryJob({ query: downloadsService.getExportQuery(download.id, queryStatement, exportFilePath, format) });
     }
@@ -71,8 +71,9 @@ class MailRequestsService {
         const query: { [key: string]: string } = download.query || {};
 
         // mandatory conditions
-        let conditions = `mailRequest.companyId = ${download.companyId}`;
-        conditions += ` AND (DATETIME(mailRequest.createdAt, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
+        let conditions = `mailRequest.companyId = '${download.companyId}' AND mailReport.companyId = '${download.companyId}'`;
+        conditions += ` AND (DATETIME(mailRequest.createdAt, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")
+         AND (DATETIME(mailReport.requestTime, '${download.timezone}') BETWEEN "${download.startDate.toFormat('yyyy-MM-dd')}" AND "${download.endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
         if (query.subject) conditions += ` AND UPPER(mailRequest.subject) LIKE '%${query.subject.toUpperCase()}%'`;

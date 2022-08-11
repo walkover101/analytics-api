@@ -26,7 +26,7 @@ export default class MailRequest {
         this.clientRequestIP = attr['cri'];
 
         //common in all three email models
-        this.recipientEmail = attr['rem'];
+        this.recipientEmail = attr['rem']?.toLowerCase();
         this.outboundEmailId = parseInt(attr['oid']);
         this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
