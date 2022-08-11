@@ -31,7 +31,6 @@ export default class MailRequest {
         this.outboundEmailId = parseInt(attr['oid']);
         this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
-        this.requestTime = attr['mct'] && new Date(attr['mct']);
-        this.createdAt = attr['created_at'] && new Date(attr['created_at']);
+        this.createdAt = this.requestTime = attr['created_at'] && new Date(attr['created_at']);
     }
 }
