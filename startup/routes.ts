@@ -4,6 +4,7 @@ import dummy from "../routes/dummy";
 import analytics from "../routes/analytics";
 import downloads from "../routes/downloads";
 import campaign from '../routes/campaign';
+import mailAnalytics from "../routes/mail/analytics";
 import profits from '../routes/profits';
 import options from "../middlewares/options";
 import error from "../middlewares/error";
@@ -16,8 +17,8 @@ export default function (app: Application) {
   app.use("/dummy", dummy);
   app.use("/analytics", analytics); // Temp for compatibility
   app.use("/analytics/sms", authenticate, analytics);
+  app.use("/analytics/mail",mailAnalytics);
   app.use("/exports", authenticate, downloads);
-  app.use("/mail/exports", authenticate, downloads);
   app.use("/profits/sms", authenticate, profits);
   app.use("/campaigns", authenticate, campaign);
   app.use(options);
