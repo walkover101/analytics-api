@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import bigquery from '../database/big-query-service';
+import bigquery, { getQueryResults } from '../database/big-query-service';
 import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
@@ -64,7 +64,7 @@ async function getCompanyAnalyticsOld(companyId: string, startDate: DateTime, en
     ${route != null ? `AND request.curRoute = "${route}"` : ""}
     GROUP BY DATE(request.requestDate),report.user_pid;`
     console.log(query);
-    let result = await runQuery(query);
+    let result = await getQueryResults(query);
     result = result.map(row => {
         row['Date'] = row['Date']?.value;
         return row;
@@ -115,22 +115,7 @@ async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDat
     ${route ? "AND route = " + route : ""}
     GROUP BY Date, smsc
     ORDER BY Date;`
-    return { data: await runQuery(query) };
-}
-
-export async function runQuery(query: string) {
-    try {
-        const [job] = await bigquery.createQueryJob({
-            query: query,
-            location: process.env.DATA_SET_LOCATION,
-            // maximumBytesBilled: "1000"
-        });
-        let [rows] = await job.getQueryResults();
-        return rows;
-    } catch (error) {
-        throw error;
-    }
-
+    return { data: await getQueryResults(query) };
 }
 
 // Old Version

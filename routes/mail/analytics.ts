@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import bigquery from '../../database/big-query-service';
+import { getQueryResults } from '../../database/big-query-service';
 import { getDefaultDate } from '../../utility';
 import { DateTime } from 'luxon';
 import logger from "../../logger/logger";
@@ -56,7 +56,7 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
   WHERE request.createdAt BETWEEN "${endDate}" AND "${endDate}" AND companyId = "${companyId}"
   GROUP BY Date
   ORDER BY Date;`
-    const data = await runQuery(query);
+    const data = await getQueryResults(query);
     return { data };
 }
 
@@ -68,30 +68,6 @@ async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDa
 //     const total = calculateTotalAggr(data);
 //     return { data, total };
 // }
-
-
-
-
-export async function runQuery(query: string) {
-    try {
-        const [job] = await bigquery.createQueryJob({
-            query: query,
-            location: process.env.DATA_SET_LOCATION,
-            // maximumBytesBilled: "1000"
-        });
-        let [rows] = await job.getQueryResults();
-        return rows;
-    } catch (error) {
-        throw error;
-    }
-
-}
-
-
-
-
-
-
 
 export enum INTERVAL {
     // HOURLY = "hourly",

@@ -1,5 +1,5 @@
 import { getQuotedStrings, getValidFields } from "../utility-service";
-import bigquery from '../../database/big-query-service';
+import { getQueryResults } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -25,14 +25,14 @@ class SmsService {
         return SmsService.instance ||= new SmsService();
     }
 
-    async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy: string = DEFAULT_GROUP_BY) {
+    public async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy: string = DEFAULT_GROUP_BY) {
         const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy.splitAndTrim(','));
-        const data = await this.runQuery(query);
+        const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string[]) {
+    private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string[]) {
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings);
         const groupBy = validFields.onlyAlias.join(',');
@@ -50,7 +50,7 @@ class SmsService {
         return query;
     }
 
-    getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
         let conditions = `reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
         conditions += ` AND (reportData.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
@@ -63,7 +63,7 @@ class SmsService {
         return conditions;
     }
 
-    aggregateAttribs() {
+    private aggregateAttribs() {
         // Don't add credit if request gets blocked or NDNC
 
         return `COUNT(reportData._id) as Sent,
@@ -77,7 +77,7 @@ class SmsService {
             ROUND(SUM(IF(reportData.status = 1, TIMESTAMP_DIFF(reportData.deliveryTime, reportData.sentTime, SECOND), NULL))/COUNTIF(reportData.status = 1), 0) as DeliveryTime`;
     }
 
-    calculateTotalAggr(data: any) {
+    private calculateTotalAggr(data: any) {
         let totalDeliveryTime = 0;
         const total = {
             "Message": 0,
@@ -99,21 +99,6 @@ class SmsService {
         total["AvgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
         return total;
     }
-
-    async runQuery(query: string) {
-        try {
-            const [job] = await bigquery.createQueryJob({
-                query: query,
-                location: process.env.DATA_SET_LOCATION,
-                // maximumBytesBilled: "1000"
-            });
-            let [rows] = await job.getQueryResults();
-            return rows;
-        } catch (error) {
-            throw error;
-        }
-    }
-
 }
 
 export default SmsService.getSingletonInstance();
