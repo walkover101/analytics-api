@@ -18,17 +18,15 @@ router.route(`/`)
     .get(async (req: Request, res: Response) => {
         try {
             const params = { ...req.query, ...req.params } as any;
-            let { companyId, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
-            if (!companyId && !vendorIds) return res.status(400).send("vendorIds or companyId is required");
+            let { companyId, vendorIds, route, timeZone, groupBy, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
+            if (!companyId && !vendorIds) throw "vendorIds or companyId is required";
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);
-            if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
-            if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
-            if (companyId) return res.send(await smsService.getCompanyAnalytics(companyId, fromDate, toDate, params));
+            if (companyId) return res.send(await smsService.getCompanyAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy));
             if (vendorIds) return res.send(await getVendorAnalytics(vendorIds.splitAndTrim(','), fromDate, toDate, route));
         } catch (error) {
             logger.error(error);
-            res.status(400).send(error);
+            res.status(400).send({ error });
         }
     });
 

@@ -15,9 +15,9 @@ function formatDate(date: string) {
     try {
         const result = DateTime.fromFormat(date, 'yyyy-MM-dd');
         if (result?.isValid) return result;
-        return null;
+        throw 'Date must be provided in yyyy-MM-dd format';
     } catch (err) {
-        return null;
+        throw 'Date must be provided in yyyy-MM-dd format';
     }
 }
 

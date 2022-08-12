@@ -26,16 +26,14 @@ router.route(`/`)
     .get(async (req: Request, res: Response) => {
         try {
             const params = { ...req.query, ...req.params } as any;
-            let { companyId, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
-            if (!companyId && !vendorIds) return res.status(400).send("vendorIds or companyId is required");
+            let { companyId, vendorIds, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
+            if (!companyId && !vendorIds) throw "vendorIds or companyId is required";
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);
-            if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
-            if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
-            return res.send(await getCompanyAnalytics(companyId, startDate, endDate));
+            return res.send(await getCompanyAnalytics(companyId, fromDate, toDate));
         } catch (error) {
             logger.error(error);
-            res.status(400).send(error);
+            res.status(400).send({ error });
         }
     });
 

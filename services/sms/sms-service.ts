@@ -25,17 +25,15 @@ class SmsService {
         return SmsService.instance ||= new SmsService();
     }
 
-    async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
-        let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
-        const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, groupBy.splitAndTrim(','), opts);
+    async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy: string = DEFAULT_GROUP_BY) {
+        const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy.splitAndTrim(','));
         const data = await this.runQuery(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, groupings: string[], opts: { [key: string]: string } = {}) {
-        const { timeZone = DEFAULT_TIMEZONE } = opts;
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, opts);
+    getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string[]) {
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings);
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -60,6 +58,7 @@ class SmsService {
 
         // optional conditions
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
+        if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
 
         return conditions;
     }
