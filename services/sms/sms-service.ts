@@ -1,5 +1,5 @@
 import { getQuotedStrings, getValidFields } from "../utility-service";
-import bigquery from '../../database/big-query-service';
+import { getQueryResults } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -27,7 +27,7 @@ class SmsService {
 
     public async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy: string = DEFAULT_GROUP_BY) {
         const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy.splitAndTrim(','));
-        const data = await this.getQueryResults(query);
+        const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
@@ -98,12 +98,6 @@ class SmsService {
         total["TotalCredits"] = Number(total["TotalCredits"].toFixed(3));
         total["AvgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
         return total;
-    }
-
-    private async getQueryResults(query: string) {
-        const [job] = await bigquery.createQueryJob({ query, location: process.env.DATA_SET_LOCATION });
-        let [rows] = await job.getQueryResults();
-        return rows;
     }
 }
 

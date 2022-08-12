@@ -18,7 +18,14 @@ function getMsg91Dataset() {
     return bigQuery.dataset(MSG91_DATASET_ID);
 }
 
+async function getQueryResults(query: string) {
+    const [job] = await getMsg91Dataset().createQueryJob({ query, location: process.env.DATA_SET_LOCATION });
+    let [rows] = await job.getQueryResults();
+    return rows;
+}
+
 export default getMsg91Dataset();
 export {
-    bigQuery
+    bigQuery,
+    getQueryResults
 }
