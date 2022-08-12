@@ -1,5 +1,5 @@
 interface String {
-    splitAndTrim(delimiter: string): string[];
+    splitAndTrim(delimiter?: string): string[];
 }
 
 String.prototype.splitAndTrim = function (delimiter: string = ',') {
