@@ -11,8 +11,8 @@ router.route(`/`)
         try {
             const params = { ...req.query, ...req.params } as any;
             let { companyId, smsNodeIds, timeZone, groupBy, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
-            if (!companyId) throw "Company id required";
-            if (!smsNodeIds?.length) throw "Node ids required";
+            if (!companyId) throw "companyId required";
+            if (!smsNodeIds?.length) throw "smsNodeIds required";
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);
             groupBy = `nodeId,${groupBy?.length ? groupBy : 'Date'}`;

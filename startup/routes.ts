@@ -17,10 +17,10 @@ export default function (app: Application) {
   app.use("/dummy", dummy);
   app.use("/analytics", analytics); // Temp for compatibility
   app.use("/analytics/sms", authenticate, analytics);
-  app.use("/analytics/mail",mailAnalytics);
+  app.use("/analytics/mail", mailAnalytics);
+  app.use("/analytics/campaigns", authenticate, campaign);
   app.use("/exports", authenticate, downloads);
   app.use("/profits/sms", authenticate, profits);
-  app.use("/campaigns", authenticate, campaign);
   app.use(options);
   app.use(error);
 }
