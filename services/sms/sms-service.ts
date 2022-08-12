@@ -1,4 +1,5 @@
 import { getQuotedStrings, getValidFields } from "../utility-service";
+import bigquery from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -7,6 +8,7 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
+const DEFAULT_GROUP_BY = 'Date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
     country: 'reportData.countryCode',
@@ -21,6 +23,14 @@ class SmsService {
 
     public static getSingletonInstance(): SmsService {
         return SmsService.instance ||= new SmsService();
+    }
+
+    async getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
+        let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
+        const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, groupBy.splitAndTrim(','), opts);
+        const data = await this.runQuery(query);
+        const total = this.calculateTotalAggr(data);
+        return { data, total };
     }
 
     getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, groupings: string[], opts: { [key: string]: string } = {}) {
@@ -89,6 +99,20 @@ class SmsService {
         total["TotalCredits"] = Number(total["TotalCredits"].toFixed(3));
         total["AvgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
         return total;
+    }
+
+    async runQuery(query: string) {
+        try {
+            const [job] = await bigquery.createQueryJob({
+                query: query,
+                location: process.env.DATA_SET_LOCATION,
+                // maximumBytesBilled: "1000"
+            });
+            let [rows] = await job.getQueryResults();
+            return rows;
+        } catch (error) {
+            throw error;
+        }
     }
 
 }

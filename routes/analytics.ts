@@ -13,7 +13,6 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
-const DEFAULT_GROUP_BY = 'Date';
 
 router.route(`/`)
     .get(async (req: Request, res: Response) => {
@@ -25,21 +24,13 @@ router.route(`/`)
             const toDate = formatDate(endDate);
             if (!fromDate) throw 'Start Date must be provided in yyyy-MM-dd format';
             if (!toDate) throw 'End Date must be provided in yyyy-MM-dd format';
-            if (companyId) return res.send(await getCompanyAnalytics(companyId, fromDate, toDate, params));
+            if (companyId) return res.send(await smsService.getCompanyAnalytics(companyId, fromDate, toDate, params));
             if (vendorIds) return res.send(await getVendorAnalytics(vendorIds.splitAndTrim(','), fromDate, toDate, route));
         } catch (error) {
             logger.error(error);
             res.status(400).send(error);
         }
     });
-
-async function getCompanyAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, opts: { [key: string]: string } = {}) {
-    let groupBy = opts.groupBy?.length ? opts.groupBy : DEFAULT_GROUP_BY;
-    const query: string = smsService.getAnalyticsQuery(companyId, startDate, endDate, groupBy.splitAndTrim(','), opts);
-    const data = await runQuery(query);
-    const total = smsService.calculateTotalAggr(data);
-    return { data, total };
-}
 
 router.route("/vendors")
     .get(async (req: Request, res: Response) => {
@@ -181,7 +172,7 @@ router.route('/users/:userId')
 
         if (userId) {
             // Handle request for company Id
-            return res.send(await getCompanyAnalytics(userId, startDate, endDate));
+            return res.send(await smsService.getCompanyAnalytics(userId, startDate, endDate));
         }
         // const [reportDataJob] = await bigquery.createQueryJob({
         //     query: reportDataQuery,
