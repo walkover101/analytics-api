@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
 import { getQueryResults } from '../../database/big-query-service';
-import { getDefaultDate } from '../../utility';
 import { DateTime } from 'luxon';
 import logger from "../../logger/logger";
-import { formatDate, getQuotedStrings, getValidFields } from '../../services/utility-service';
+import { formatDate, getDefaultDate, getQuotedStrings, getValidFields } from '../../services/utility-service';
 
 const router = express.Router();
 const DEFAULT_TIMEZONE: string = '+05:30';
@@ -26,7 +25,7 @@ router.route(`/`)
     .get(async (req: Request, res: Response) => {
         try {
             const params = { ...req.query, ...req.params } as any;
-            let { companyId, vendorIds, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
+            let { companyId, vendorIds, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
             if (!companyId && !vendorIds) throw "vendorIds or companyId is required";
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);

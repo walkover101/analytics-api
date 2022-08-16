@@ -1,16 +1,14 @@
-import express, { Request, Response } from 'express';
+import { Request, Response } from "express";
 import logger from '../logger/logger';
-import downloadsService from '../services/downloads-service';
+import { formatDate } from "../services/utility-service";
 import Download, { DOWNLOAD_STATUS } from '../models/download.model';
-import { formatDate } from '../services/utility-service';
+import downloadsService from "../services/downloads-service";
 
-const router = express.Router();
-
-
-router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
+// POST '/exports/sms' | '/exports/email'
+const downloadCsv = async (req: Request, res: Response) => {
     try {
         let { companyId, fields, timezone } = req.query;
-        let resourceType = req.params[0];
+        let resourceType = req.params[0]; // sms or email
         let startDate = formatDate(req.query.startDate as string);
         let endDate = formatDate(req.query.endDate as string);
         if (!companyId) throw 'Company Id is mandatory';
@@ -32,9 +30,10 @@ router.route(/^\/(sms|email)/).post(async (req: Request, res: Response) => {
         logger.error(error);
         res.status(400).send({ error });
     }
-});
+}
 
-router.route('/:resourceType').get(async (req: Request, res: Response) => {
+// GET '/exports/:resourceType'
+const getDownloadLinks = async (req: Request, res: Response) => {
     try {
         let { companyId } = req.query;
         logger.info(`[DOWNLOAD](companyId: ${companyId}) Fetching records...`);
@@ -50,5 +49,9 @@ router.route('/:resourceType').get(async (req: Request, res: Response) => {
         logger.error(err);
         res.status(500).send({ "error": err.message });
     }
-});
-export default router;
+}
+
+export {
+    downloadCsv,
+    getDownloadLinks
+};

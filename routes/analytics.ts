@@ -1,10 +1,9 @@
 import express, { Request, Response } from 'express';
 import bigquery, { getQueryResults } from '../database/big-query-service';
-import { getDefaultDate } from '../utility';
 import { DateTime } from 'luxon';
 import logger from "../logger/logger";
 import smsService from "../services/sms/sms-service";
-import { formatDate, getQuotedStrings } from '../services/utility-service';
+import { formatDate, getDefaultDate, getQuotedStrings } from '../services/utility-service';
 
 const router = express.Router();
 const reportQueryMap = new Map();
@@ -18,11 +17,11 @@ router.route(`/`)
     .get(async (req: Request, res: Response) => {
         try {
             const params = { ...req.query, ...req.params } as any;
-            let { companyId, vendorIds, route, timeZone, groupBy, startDate = getDefaultDate().end, endDate = getDefaultDate().start } = params;
+            let { companyId, vendorIds, route, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
             if (!companyId && !vendorIds) throw "vendorIds or companyId is required";
             const fromDate = formatDate(startDate);
             const toDate = formatDate(endDate);
-            if (companyId) return res.send(await smsService.getCompanyAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy));
+            if (companyId) return res.send(await smsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy));
             if (vendorIds) return res.send(await getVendorAnalytics(vendorIds.splitAndTrim(','), fromDate, toDate, route));
         } catch (error) {
             logger.error(error);
@@ -32,7 +31,7 @@ router.route(`/`)
 
 router.route("/vendors")
     .get(async (req: Request, res: Response) => {
-        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { companyId, nodeIds, vendorIds, route, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         (!vendorIds) ? vendorIds = [] : vendorIds = vendorIds.splitAndTrim(',');
         return res.send(await getVendorAnalytics(vendorIds, startDate, endDate, route));
     });
@@ -122,7 +121,7 @@ async function getVendorAnalytics(vendors: string[], startDate: DateTime, endDat
 
 router.route('/users/:userId')
     .get(async (req: Request, res: Response) => {
-        let { userId = 100079, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { userId = 100079, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         if (!isValidInterval(interval)) {
             res.status(400).send({
                 message: "Invalid interval provided",
@@ -155,7 +154,7 @@ router.route('/users/:userId')
 
         if (userId) {
             // Handle request for company Id
-            return res.send(await smsService.getCompanyAnalytics(userId, startDate, endDate));
+            return res.send(await smsService.getAnalytics(userId, startDate, endDate));
         }
         // const [reportDataJob] = await bigquery.createQueryJob({
         //     query: reportDataQuery,
@@ -216,7 +215,7 @@ router.route('/users/:userId')
 
 router.route('/users/:userId/campaigns/:campaignId')
     .get(async (req: Request, res: Response) => {
-        const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = { ...req.query, ...req.params } as any;
+        const { userId, campaignId, startDate = getDefaultDate().to, endDate = getDefaultDate().from } = { ...req.query, ...req.params } as any;
         const query = `SELECT DATE(requestDate) as Date,
         user_pid as Company, 
         campaign_pid as Campaign,
@@ -246,7 +245,7 @@ router.route('/users/:userId/campaigns/:campaignId')
     });
 router.route('/users/:userId/campaigns')
     .get(async (req: Request, res: Response) => {
-        const { userId, campaignId, startDate = getDefaultDate().start, endDate = getDefaultDate().end } = { ...req.query, ...req.params } as any;
+        const { userId, campaignId, startDate = getDefaultDate().to, endDate = getDefaultDate().from } = { ...req.query, ...req.params } as any;
         const query = `SELECT DATE(requestDate) as Date,
         user_pid as Company, 
         campaign_pid as Campaign,
@@ -276,7 +275,7 @@ router.route('/users/:userId/campaigns')
     });
 router.route('/vendors')
     .get(async (req: Request, res: Response) => {
-        let { id, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { id, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         const reportQuery = `SELECT DATE(sentTime) as Date, smsc as SMSC, COUNT(_id) as Total,
         SUM(credit) as BalanceDeducted, 
         COUNTIF(status = 1) as Delivered, 
@@ -334,7 +333,7 @@ router.route('/vendors')
     })
 router.route('/profit')
     .get(async (req: Request, res: Response) => {
-        let { id, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { id, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         const query = `SELECT DATE(sentTime) as Date, crcy as Currency, SUM(credit) as Credit,
         SUM(oppri) as Cost,
         (SUM(credit) - SUM(oppri)) as Profit
@@ -356,7 +355,7 @@ router.route('/profit')
     });
 router.route('/profit/users/:userId')
     .get(async (req: Request, res: Response) => {
-        let { userId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { userId, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         const query = `SELECT DATE(sentTime) as Date, user_pid as Company, SUM(credit) as Credit,
         SUM(oppri) as Cost,
         (SUM(credit) - SUM(oppri)) as Profit
@@ -378,7 +377,7 @@ router.route('/profit/users/:userId')
     });
 router.route('/profit/vendors')
     .get(async (req: Request, res: Response) => {
-        let { userId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+        let { userId, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
         const query = `SELECT DATE(sentTime) as Date, smsc as Vendor,
         crcy as Currency,
         SUM(credit) as Credit,

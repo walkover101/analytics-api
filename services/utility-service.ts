@@ -68,6 +68,15 @@ function extractCountryCode(mobileNumber: string) {
     return { country, countryCode };
 }
 
+function getDefaultDate(dayDiff: number = 7): { from: string, to: string } {
+    const today = DateTime.now();
+
+    return {
+        from: today.minus({ days: dayDiff }).toFormat('yyyy-MM-dd'),
+        to: today.toFormat('yyyy-MM-dd')
+    };
+}
+
 export {
     delay,
     formatDate,
@@ -75,5 +84,6 @@ export {
     getValidFields,
     isValidObjectId,
     extractCountryCode,
-    getHashCode
+    getHashCode,
+    getDefaultDate
 }

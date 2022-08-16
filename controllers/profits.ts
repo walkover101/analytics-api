@@ -1,37 +1,28 @@
-import express, { Request, Response } from 'express';
-const router = express.Router();
-import { getDefaultDate } from '../utility';
+import { Request, Response } from "express";
 import bigquery, { getQueryResults } from '../database/big-query-service';
-import { INTERVAL } from './analytics';
 import { DateTime } from 'luxon';
+import { getDefaultDate, formatDate } from '../services/utility-service';
 const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const DATA_SET = process.env.MSG91_DATASET_ID;
 const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
 const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
-router.route('/')
-    .get(async (req: Request, res: Response) => {
-        let { route = null, companyId, vendorId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
-        if (companyId) {
-            const result = await getUserProfit(startDate, endDate, companyId, route);
-            return res.send(result);
-        } else if (vendorId) {
-            const result = await getVendorProfit(startDate, endDate, vendorId, route);
-            return res.send(result);
-        } else {
-            const result = await getOverallProfit(startDate, endDate, route);
-            return res.send(result);
-        }
-    });
+enum INTERVAL {
+    DAILY = "daily",
+    // HOURLY = "hourly",
+    // WEEKLY = "weekly",
+    // MONTHLY = "monthly"
+}
 
-router.route('/vendors')
-    .get(async (req: Request, res: Response) => {
-        let { vendorId, startDate = getDefaultDate().end, endDate = getDefaultDate().start, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
-        if (vendorId) {
-            const result = await getVendorProfit(startDate, endDate, vendorId);
-            return res.send(result);
-        }
+// GET '/profits/vendors'
+const getVendorProfits = async (req: Request, res: Response) => {
+    let { vendorId, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
 
-        const query = `SELECT DATE(sentTime) as Date, smsc as Vendor,
+    if (vendorId) {
+        const result = await getVendorProfit(startDate, endDate, vendorId);
+        return res.send(result);
+    }
+
+    const query = `SELECT DATE(sentTime) as Date, smsc as Vendor,
         crcy as Currency,
         SUM(credit) as Credit,
         SUM(oppri) as Cost,
@@ -39,19 +30,35 @@ router.route('/vendors')
         FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
         WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
         GROUP BY DATE(sentTime), smsc, crcy;`
-        const [job] = await bigquery.createQueryJob({
-            query: query,
-            location: process.env.DATA_SET_LOCATION,
-            // maximumBytesBilled: "1000"
-        });
-        const [rows] = await job.getQueryResults();
-        res.send(rows.map(row => {
-            return { ...row, "Date": row["Date"].value }
-        }))
-        return;
+    const [job] = await bigquery.createQueryJob({
+        query: query,
+        location: process.env.DATA_SET_LOCATION,
+        // maximumBytesBilled: "1000"
     });
+    const [rows] = await job.getQueryResults();
+    res.send(rows.map(row => {
+        return { ...row, "Date": row["Date"].value }
+    }))
+    return;
+}
 
-export async function getUserProfit(startDate: DateTime, endDate: DateTime, userId: string, route?: number) {
+// GET '/profits/sms'
+const getSmsProfits = async (req: Request, res: Response) => {
+    let { route = null, companyId, vendorId, startDate = getDefaultDate().from, endDate = getDefaultDate().to, interval = INTERVAL.DAILY } = { ...req.query, ...req.params } as any;
+
+    if (companyId) {
+        const result = await getUserProfit(startDate, endDate, companyId, route);
+        return res.send(result);
+    } else if (vendorId) {
+        const result = await getVendorProfit(startDate, endDate, vendorId, route);
+        return res.send(result);
+    } else {
+        const result = await getOverallProfit(startDate, endDate, route);
+        return res.send(result);
+    }
+}
+
+async function getUserProfit(startDate: DateTime, endDate: DateTime, userId: string, route?: number) {
     const defaultQuery = `SELECT DATE(sentTime) as Date, user_pid as Company, SUM(credit) as Credit,
     SUM(oppri) as Cost,
     (SUM(credit) - SUM(oppri)) as Profit
@@ -78,7 +85,7 @@ export async function getUserProfit(startDate: DateTime, endDate: DateTime, user
     return rows;
 }
 
-export async function getVendorProfit(startDate: DateTime, endDate: DateTime, vendorId: string, route?: number) {
+async function getVendorProfit(startDate: DateTime, endDate: DateTime, vendorId: string, route?: number) {
     const defaultQuery = `SELECT DATE(sentTime) as Date, smsc as Vendor,
     crcy as Currency,
     SUM(credit) as Credit,
@@ -108,7 +115,7 @@ export async function getVendorProfit(startDate: DateTime, endDate: DateTime, ve
     return rows;
 }
 
-export async function getOverallProfit(startDate: DateTime, endDate: DateTime, route?: number) {
+async function getOverallProfit(startDate: DateTime, endDate: DateTime, route?: number) {
     const defaultQuery = `SELECT DATE(sentTime) as Date, crcy as Currency, SUM(credit) as Credit,
     SUM(oppri) as Cost,
     (SUM(credit) - SUM(oppri)) as Profit
@@ -124,4 +131,8 @@ export async function getOverallProfit(startDate: DateTime, endDate: DateTime, r
     rows = rows.sort((a: any, b: any) => new Date(a['Date']).getTime() - new Date(b['Date']).getTime());
     return rows;
 }
-export default router;
+
+export {
+    getVendorProfits,
+    getSmsProfits
+};
