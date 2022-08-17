@@ -51,9 +51,9 @@ export default class Download {
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
     }
 
-    public static index(companyId?: string) {
+    public static index(resourceType: string, companyId?: string) {
         if (companyId) {
-            return collection.where('companyId', '==', companyId).get();
+            return collection.where('companyId', '==', companyId).where('resourceType', '==', resourceType).get();
         }
 
         return collection.get();

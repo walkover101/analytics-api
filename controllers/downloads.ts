@@ -6,10 +6,10 @@ import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 // POST '/exports/sms' | '/exports/email'
 const downloadCsv = async (req: Request, res: Response) => {
     try {
-        let { companyId, fields, timezone } = req.query;
-        let resourceType = req.params[0]; // sms or email
-        let startDate = formatDate(req.query.startDate as string);
-        let endDate = formatDate(req.query.endDate as string);
+        const { companyId, fields, timezone } = req.query;
+        const resourceType = req.params[0]; // sms or email
+        const startDate = formatDate(req.query.startDate as string);
+        const endDate = formatDate(req.query.endDate as string);
         if (!companyId) throw 'Company Id is mandatory';
         const download = new Download(resourceType as string, companyId as string, startDate, endDate, timezone as string, fields as string, req.query);
         const downloadDoc = await download.save();
@@ -35,8 +35,9 @@ const downloadCsv = async (req: Request, res: Response) => {
 const getDownloadLinks = async (req: Request, res: Response) => {
     try {
         let { companyId } = req.query;
+        let resourceType = req.params[0]; // sms or email
         logger.info(`[DOWNLOAD](companyId: ${companyId}) Fetching records...`);
-        const snapshot = await Download.index(companyId as string);
+        const snapshot = await Download.index(resourceType, companyId as string);
         const docs = snapshot.docs;
         const results = docs.map(doc => {
             const document = doc.data();
