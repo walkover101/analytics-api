@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon';
 import { ObjectId } from 'mongodb';
+
+const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
@@ -13,11 +15,11 @@ function delay(time = 1000) {
 
 function formatDate(date: string) {
     try {
-        const result = DateTime.fromFormat(date, 'yyyy-MM-dd');
+        const result = DateTime.fromFormat(date, DEFAULT_DATE_FORMAT);
         if (result?.isValid) return result;
-        throw 'Date must be provided in yyyy-MM-dd format';
+        throw `Date must be provided in '${DEFAULT_DATE_FORMAT}' format`;
     } catch (err) {
-        throw 'Date must be provided in yyyy-MM-dd format';
+        throw `Date must be provided in '${DEFAULT_DATE_FORMAT}' format`;
     }
 }
 
@@ -72,8 +74,8 @@ function getDefaultDate(dayDiff: number = 7): { from: string, to: string } {
     const today = DateTime.now();
 
     return {
-        from: today.minus({ days: dayDiff }).toFormat('yyyy-MM-dd'),
-        to: today.toFormat('yyyy-MM-dd')
+        from: today.minus({ days: dayDiff }).toFormat(DEFAULT_DATE_FORMAT),
+        to: today.toFormat(DEFAULT_DATE_FORMAT)
     };
 }
 
