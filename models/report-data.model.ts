@@ -29,7 +29,7 @@ export default class ReportData {
         this._id = attr['_id']?.toString();
         this.requestID = attr['requestID'];
         this.telNum = attr['telNum'];
-        this.countryCode = extractCountryCode(this.telNum)?.regionCode || 'UNKNOWN';
+        this.countryCode = extractCountryCode(this.telNum)?.regionCode;
         this.status = parseInt(attr['status']);
         this.sentTime = attr['sentTime'] || null;
         this.providerSMSID = attr['providerSMSID'];

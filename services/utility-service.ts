@@ -57,11 +57,11 @@ function extractCountryCode(mobileNumber: string) {
 
     try {
         const parsedNum = phoneUtil.parseAndKeepRawInput(`+${mobileNumber}`);
-        if (!phoneUtil.isValidNumber(parsedNum)) throw 'UNKNOWN';
+        if (!phoneUtil.isValidNumber(parsedNum)) throw '0';
         regionCode = phoneUtil.getRegionCodeForNumber(parsedNum);
         countryCode = parsedNum.getCountryCode();
     } catch (err) {
-        regionCode = 'UNKNOWN';
+        regionCode = null;
         countryCode = '0';
     }
 
