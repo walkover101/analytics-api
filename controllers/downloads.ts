@@ -31,7 +31,7 @@ const downloadCsv = async (req: Request, res: Response) => {
     }
 }
 
-// GET '/exports/:resourceType'
+// GET '/exports/sms' | '/exports/email'
 const getDownloadLinks = async (req: Request, res: Response) => {
     try {
         let { companyId } = req.query;

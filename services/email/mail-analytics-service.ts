@@ -1,46 +1,103 @@
-import { getQueryResults } from '../../database/big-query-service';
+import { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
+import { getValidFields } from '../utility-service';
+import { MAIL_REQ_TABLE_ID } from '../../models/mail-request.model';
+import { MAIL_REP_TABLE_ID } from '../../models/mail-report.model';
 
 const DEFAULT_TIMEZONE: string = '+05:30';
 const DEFAULT_GROUP_BY = 'date';
+const PERMITTED_GROUPINGS: { [key: string]: string } = {
+    // from request
+    date: 'STRING(DATE(request.createdAt))',
+    nodeId: 'request.nodeId'
+};
 
-class SmsAnalyticsService {
-    private static instance: SmsAnalyticsService;
+class MailAnalyticsService {
+    private static instance: MailAnalyticsService;
 
-    public static getSingletonInstance(): SmsAnalyticsService {
-        return SmsAnalyticsService.instance ||= new SmsAnalyticsService();
+    public static getSingletonInstance(): MailAnalyticsService {
+        return MailAnalyticsService.instance ||= new MailAnalyticsService();
     }
 
     public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
+        if (filters.mailNodeIds?.length) groupBy = `nodeId,${groupBy?.length ? groupBy : 'date'}`;
         const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
         const data = await getQueryResults(query);
-        return { data };
+        const total = this.calculateTotalAggr(data);
+        return { data, total };
     }
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
-        const query = `SELECT 
-            DATE(request.createdAt) AS date,
-            COUNT(request.requestId) AS total,
-            COUNTIF(eventId = 2) AS accepted,
-            COUNTIF(eventId = 3) AS rejected,
-            COUNTIF(eventId = 4) AS delivered,
-            COUNTIF(eventId = 9) AS failed,
-            COUNTIF(eventId = 8) AS bounced
-        FROM \`msg91-reports.msg91_test.mail_request\` as request
-        JOIN (
-            SELECT requestId, ARRAY_AGG(eventId ORDER BY createdAt DESC)[OFFSET(0)] as eventId FROM \`msg91-reports.msg91_test.mail_report\` 
-            WHERE (requestTime BETWEEN "${startDate}" AND "${endDate}") AND companyId = "${companyId}"
-            GROUP BY requestId
-            ) AS response
-        ON request.requestId = response.requestId
-        WHERE request.createdAt BETWEEN "${endDate}" AND "${endDate}" AND companyId = "${companyId}"
-        GROUP BY date
-        ORDER BY date;`;
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
+        const groupBy = validFields.onlyAlias.join(',');
+        const groupByAttribs = validFields.withAlias.join(',');
+        const responseSubQuery = this.getResponseSubQuery(companyId, startDate, endDate, timeZone, filters);
+
+        const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
+            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REQ_TABLE_ID}\` AS request
+            JOIN (${responseSubQuery}) AS response
+            ON request.requestId = response.requestId
+            WHERE ${whereClause}
+            GROUP BY ${groupBy}
+            ORDER BY ${groupBy};`;
 
         logger.info(query);
         return query;
     }
+
+    private getResponseSubQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+        return `SELECT
+                    requestId,
+                    ARRAY_AGG(eventId ORDER BY createdAt DESC)[OFFSET(0)] as eventId
+                FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REP_TABLE_ID}\`
+                WHERE
+                    (requestTime BETWEEN "${startDate}" AND "${endDate}")
+                    AND companyId = "${companyId}"
+                GROUP BY requestId`;
+    }
+
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+        let conditions = `(request.createdAt BETWEEN "${startDate}" AND "${endDate}")`;
+        conditions += ` AND companyId = "${companyId}"`;
+
+        // optional conditions
+        if (filters.mailNodeIds) conditions += ` AND request.nodeId in (${filters.mailNodeIds.splitAndTrim(',')})`;
+
+        return conditions;
+    }
+
+    private aggregateAttribs() {
+        return `COUNT(request.requestId) AS total,
+            COUNTIF(eventId = 2) AS accepted,
+            COUNTIF(eventId = 3) AS rejected,
+            COUNTIF(eventId = 4) AS delivered,
+            COUNTIF(eventId = 9) AS failed,
+            COUNTIF(eventId = 8) AS bounced`;
+    }
+
+    private calculateTotalAggr(data: any) {
+        const total = {
+            "total": 0,
+            "accepted": 0,
+            "rejected": 0,
+            "delivered": 0,
+            "failed": 0,
+            "bounced": 0
+        }
+
+        data.forEach((row: any) => {
+            total["total"] += row["total"] || 0;
+            total["accepted"] += row["accepted"] || 0;
+            total["rejected"] += row["rejected"] || 0;
+            total["delivered"] += row["delivered"] || 0;
+            total["failed"] += row["failed"] || 0;
+            total["bounced"] += row["bounced"] || 0;
+        })
+
+        return total;
+    }
 }
 
-export default SmsAnalyticsService.getSingletonInstance();
+export default MailAnalyticsService.getSingletonInstance();

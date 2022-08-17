@@ -5,6 +5,6 @@ const router = express.Router();
 
 router.post(/^\/(sms|email)/, downloadsController.downloadCsv);
 
-router.get('/:resourceType', downloadsController.getDownloadLinks);
+router.get(/^\/(sms|email)/, downloadsController.getDownloadLinks);
 
 export default router;
