@@ -1,9 +1,7 @@
 import { getQuotedStrings, getValidFields } from "../utility-service";
-import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../../database/big-query-service';
+import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
-import { REPORT_DATA_TABLE_ID } from '../../models/report-data.model';
-import { REQUEST_DATA_TABLE_ID } from '../../models/request-data.model';
 
 const DEFAULT_TIMEZONE: string = '+05:30';
 const DEFAULT_GROUP_BY = 'date';

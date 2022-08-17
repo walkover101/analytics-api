@@ -1,6 +1,5 @@
+import { MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID } from '../../database/big-query-service';
 import Download from '../../models/download.model';
-import { MAIL_REP_TABLE_ID } from '../../models/mail-report.model';
-import { MAIL_REQ_TABLE_ID } from '../../models/mail-request.model';
 import { getQuotedStrings, getValidFields } from '../utility-service';
 
 const PERMITTED_FIELDS: { [key: string]: string } = {

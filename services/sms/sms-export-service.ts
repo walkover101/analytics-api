@@ -1,9 +1,8 @@
 
+import { REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
 import Download from '../../models/download.model';
 import { getQuotedStrings, getValidFields } from '../utility-service';
 
-const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data'
-const REQUEST_DATA_TABLE_ID = process.env.REQUEST_DATA_TABLE_ID || 'request_data'
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
     status: 'reportData.status',

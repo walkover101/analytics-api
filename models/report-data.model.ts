@@ -1,8 +1,7 @@
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from '../database/big-query-service';
+import msg91Dataset, { REPORT_DATA_TABLE_ID } from '../database/big-query-service';
 import { extractCountryCode } from "../services/utility-service";
 
-export const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data';
 const reportDataTable: Table = msg91Dataset.table(REPORT_DATA_TABLE_ID);
 export default class ReportData {
     _id: string;

@@ -1,9 +1,7 @@
-import { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID } from '../../database/big-query-service';
+import { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID, MAIL_REQ_TABLE_ID, MAIL_REP_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 import { getValidFields } from '../utility-service';
-import { MAIL_REQ_TABLE_ID } from '../../models/mail-request.model';
-import { MAIL_REP_TABLE_ID } from '../../models/mail-report.model';
 
 const DEFAULT_TIMEZONE: string = '+05:30';
 const DEFAULT_GROUP_BY = 'date';

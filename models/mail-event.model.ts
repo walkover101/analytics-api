@@ -1,8 +1,7 @@
 import { getHashCode } from "../services/utility-service";
 import { Table } from '@google-cloud/bigquery';
-import msg91Dataset from '../database/big-query-service';
+import msg91Dataset, { MAIL_EVENTS_TABLE_ID } from '../database/big-query-service';
 
-const MAIL_EVENTS_TABLE_ID = process.env.MAIL_EVENTS_TABLE_ID || 'mail_event';
 const mailEventsTable: Table = msg91Dataset.table(MAIL_EVENTS_TABLE_ID);
 
 export default class MailEvent {
