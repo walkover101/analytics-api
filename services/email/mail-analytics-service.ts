@@ -58,7 +58,7 @@ class MailAnalyticsService {
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         let conditions = `(request.createdAt BETWEEN "${startDate}" AND "${endDate}")`;
-        conditions += ` AND companyId = "${companyId}"`;
+        conditions += ` AND request.companyId = "${companyId}"`;
 
         // optional conditions
         if (filters.mailNodeIds) conditions += ` AND request.nodeId in (${filters.mailNodeIds.splitAndTrim(',')})`;
