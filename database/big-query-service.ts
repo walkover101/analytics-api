@@ -1,7 +1,8 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import * as _ from "lodash";
 
-const MSG91_DATASET_ID = process.env.MSG91_DATASET_ID || 'msg91_test';
+export const MSG91_DATASET_ID = process.env.MSG91_DATASET_ID || 'msg91_test';
+export const MSG91_PROJECT_ID = process.env.GCP_PROJECT_ID;
 
 const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,

@@ -1,5 +1,9 @@
+import { Table } from '@google-cloud/bigquery';
+import msg91Dataset from '../database/big-query-service';
 import { extractCountryCode } from "../services/utility-service";
 
+export const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_data';
+const reportDataTable: Table = msg91Dataset.table(REPORT_DATA_TABLE_ID);
 export default class ReportData {
     _id: string;
     requestID: string;
@@ -41,5 +45,10 @@ export default class ReportData {
         this.node_id = attr['node_id'];
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.isSingleRequest = attr['isSingleRequest'];
+    }
+
+    public static insertMany(rows: Array<ReportData>) {
+        const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
+        return reportDataTable.insert(rows, insertOptions);
     }
 }

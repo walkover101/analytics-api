@@ -1,13 +1,11 @@
 import { getQuotedStrings, getValidFields } from "../utility-service";
-import { getQueryResults } from '../../database/big-query-service';
+import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
+import { REPORT_DATA_TABLE_ID } from '../../models/report-data.model';
+import { REQUEST_DATA_TABLE_ID } from '../../models/request-data.model';
 
 const DEFAULT_TIMEZONE: string = '+05:30';
-const PROJECT_ID = process.env.GCP_PROJECT_ID;
-const DATA_SET = process.env.MSG91_DATASET_ID;
-const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
-const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
@@ -19,11 +17,11 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     nodeId: 'requestData.node_id'
 };
 
-class SmsService {
-    private static instance: SmsService;
+class SmsAnalyticsService {
+    private static instance: SmsAnalyticsService;
 
-    public static getSingletonInstance(): SmsService {
-        return SmsService.instance ||= new SmsService();
+    public static getSingletonInstance(): SmsAnalyticsService {
+        return SmsAnalyticsService.instance ||= new SmsAnalyticsService();
     }
 
     public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
@@ -42,8 +40,8 @@ class SmsService {
         const groupByAttribs = validFields.withAlias.join(',');
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
-            FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS reportData
-            INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS requestData
+            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\` AS reportData
+            INNER JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REQUEST_DATA_TABLE_ID}\` AS requestData
             ON reportData.requestID = requestData._id
             WHERE ${whereClause}
             GROUP BY ${groupBy}
@@ -105,4 +103,4 @@ class SmsService {
     }
 }
 
-export default SmsService.getSingletonInstance();
+export default SmsAnalyticsService.getSingletonInstance();

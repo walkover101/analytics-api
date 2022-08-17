@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
-import bigquery, { getQueryResults } from '../database/big-query-service';
+import bigquery, { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID } from '../database/big-query-service';
 import { DateTime } from 'luxon';
-import { getDefaultDate, formatDate } from '../services/utility-service';
-const PROJECT_ID = process.env.GCP_PROJECT_ID;
-const DATA_SET = process.env.MSG91_DATASET_ID;
-const REQUEST_TABLE = process.env.REQUEST_DATA_TABLE_ID;
-const REPORT_TABLE = process.env.REPORT_DATA_TABLE_ID;
+import { getDefaultDate } from '../services/utility-service';
+import { REPORT_DATA_TABLE_ID } from '../models/report-data.model';
+import { REQUEST_DATA_TABLE_ID } from '../models/request-data.model';
+
 enum INTERVAL {
     DAILY = "daily",
     // HOURLY = "hourly",
@@ -27,7 +26,7 @@ const getVendorProfits = async (req: Request, res: Response) => {
         SUM(credit) as Credit,
         SUM(oppri) as Cost,
         (SUM(credit) - SUM(oppri)) as Profit
-        FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+        FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\`
         WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
         GROUP BY DATE(sentTime), smsc, crcy;`
     const [job] = await bigquery.createQueryJob({
@@ -62,15 +61,15 @@ async function getUserProfit(startDate: DateTime, endDate: DateTime, userId: str
     const defaultQuery = `SELECT DATE(sentTime) as Date, user_pid as Company, SUM(credit) as Credit,
     SUM(oppri) as Cost,
     (SUM(credit) - SUM(oppri)) as Profit
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\`
     WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND user_pid = "${userId}"
     GROUP BY DATE(sentTime), user_pid;`
 
     const routeQuery = `SELECT DATE(report.sentTime) as Date, report.user_pid as Company, SUM(report.credit) as Credit,
     SUM(report.oppri) as Cost,
     (SUM(report.credit) - SUM(report.oppri)) as Profit 
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS report
-    INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
+    FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\` AS report
+    INNER JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REQUEST_DATA_TABLE_ID}\` AS request
     ON report.requestID = request._id
     WHERE (report.sentTime BETWEEN "${startDate}" AND "${endDate}") AND (request.requestDate BETWEEN "${startDate}" AND "${endDate}")
     AND report.user_pid = "${userId}" AND request.requestUserid = "${userId}"
@@ -91,7 +90,7 @@ async function getVendorProfit(startDate: DateTime, endDate: DateTime, vendorId:
     SUM(credit) as Credit,
     SUM(oppri) as Cost,
     (SUM(credit) - SUM(oppri)) as Profit
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\`
     WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}") AND smsc = "${vendorId}"
     GROUP BY DATE(sentTime), smsc, crcy;`;
     const routeQuery = `SELECT DATE(report.sentTime) as Date, report.smsc as Vendor,
@@ -99,8 +98,8 @@ async function getVendorProfit(startDate: DateTime, endDate: DateTime, vendorId:
     SUM(report.credit) as Credit,
     SUM(report.oppri) as Cost,
     (SUM(report.credit) - SUM(report.oppri)) as Profit
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\` AS report
-    INNER JOIN \`${PROJECT_ID}.${DATA_SET}.${REQUEST_TABLE}\` AS request
+    FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\` AS report
+    INNER JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REQUEST_DATA_TABLE_ID}\` AS request
     ON report.requestID = request._id
     WHERE (report.sentTime BETWEEN "${startDate}" AND "${endDate}") AND (request.requestDate BETWEEN "${startDate}" AND "${endDate}")
     AND report.smsc = "${vendorId}" AND request.smsc = "${vendorId}"
@@ -119,7 +118,7 @@ async function getOverallProfit(startDate: DateTime, endDate: DateTime, route?: 
     const defaultQuery = `SELECT DATE(sentTime) as Date, crcy as Currency, SUM(credit) as Credit,
     SUM(oppri) as Cost,
     (SUM(credit) - SUM(oppri)) as Profit
-    FROM \`${PROJECT_ID}.${DATA_SET}.${REPORT_TABLE}\`
+    FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\`
     WHERE (sentTime BETWEEN "${startDate}" AND "${endDate}")
     GROUP BY DATE(sentTime), crcy;`
     const routeQuery = defaultQuery;
