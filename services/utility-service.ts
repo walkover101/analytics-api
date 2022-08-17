@@ -53,19 +53,19 @@ function isValidObjectId(id: string) {
 }
 
 function extractCountryCode(mobileNumber: string) {
-    let country, countryCode = '0';
+    let regionCode, countryCode = '0';
 
     try {
         const parsedNum = phoneUtil.parseAndKeepRawInput(`+${mobileNumber}`);
-        if (!phoneUtil.isValidNumber(parsedNum)) throw 'INVALID';
-        country = phoneUtil.getRegionCodeForNumber(parsedNum);
+        if (!phoneUtil.isValidNumber(parsedNum)) throw 'UNKNOWN';
+        regionCode = phoneUtil.getRegionCodeForNumber(parsedNum);
         countryCode = parsedNum.getCountryCode();
     } catch (err) {
-        country = 'INVALID';
+        regionCode = 'UNKNOWN';
         countryCode = '0';
     }
 
-    return { country, countryCode };
+    return { regionCode, countryCode };
 }
 
 function getDefaultDate(dayDiff: number = 7): { from: string, to: string } {
