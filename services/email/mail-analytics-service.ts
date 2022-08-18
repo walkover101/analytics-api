@@ -19,7 +19,7 @@ class MailAnalyticsService {
     }
 
     public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
-        if (filters.mailNodeIds?.length) groupBy = `nodeId,${groupBy?.length ? groupBy : 'date'}`;
+        if (filters.emailNodeIds?.length) groupBy = `nodeId,${groupBy?.length ? groupBy : 'date'}`;
         const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
         const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
@@ -61,7 +61,7 @@ class MailAnalyticsService {
         conditions += ` AND request.companyId = "${companyId}"`;
 
         // optional conditions
-        if (filters.mailNodeIds) conditions += ` AND request.nodeId in (${filters.mailNodeIds.splitAndTrim(',')})`;
+        if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
 
         return conditions;
     }
