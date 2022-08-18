@@ -51,13 +51,13 @@ class MailAnalyticsService {
                     ARRAY_AGG(eventId ORDER BY createdAt DESC)[OFFSET(0)] as eventId
                 FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REP_TABLE_ID}\`
                 WHERE
-                    (requestTime BETWEEN "${startDate}" AND "${endDate}")
+                    (DATETIME(requestTime, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))
                     AND companyId = "${companyId}"
                 GROUP BY requestId`;
     }
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
-        let conditions = `(request.createdAt BETWEEN "${startDate}" AND "${endDate}")`;
+        let conditions = `(DATETIME(request.createdAt, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
         conditions += ` AND request.companyId = "${companyId}"`;
 
         // optional conditions
