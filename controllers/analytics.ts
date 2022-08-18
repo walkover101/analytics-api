@@ -48,8 +48,8 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
         if (!smsNodeIds?.length && !mailNodeIds?.length) throw "smsNodeIds OR mailNodeIds required";
 
         let smsAnalytics, mailAnalytics;
-        if (!smsNodeIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        if (!mailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
+        if (smsNodeIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+        if (mailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
         res.send({ sms: smsAnalytics, mail: mailAnalytics });
     } catch (error: any) {
         logger.error(error);
