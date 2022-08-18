@@ -14,9 +14,9 @@ const getSmsAnalytics = async (req: Request, res: Response) => {
 
         const smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         res.send(smsAnalytics);
-    } catch (error) {
+    } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error });
+        res.status(400).send({ error: error?.message });
     }
 }
 
@@ -31,9 +31,9 @@ const getMailAnalytics = async (req: Request, res: Response) => {
 
         const mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         res.send(mailAnalytics);
-    } catch (error) {
+    } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error });
+        res.status(400).send({ error: error?.message });
     }
 }
 
@@ -51,9 +51,9 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
         if (!smsNodeIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         if (!mailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
         res.send({ sms: smsAnalytics, mail: mailAnalytics });
-    } catch (error) {
+    } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error });
+        res.status(400).send({ error: error?.message });
     }
 }
 
