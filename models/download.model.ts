@@ -16,7 +16,7 @@ export enum DOWNLOAD_STATUS {
 
 export enum RESOURCE_TYPE {
     SMS = 'sms',
-    EMAIL = 'email'
+    EMAIL = 'mail'
 }
 
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
