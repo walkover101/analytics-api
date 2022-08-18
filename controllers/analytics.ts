@@ -16,7 +16,7 @@ const getSmsAnalytics = async (req: Request, res: Response) => {
         res.send(smsAnalytics);
     } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error: error?.message });
+        res.status(400).send({ error: error?.message || error });
     }
 }
 
@@ -33,7 +33,7 @@ const getMailAnalytics = async (req: Request, res: Response) => {
         res.send(mailAnalytics);
     } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error: error?.message });
+        res.status(400).send({ error: error?.message || error });
     }
 }
 
@@ -53,7 +53,7 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
         res.send({ sms: smsAnalytics, mail: mailAnalytics });
     } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error: error?.message });
+        res.status(400).send({ error: error?.message || error });
     }
 }
 
