@@ -1,3 +1,4 @@
+import { uniq } from 'lodash';
 import { DateTime } from 'luxon';
 import { ObjectId } from 'mongodb';
 
@@ -33,7 +34,7 @@ function getValidFields(permittedFields: { [key: string]: string } = {}, fields:
     let attrbs = fields.filter(field => field in permittedFields);
     if (!attrbs.length) attrbs = Object.keys(permittedFields);
 
-    attrbs.forEach(key => {
+    uniq(attrbs).forEach(key => {
         result.withAlias.push(`${permittedFields[key]} as ${key}`);
         result.withoutAlias.push(permittedFields[key]);
         result.onlyAlias.push(key);

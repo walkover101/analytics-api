@@ -41,7 +41,7 @@ const getMailAnalytics = async (req: Request, res: Response) => {
 const getCampaignAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, smsNodeIds, mailNodeIds, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
+        let { companyId, smsNodeIds, mailNodeIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
         if (!companyId) throw "companyId required";
@@ -49,7 +49,7 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
 
         let smsAnalytics, mailAnalytics;
         if (!smsNodeIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        if (!mailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+        if (!mailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
         res.send({ sms: smsAnalytics, mail: mailAnalytics });
     } catch (error) {
         logger.error(error);
