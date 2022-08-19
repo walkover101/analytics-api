@@ -16,6 +16,7 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: 22
         script: |
+          sudo su
           cd ~/home/dev-apps
           git pull origin master
           git status
