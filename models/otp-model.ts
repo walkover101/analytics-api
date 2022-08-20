@@ -52,7 +52,7 @@ export default class OtpModel {
     voiceStatus: number;
 
     constructor(attr: any) {
-        this.id = attr['_id'];
+        this.id = attr['_id'].toString();
         this.telNum = attr['telNum'];
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.crcy = attr['crcy'];

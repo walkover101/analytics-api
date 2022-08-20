@@ -108,8 +108,8 @@ function fetchReportDataDocs(maxEndTime: DateTime, lastDocumentId: string) {
 
 function fetchOtpReportDocs(maxEndTime: DateTime, lastDocumentId: string) {
     const query = {
-        id: { $gt: new ObjectId(lastDocumentId) },
-        sentTime: { $lte: maxEndTime }
+        _id: { $gt: new ObjectId(lastDocumentId) },
+        sentTimeReport: { $lte: maxEndTime }
     }
 
     logger.info(`[MONGO] Fetching docs...`);
