@@ -18,7 +18,7 @@ jobs:
         script: |
           sudo su
           cd /home/test-apps/analytics-api
-          git pull origin master
-          git status
-          npm install --only=pro
-          npm run build
+          sudo git pull origin master
+          sudo git status
+          sudo npm install --only=pro
+          sudo npm run build
