@@ -1,3 +1,8 @@
+import { Table } from '@google-cloud/bigquery';
+import msg91Dataset, { OTP_TABLE_ID } from "../database/big-query-service";
+
+const otpReportTable: Table = msg91Dataset.table(OTP_TABLE_ID);
+
 export default class OtpModel {
     id: string;
     telNum: string;
@@ -93,5 +98,10 @@ export default class OtpModel {
         this.voiceRetryCount = +attr['voice_retry_count'];
         this.voiceService = attr['voice_service'];
         this.voiceStatus = +attr['voice_status'];
+    }
+
+    public static insertMany(rows: Array<OtpModel>) {
+        const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
+        return otpReportTable.insert(rows, insertOptions);
     }
 }
