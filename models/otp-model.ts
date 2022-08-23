@@ -50,6 +50,8 @@ export default class OtpModel {
     voiceRetryCount: number;
     voiceService: string;
     voiceStatus: number;
+    demoAccount: number;
+    source: number;
 
     constructor(attr: any) {
         this.id = attr['_id'].toString();
@@ -98,6 +100,8 @@ export default class OtpModel {
         this.voiceRetryCount = +attr['voice_retry_count'];
         this.voiceService = attr['voice_service'];
         this.voiceStatus = +attr['voice_status'];
+        this.demoAccount = +attr['demo_account'];
+        this.source = +attr['source'];
     }
 
     public static insertMany(rows: Array<OtpModel>) {
