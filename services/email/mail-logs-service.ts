@@ -6,6 +6,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = '+05:30';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
+    requestId: 'mailRequest.requestId',
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
     domain: 'mailRequest.domain',

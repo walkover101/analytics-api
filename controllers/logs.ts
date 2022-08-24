@@ -3,6 +3,7 @@ import logger from '../logger/logger';
 import mailLogsService from "../services/email/mail-logs-service";
 import smsLogsService from "../services/sms/sms-logs-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
+import MailEvent from '../models/mail-event.model';
 
 // GET '/logs/sms'
 const getSmsLogs = async (req: Request, res: Response) => {
@@ -38,6 +39,23 @@ const getMailLogs = async (req: Request, res: Response) => {
     }
 }
 
+// GET '/logs/mail/:requestId'
+const getMailLogDetails = async (req: Request, res: Response) => {
+    try {
+        const params = { ...req.query, ...req.params } as any;
+        let { companyId, requestId } = params;
+        if (!requestId) throw "requestId required";
+
+        const logs = await MailEvent.index(companyId, requestId);
+        res.send({ data: logs });
+    } catch (error: any) {
+        logger.error(error);
+        res.status(400).send({ error: error?.message || error });
+    }
+}
+
 export {
-    getMailLogs
+    getSmsLogs,
+    getMailLogs,
+    getMailLogDetails
 };
