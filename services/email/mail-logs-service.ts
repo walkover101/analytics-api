@@ -18,7 +18,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     mailerRequestId: 'mailRequest.mailerRequestId',
     nodeId: 'mailRequest.nodeId',
     clientRequestIP: 'mailRequest.clientRequestIP',
-    createdAt: 'mailRequest.createdAt',
+    createdAt: 'STRING(mailRequest.createdAt)',
 
     // Mail Report
     eventId: 'mailReport.eventId',

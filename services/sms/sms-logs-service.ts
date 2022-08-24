@@ -9,8 +9,8 @@ const DEFAULT_TIMEZONE: string = '+05:30';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
     status: 'reportData.status',
-    sentTime: 'reportData.sentTime',
-    deliveryTime: 'reportData.deliveryTime',
+    sentTime: 'STRING(reportData.sentTime)',
+    deliveryTime: 'STRING(reportData.deliveryTime)',
     requestId: 'reportData.requestID',
     telNum: 'reportData.telNum',
     credit: 'reportData.credit',
@@ -18,7 +18,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
 
     // from request-data
     campaignName: 'requestData.campaign_name',
-    scheduleDateTime: 'requestData.scheduleDateTime',
+    scheduleDateTime: 'STRING(requestData.scheduleDateTime)',
     msgData: 'requestData.msgData',
     route: 'requestData.curRoute'
 };

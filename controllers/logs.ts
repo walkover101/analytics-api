@@ -43,10 +43,11 @@ const getMailLogs = async (req: Request, res: Response) => {
 const getMailLogDetails = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, requestId } = params;
+        let { companyId, requestId, fields } = params;
+        const attributes = fields?.length ? fields.splitAndTrim(',') : [];
         if (!requestId) throw "requestId required";
 
-        const logs = await MailEvent.index(companyId, requestId);
+        const logs = await MailEvent.index(companyId, requestId, params, attributes);
         res.send({ data: logs });
     } catch (error: any) {
         logger.error(error);
