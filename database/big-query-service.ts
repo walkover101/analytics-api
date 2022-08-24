@@ -9,6 +9,8 @@ export const REPORT_DATA_TABLE_ID = process.env.REPORT_DATA_TABLE_ID || 'report_
 export const MAIL_REQ_TABLE_ID = process.env.MAIL_REQ_TABLE_ID || 'mail_request';
 export const MAIL_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'mail_report';
 export const MAIL_EVENTS_TABLE_ID = process.env.MAIL_EVENTS_TABLE_ID || 'mail_event';
+export const WA_REQ_TABLE_ID = process.env.MAIL_REQ_TABLE_ID || 'wa_request';
+export const WA_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'wa_report';
 
 const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,
