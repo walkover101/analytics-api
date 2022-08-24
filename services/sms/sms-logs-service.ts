@@ -53,7 +53,7 @@ class SmsLogsService {
         conditions += ` AND (DATETIME(requestData.requestDate, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
-        if (query.route) conditions += ` AND reportData.route in (${getQuotedStrings(query.route.splitAndTrim(','))})`;
+        if (query.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(query.route.splitAndTrim(','))})`;
 
         return conditions;
     }
