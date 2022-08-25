@@ -2,6 +2,7 @@ import "../startup/dotenv";
 import logger from "./../logger/logger";
 import { has } from 'lodash';
 import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-job';
+import { requestDataWatcher } from './mongo-watcher';
 import sequelize from '../database/sequelize-service';
 const argv = require('minimist')(process.argv.slice(2));
 
@@ -9,7 +10,8 @@ const argv = require('minimist')(process.argv.slice(2));
 const Jobs: any = {
     requestDataSyncJob,
     reportDataSyncJob,
-    otpReportSyncJob
+    otpReportSyncJob,
+    requestDataWatcher
 };
 
 function invalidJobName(jobName: string): Boolean {
