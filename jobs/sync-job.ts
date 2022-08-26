@@ -16,9 +16,9 @@ const OTP_REPORT_COLLECTION = process.env.OTP_REPORT_COLLECTION || '';
 
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);
 const BATCH_SIZE = +(process.env.BATCH_SIZE || 1000);
-const DELAY_INTERVAL = +(process.env.DELAY_INTERVAL || 5); // in mins
+const BUFFER_INTERVAL = +(process.env.BUFFER_INTERVAL || 5); // in mins
 const LAG = +(process.env.SYNC_LAG || 48 * 60 * 60);  // Minutes | Default: 48hrs
-const RETRY_INTERVAL = +(process.env.DELAY_INTERVAL || 10) * 1000; // in secs
+const RETRY_INTERVAL = +(process.env.RETRY_INTERVAL || 10) * 1000; // in secs
 
 const FILTER_BY = {
     requestData: 'requestDate',
@@ -27,13 +27,19 @@ const FILTER_BY = {
 }
 
 async function initSynching(job: jobType) {
-    logger.info(`MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | BATCH_SIZE: ${BATCH_SIZE} | DELAY_INTERVAL: ${DELAY_INTERVAL}mins | LAG: ${LAG}min`);
+    logger.info(`MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | BATCH_SIZE: ${BATCH_SIZE} | BUFFER_INTERVAL: ${BUFFER_INTERVAL}mins | LAG: ${LAG}min`);
 
     while (true) {
         try {
             const tracker: any = await Tracker.findByPk(job);
-            const fromTimestamp = getTimestamp(tracker);
-            const mongoDocs = await fetchDocsFromMongo(job, fromTimestamp, maxEndTime());
+            const { fromTimestamp, toTimestamp } = getTimestamp(tracker);
+
+            if (isTimeLimitExhausted(toTimestamp)) {
+                logger.info(`Time limit exhausted, going to wait for ${(BUFFER_INTERVAL + 1)}mins`);
+                await delay((BUFFER_INTERVAL + 1) * 60 * 1000);
+            }
+
+            const mongoDocs = await fetchDocsFromMongo(job, fromTimestamp, toTimestamp);
             const docsToSync = skipRecordsUntilId(mongoDocs, tracker.lastDocumentId);
 
             if (docsToSync.length) {
@@ -41,8 +47,12 @@ async function initSynching(job: jobType) {
                 continue;
             }
 
-            logger.info(`Insufficient records to create a batch, going to wait for ${DELAY_INTERVAL}mins`);
-            await delay(DELAY_INTERVAL * 60 * 1000);
+            logger.info(`[UPDATE TRACKERS] Updating lastTimestamp: ${toTimestamp.toISO()}...`);
+            logger.info(`[UPDATE TRACKERS] Updating lastDocumentId: null...`);
+            await Tracker.upsert({ jobType: job, lastTimestamp: toTimestamp.toISO(), lastDocumentId: null }).catch(err => {
+                logger.error(err);
+                process.exit(1);
+            });
         } catch (error) {
             logger.error(error);
             await delay(RETRY_INTERVAL);
@@ -56,7 +66,7 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
     for (let i = 0; i < mongoDocs.length; i += BATCH_SIZE) {
         const batch = mongoDocs.slice(i, i + BATCH_SIZE);
         logger.info(`[BATCH PROCESSING] ${i}-${(i + BATCH_SIZE) - 1} records synching to big query...`);
-        // await insertBatchInBigQuery(job, batch);
+        await insertBatchInBigQuery(job, batch);
         logger.info('[BATCH PROCESSING] Batch synched.');
         const lastDocument = batch.pop();
         const lastTimestamp = lastDocument && new Date(lastDocument[FILTER_BY[job]]).toISOString();
@@ -142,13 +152,19 @@ function maxEndTime() {
     return DateTime.now().minus({ minutes: LAG });
 }
 
+function isTimeLimitExhausted(timestamp: DateTime) {
+    return maxEndTime().diff(timestamp, 'minute').minutes <= 0
+}
+
 function getTimestamp(tracker: any) {
     if (!tracker?.lastTimestamp) {
         logger.error('lastTimestamp is required.');
         process.exit(1);
     }
 
-    return DateTime.fromJSDate(tracker.lastTimestamp);
+    const fromTimestamp = DateTime.fromJSDate(tracker.lastTimestamp);
+    const toTimestamp = fromTimestamp.plus({ minutes: BUFFER_INTERVAL });
+    return { fromTimestamp, toTimestamp };
 }
 
 function skipRecordsUntilId(mongoDocs: any[], documentId: string) {
