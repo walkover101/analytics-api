@@ -41,7 +41,7 @@ class SmsAnalyticsService {
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REPORT_DATA_TABLE_ID}\` AS reportData
-            INNER JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REQUEST_DATA_TABLE_ID}\` AS requestData
+            LEFT JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${REQUEST_DATA_TABLE_ID}\` AS requestData
             ON reportData.requestID = requestData._id
             WHERE ${whereClause}
             GROUP BY ${groupBy}
