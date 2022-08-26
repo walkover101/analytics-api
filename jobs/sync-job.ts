@@ -1,6 +1,6 @@
 import logger from "../logger/logger";
 import firebaseLogger from '../logger/firebase-logger';
-import { MongoClient } from 'mongodb';
+import { MongoClient, Sort } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay } from "../services/utility-service";
 import { DateTime } from 'luxon';
@@ -56,6 +56,7 @@ async function initSynching(job: jobType) {
 
 async function fetchDocsFromMongo(job: jobType, fromTimestamp: DateTime, toTimestamp: DateTime): Promise<any[]> {
     try {
+        const sortBy: Sort = { [FILTER_BY[job]]: 1 };
         const query = {
             [FILTER_BY[job]]: {
                 $gte: fromTimestamp,
@@ -66,7 +67,7 @@ async function fetchDocsFromMongo(job: jobType, fromTimestamp: DateTime, toTimes
         logger.info(`[MONGO] Fetching docs...`);
         logger.info(`[MONGO] Query - ${JSON.stringify(query)}`);
         const collection = mongoConnection.db().collection(COLLECTION[job]);
-        return collection.find(query).sort({ [FILTER_BY[job]]: 1 }).limit(MONGO_DOCS_LIMIT).toArray();
+        return collection.find(query).sort(sortBy).limit(MONGO_DOCS_LIMIT).toArray();
     } catch (err: any) {
         logger.error(err);
         process.exit(1);
