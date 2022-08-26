@@ -47,12 +47,7 @@ async function initSynching(job: jobType) {
                 continue;
             }
 
-            logger.info(`[UPDATE TRACKERS] Updating lastTimestamp: ${toTimestamp.toISO()}...`);
-            logger.info(`[UPDATE TRACKERS] Updating lastDocumentId: null...`);
-            await Tracker.upsert({ jobType: job, lastTimestamp: toTimestamp.toISO(), lastDocumentId: null }).catch(err => {
-                logger.error(err);
-                process.exit(1);
-            });
+            await upsertTracker(job, toTimestamp.toISO());
         } catch (error) {
             logger.error(error);
             await delay(RETRY_INTERVAL);
@@ -72,12 +67,7 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
         const lastTimestamp = lastDocument && new Date(lastDocument[FILTER_BY[job]]).toISOString();
         const lastDocumentId = lastDocument?._id?.toString();
 
-        logger.info(`[UPDATE TRACKERS] Updating lastTimestamp: ${lastTimestamp}...`);
-        logger.info(`[UPDATE TRACKERS] Updating lastDocumentId: ${lastDocumentId}...`);
-        await Tracker.upsert({ jobType: job, lastTimestamp, lastDocumentId }).catch(err => {
-            logger.error(err);
-            process.exit(1);
-        });
+        await upsertTracker(job, lastTimestamp, lastDocumentId);
     }
 }
 
@@ -186,10 +176,20 @@ function skipRecordsUntilId(mongoDocs: any[], documentId: string) {
     return result;
 }
 
+function upsertTracker(job: jobType, isoTimestamp: string, lastDocumentId: string | null = null) {
+    logger.info(`[UPDATE TRACKERS] Updating lastTimestamp: ${isoTimestamp}...`);
+    logger.info(`[UPDATE TRACKERS] Updating lastDocumentId: ${lastDocumentId}...`);
+
+    return Tracker.upsert({ jobType: job, lastTimestamp: isoTimestamp, lastDocumentId }).catch(err => {
+        logger.error(err);
+        process.exit(1);
+    });
+}
+
 function initTrackers(job: jobType, lastTimestamp: string, forceReplace: boolean) {
     if (!lastTimestamp) return;
     logger.info(`[UPDATE TRACKERS] Updating lastTimestamp to ${lastTimestamp}...`);
-    if (forceReplace) return Tracker.upsert({ jobType: job, lastTimestamp, lastDocumentId: null });
+    if (forceReplace) return upsertTracker(job, lastTimestamp);
     return Tracker.create({ jobType: job, lastTimestamp });
 }
 
