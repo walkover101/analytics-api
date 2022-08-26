@@ -38,6 +38,7 @@ const getMailAnalytics = async (req: Request, res: Response) => {
     }
 }
 
+// GET '/analytics/otp'
 const getOtpAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;

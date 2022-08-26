@@ -18,7 +18,7 @@ function invalidJobName(jobName: string): Boolean {
 
 function getAvailableJobs() {
     const jobNames = Object.keys(Jobs);
-    const numberedJobNames = jobNames.map((job, idx) => `${idx + 1}. ${job} -- --ldi={LAST_DOCUMENT_ID}`);
+    const numberedJobNames = jobNames.map((job, idx) => `${idx + 1}. ${job} -- --lts={LAST_TIMESTAMP}`);
     return numberedJobNames.join('\n');
 }
 
