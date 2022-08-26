@@ -24,7 +24,7 @@ const FILTER_BY = {
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);
 const BATCH_SIZE = +(process.env.BATCH_SIZE || 1000);
 const BUFFER_INTERVAL = +(process.env.BUFFER_INTERVAL || 5); // in mins
-const LAG = +(process.env.SYNC_LAG || 48 * 60 * 60);  // Minutes | Default: 48hrs
+const LAG = +(process.env.SYNC_LAG || 48 * 60);  // Minutes | Default: 48hrs
 const RETRY_INTERVAL = +(process.env.RETRY_INTERVAL || 10) * 1000; // in secs
 
 const maxEndTime = () => DateTime.now().minus({ minutes: LAG });
