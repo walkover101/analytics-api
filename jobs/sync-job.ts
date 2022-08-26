@@ -66,7 +66,6 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
         const lastDocument = batch.pop();
         const lastTimestamp = lastDocument && new Date(lastDocument[FILTER_BY[job]]).toISOString();
         const lastDocumentId = lastDocument?._id?.toString();
-
         await upsertTracker(job, lastTimestamp, lastDocumentId);
     }
 }
