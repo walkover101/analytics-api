@@ -45,13 +45,8 @@ async function initSynching(job: jobType) {
 
             const mongoDocs = await fetchDocsFromMongo(job, fromTimestamp, toTimestamp);
             const docsToSync = skipRecordsUntilId(mongoDocs, tracker.lastDocumentId);
-
-            if (docsToSync.length) {
-                await syncDataToBigQuery(job, docsToSync);
-                continue;
-            }
-
-            await upsertTracker(job, toTimestamp.toISO());
+            if (!docsToSync.length && await upsertTracker(job, toTimestamp.toISO())) continue;
+            await syncDataToBigQuery(job, docsToSync);
         } catch (error) {
             logger.error(error);
             await delay(RETRY_INTERVAL);
