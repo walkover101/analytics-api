@@ -119,12 +119,7 @@ function skipRecordsUntilId(mongoDocs: any[], documentId: string) {
 
     for (let i = 0; i < mongoDocs.length; i++) {
         const doc = mongoDocs[i];
-
-        if (offsetReached) {
-            result.push(doc);
-            continue;
-        }
-
+        if (offsetReached && result.push(doc)) continue;
         if (doc?._id == documentId) offsetReached = true;
     }
 
