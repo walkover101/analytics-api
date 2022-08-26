@@ -10,9 +10,16 @@ import Tracker, { jobType } from "../models/trackers.model";
 import OtpModel from "../models/otp-model";
 
 let mongoConnection: MongoClient;
-const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
-const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || '';
-const OTP_REPORT_COLLECTION = process.env.OTP_REPORT_COLLECTION || '';
+const COLLECTION = {
+    requestData: process.env.REQUEST_DATA_COLLECTION || '',
+    reportData: process.env.REPORT_DATA_COLLECTION || '',
+    otpReport: process.env.OTP_REPORT_COLLECTION || ''
+}
+const FILTER_BY = {
+    requestData: 'requestDate',
+    reportData: 'sentTime',
+    otpReport: 'sentTimeReport'
+}
 
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);
 const BATCH_SIZE = +(process.env.BATCH_SIZE || 1000);
@@ -20,11 +27,8 @@ const BUFFER_INTERVAL = +(process.env.BUFFER_INTERVAL || 5); // in mins
 const LAG = +(process.env.SYNC_LAG || 48 * 60 * 60);  // Minutes | Default: 48hrs
 const RETRY_INTERVAL = +(process.env.RETRY_INTERVAL || 10) * 1000; // in secs
 
-const FILTER_BY = {
-    requestData: 'requestDate',
-    reportData: 'sentTime',
-    otpReport: 'sentTimeReport'
-}
+const maxEndTime = () => DateTime.now().minus({ minutes: LAG });
+const isTimeLimitExhausted = (timestamp: DateTime) => maxEndTime().diff(timestamp, 'minute').minutes <= 0;
 
 async function initSynching(job: jobType) {
     logger.info(`MONGO_DOCS_LIMIT: ${MONGO_DOCS_LIMIT} | BATCH_SIZE: ${BATCH_SIZE} | BUFFER_INTERVAL: ${BUFFER_INTERVAL}mins | LAG: ${LAG}min`);
@@ -32,7 +36,7 @@ async function initSynching(job: jobType) {
     while (true) {
         try {
             const tracker: any = await Tracker.findByPk(job);
-            const { fromTimestamp, toTimestamp } = getTimestamp(tracker);
+            const { fromTimestamp, toTimestamp } = getTimestamps(tracker);
 
             if (isTimeLimitExhausted(toTimestamp)) {
                 logger.info(`Time limit exhausted, going to wait for ${(BUFFER_INTERVAL + 1)}mins`);
@@ -52,6 +56,25 @@ async function initSynching(job: jobType) {
             logger.error(error);
             await delay(RETRY_INTERVAL);
         }
+    }
+}
+
+async function fetchDocsFromMongo(job: jobType, fromTimestamp: DateTime, toTimestamp: DateTime): Promise<any[]> {
+    try {
+        const query = {
+            [FILTER_BY[job]]: {
+                $gte: fromTimestamp,
+                $lte: toTimestamp
+            }
+        };
+
+        logger.info(`[MONGO] Fetching docs...`);
+        logger.info(`[MONGO] Query - ${JSON.stringify(query)}`);
+        const collection = mongoConnection.db().collection(COLLECTION[job]);
+        return collection.find(query).sort({ [FILTER_BY[job]]: 1 }).limit(MONGO_DOCS_LIMIT).toArray();
+    } catch (err: any) {
+        logger.error(err);
+        process.exit(1);
     }
 }
 
@@ -83,69 +106,7 @@ async function insertBatchInBigQuery(job: jobType, batch: any[]) {
     }
 }
 
-async function fetchDocsFromMongo(job: jobType, fromTimestamp: DateTime, toTimestamp: DateTime): Promise<any[]> {
-    try {
-        if (job === jobType.REQUEST_DATA) return fetchRequestDataDocs(fromTimestamp, toTimestamp);
-        if (job === jobType.REPORT_DATA) return fetchReportDataDocs(fromTimestamp, toTimestamp);
-        if (job === jobType.OTP_REPORT) return fetchOtpReportDocs(fromTimestamp, toTimestamp);
-        return Promise.resolve([]);
-    } catch (err: any) {
-        logger.error(err);
-        process.exit(1);
-    }
-}
-
-function fetchRequestDataDocs(fromTimestamp: DateTime, toTimestamp: DateTime) {
-    const query = {
-        [FILTER_BY.requestData]: {
-            $gte: fromTimestamp,
-            $lte: toTimestamp
-        }
-    };
-
-    logger.info(`[MONGO] Fetching docs...`);
-    logger.info(JSON.stringify(query));
-    const collection = mongoConnection.db().collection(REQUEST_DATA_COLLECTION);
-    return collection.find(query).sort({ [FILTER_BY.requestData]: 1 }).limit(MONGO_DOCS_LIMIT).toArray();
-}
-
-function fetchReportDataDocs(fromTimestamp: DateTime, toTimestamp: DateTime) {
-    const query = {
-        [FILTER_BY.reportData]: {
-            $gte: fromTimestamp,
-            $lte: toTimestamp
-        }
-    };
-
-    logger.info(`[MONGO] Fetching docs...`);
-    logger.info(`[MONGO] Query - ${JSON.stringify(query)}`);
-    const collection = mongoConnection.db().collection(REPORT_DATA_COLLECTION);
-    return collection.find(query).sort({ [FILTER_BY.reportData]: 1 }).limit(MONGO_DOCS_LIMIT).toArray();
-}
-
-function fetchOtpReportDocs(fromTimestamp: DateTime, toTimestamp: DateTime) {
-    const query = {
-        [FILTER_BY.otpReport]: {
-            $gte: fromTimestamp,
-            $lte: toTimestamp
-        }
-    };
-
-    logger.info(`[MONGO] Fetching docs...`);
-    logger.info(`[MONGO] Query - ${JSON.stringify(query)}`);
-    const collection = mongoConnection.db().collection(OTP_REPORT_COLLECTION);
-    return collection.find(query).sort({ [FILTER_BY.otpReport]: 1 }).limit(MONGO_DOCS_LIMIT).toArray();
-}
-
-function maxEndTime() {
-    return DateTime.now().minus({ minutes: LAG });
-}
-
-function isTimeLimitExhausted(timestamp: DateTime) {
-    return maxEndTime().diff(timestamp, 'minute').minutes <= 0
-}
-
-function getTimestamp(tracker: any) {
+function getTimestamps(tracker: any) {
     if (!tracker?.lastTimestamp) {
         logger.error('lastTimestamp is required.');
         process.exit(1);
