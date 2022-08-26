@@ -47,12 +47,11 @@ class SmsLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `reportData.user_pid = "${companyId}"`;
-        conditions += ` AND requestData.requestUserid = "${companyId}"`;
-        conditions += ` AND (DATETIME(reportData.sentTime, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
+        let conditions = `(DATETIME(reportData.sentTime, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
         conditions += ` AND (DATETIME(requestData.requestDate, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.toFormat('yyyy-MM-dd')}")`;
 
         // optional conditions
+        if (companyId) conditions += `AND reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
         if (query.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(query.route.splitAndTrim(','))})`;
 
         return conditions;
