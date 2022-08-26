@@ -3,7 +3,7 @@ import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, REPORT_DATA_TABLE_
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
@@ -11,7 +11,7 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     vendorId: 'reportData.smsc',
 
     // from request-data
-    date: 'STRING(DATE(requestData.requestDate))',
+    date: `STRING(DATE(requestData.requestDate,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'requestData.node_id'
 };
 
@@ -32,6 +32,8 @@ class SmsAnalyticsService {
     }
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
+        startDate = startDate.setZone(timeZone);
+        endDate = endDate.setZone(timeZone);
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
@@ -51,8 +53,8 @@ class SmsAnalyticsService {
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
-        let conditions = `(reportData.sentTime BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 3 }).toFormat('yyyy-MM-dd')}")`;
-        conditions += ` AND (DATETIME(requestData.requestDate, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
+        let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).toFormat('yyyy-MM-dd')}")`;
+        conditions += ` AND (requestData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += `AND reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
