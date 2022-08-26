@@ -3,11 +3,11 @@ import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
 import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 
-// POST '/exports/sms' | '/exports/mail'
+// POST '/exports/sms' | '/exports/otp' | '/exports/mail'
 const downloadCsv = async (req: Request, res: Response) => {
     try {
         const { companyId, fields, timezone } = req.query;
-        const resourceType = req.params[0]; // sms or mail
+        const resourceType = req.params[0]; // sms or otp or mail
         const startDate = formatDate(req.query.startDate as string);
         const endDate = formatDate(req.query.endDate as string);
         if (!companyId) throw 'Company Id is mandatory';
@@ -31,11 +31,11 @@ const downloadCsv = async (req: Request, res: Response) => {
     }
 }
 
-// GET '/exports/sms' | '/exports/mail'
+// GET '/exports/sms' | '/exports/otp' | '/exports/mail'
 const getDownloadLinks = async (req: Request, res: Response) => {
     try {
         let { companyId } = req.query;
-        let resourceType = req.params[0]; // sms or mail
+        let resourceType = req.params[0]; // sms or otp or mail
         logger.info(`[DOWNLOAD](companyId: ${companyId}) Fetching records...`);
         const snapshot = await Download.index(resourceType, companyId as string);
         const docs = snapshot.docs;

@@ -5,6 +5,8 @@ const router = express.Router();
 
 router.get('/sms', logsController.getSmsLogs);
 
+router.get('/otp', logsController.getOtpLogs);
+
 router.get('/mail', logsController.getMailLogs);
 router.get('/mail/:requestId', logsController.getMailLogDetails);
 
