@@ -32,8 +32,8 @@ class SmsAnalyticsService {
     }
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
-        startDate = startDate.setZone(timeZone);
-        endDate = endDate.setZone(timeZone);
+        startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
@@ -51,9 +51,10 @@ class SmsAnalyticsService {
         return query;
     }
 
+
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
-        let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).toFormat('yyyy-MM-dd')}")`;
+        let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
         conditions += ` AND (requestData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
