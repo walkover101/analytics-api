@@ -81,7 +81,7 @@ export default class OtpModel {
         this.sentTime = attr['sentTime'] && new Date(attr['sentTime']);
         this.unicode = +attr['unicode'];
         this.status = +attr['status'];
-        this.userCredit = +attr['userCredit'];
+        this.userCredit = parseFloat(attr['userCredit']);
         this.templateId = attr['template_id'];
         this.extraParam = attr['extra_param'];
         this.dcc = attr['DCC'];
