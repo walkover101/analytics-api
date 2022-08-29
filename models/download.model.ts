@@ -1,11 +1,12 @@
 
-import msg91Dataset from '../database/big-query-service';
 import { DateTime } from 'luxon';
 import { db } from '../firebase';
+import { CollectionReference } from 'firebase-admin/firestore';
 import logger from '../logger/logger';
+import msg91Dataset from '../database/big-query-service';
 import smsLogsService from '../services/sms/sms-logs-service';
 import mailLogsService from '../services/email/mail-logs-service';
-import { CollectionReference } from 'firebase-admin/firestore';
+import otpLogsService from '../services/otp/otp-logs-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -16,7 +17,8 @@ export enum DOWNLOAD_STATUS {
 
 export enum RESOURCE_TYPE {
     SMS = 'sms',
-    EMAIL = 'mail'
+    EMAIL = 'mail',
+    OTP = 'otp'
 }
 
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
@@ -42,7 +44,17 @@ export default class Download {
     updatedAt: Date = new Date();
 
     constructor(resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, fields: string = '', query: any) {
-        this.resourceType = resourceType === RESOURCE_TYPE.EMAIL ? RESOURCE_TYPE.EMAIL : RESOURCE_TYPE.SMS;
+        switch (resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                this.resourceType = RESOURCE_TYPE.EMAIL;
+                break;
+            case RESOURCE_TYPE.OTP:
+                this.resourceType = RESOURCE_TYPE.OTP;
+                break;
+            default:
+                this.resourceType = RESOURCE_TYPE.SMS;
+        }
+
         this.companyId = companyId;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -52,11 +64,9 @@ export default class Download {
     }
 
     public static index(resourceType: string, companyId?: string) {
-        if (companyId) {
-            return collection.where('companyId', '==', companyId).where('resourceType', '==', resourceType).get();
-        }
-
-        return collection.get();
+        const query = collection.where('resourceType', '==', resourceType);
+        if (companyId) query.where('companyId', '==', companyId);
+        return query.get();
     }
 
     public save() {
@@ -94,6 +104,8 @@ export default class Download {
         switch (this.resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 return mailLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
+            case RESOURCE_TYPE.OTP:
+                return otpLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             default:
                 return smsLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
         }
