@@ -18,7 +18,7 @@ const COLLECTION = {
 const FILTER_BY = {
     requestData: 'requestDate',
     reportData: 'sentTime',
-    otpReport: 'sentTimeReport'
+    otpReport: 'requestDate'
 }
 
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);
