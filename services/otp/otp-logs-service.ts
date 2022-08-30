@@ -65,7 +65,7 @@ class OtpLogsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
@@ -79,7 +79,7 @@ class OtpLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
