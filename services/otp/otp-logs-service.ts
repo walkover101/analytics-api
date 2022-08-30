@@ -4,7 +4,7 @@ import { getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     telNum: "otpData.telNum",
     oppri: "otpData.oppri",
@@ -64,6 +64,8 @@ class OtpLogsService {
     }
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
+        startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
@@ -77,7 +79,7 @@ class OtpLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(DATETIME(otpData.requestDate, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.plus({ days: 1 }).toFormat('yyyy-MM-dd')}")`;
+        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
