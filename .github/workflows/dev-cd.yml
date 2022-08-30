@@ -11,13 +11,13 @@ jobs:
     - name: Deploy using ssh
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_KEY }}
+        host: ${{ secrets.DEV_HOST }}
+        username: ${{ secrets.DEV_USERNAME }}
+        key: ${{ secrets.DEV_PRIVATE_KEY }}
         port: 22
         script: |
           sudo su
-          cd /home/test-apps/analytics-api
+          cd /home/dev-apps/analytics-api
           sudo git pull origin master
           sudo git status
           sudo npm install --only=pro
