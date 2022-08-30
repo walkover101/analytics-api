@@ -33,7 +33,7 @@ class SmsAnalyticsService {
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
