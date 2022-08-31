@@ -3,6 +3,8 @@ import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
 import Download, { DOWNLOAD_STATUS, GCS_CSV_RETENTION } from '../models/download.model';
 
+const DEFAULT_PAGE_SIZE = 3;
+
 // POST '/exports/sms' | '/exports/otp' | '/exports/mail'
 const downloadCsv = async (req: Request, res: Response) => {
     try {
@@ -31,21 +33,23 @@ const downloadCsv = async (req: Request, res: Response) => {
     }
 }
 
-// GET '/exports/sms' | '/exports/otp' | '/exports/mail'
+// GET '/exports' | '/exports/sms' | '/exports/otp' | '/exports/mail'
 const getDownloadLinks = async (req: Request, res: Response) => {
     try {
-        let { companyId } = req.query;
-        let resourceType = req.params[0]; // sms or otp or mail
-        logger.info(`[DOWNLOAD](companyId: ${companyId}) Fetching records...`);
-        const snapshot = await Download.index(resourceType, companyId as string);
+        let { companyId, resourceType, page, pageSize } = req.query;
+        const pageNumber = page ? +page : 1;
+        const offset = pageSize ? +pageSize : DEFAULT_PAGE_SIZE;
+        resourceType = req.params[0] || resourceType; // Pick from path param else from query
+        logger.info(`[DOWNLOAD](companyId: ${companyId} | resourceType: ${resourceType}) Fetching records...`);
+        const snapshot = await Download.index(pageNumber, offset, companyId as string, resourceType as string);
         const docs = snapshot.docs;
-        const results = docs.map(doc => {
+        const results = docs.map((doc: any) => {
             const document = doc.data();
             document.id = doc.id;
             document.expiry = `${GCS_CSV_RETENTION} days`;
             return document;
         });
-        res.send(results);
+        res.send({ data: results });
     } catch (err: any) {
         logger.error(err);
         res.status(500).send({ "error": err.message });

@@ -65,10 +65,12 @@ export default class Download {
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
     }
 
-    public static index(resourceType: string, companyId?: string) {
-        const query = collection.where('resourceType', '==', resourceType);
-        if (companyId) query.where('companyId', '==', companyId);
-        return query.get();
+    public static index(page: number, pageSize: number, companyId?: string, resourceType?: string) {
+        let query: any = collection;
+        if (resourceType) query = query.where('resourceType', '==', resourceType);
+        if (companyId) query = query.where('companyId', 'in', [companyId, `${companyId}`]);
+        const offset = page > 1 ? (page - 1) * pageSize : 0;
+        return query.limit(pageSize).offset(offset).get();
     }
 
     public save() {
