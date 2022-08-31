@@ -14,7 +14,7 @@ const downloadCsv = async (req: Request, res: Response) => {
         const download = new Download(resourceType as string, companyId as string, startDate, endDate, timezone as string, fields as string, req.query);
         const downloadDoc = await download.save();
         download.id = downloadDoc.id;
-        res.send(download);
+        res.send({ status: DOWNLOAD_STATUS.PROCESSING, message: 'Request Accepted. Please check back after few minutes.' });
 
         try {
             const [exportJob] = await download.createJob();
@@ -27,7 +27,7 @@ const downloadCsv = async (req: Request, res: Response) => {
         }
     } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error });
+        res.status(400).send({ status: DOWNLOAD_STATUS.ERROR, error });
     }
 }
 
