@@ -6,7 +6,7 @@ const serviceAccountCreds = require(process.env.FIREBASE_CREDENTIALS_FILE_PATH |
 
 admin.initializeApp({
   credential: cert(serviceAccountCreds),
-  databaseURL: `https://admin-panel-test-b5a7e-default-rtdb.firebaseio.com`
+  databaseURL: process.env.FIREBASE_DB_URL
 });
 
 export const db: Firestore = admin.firestore();

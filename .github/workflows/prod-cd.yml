@@ -1,4 +1,4 @@
-name: CD
+name: PROD_CD
 
 on:
     push:
@@ -17,8 +17,8 @@ jobs:
         port: 22
         script: |
           sudo su
-          cd /home/test-apps/analytics-api
-          sudo git pull origin master
+          cd /home/apps/analytics-api
+          sudo git pull origin production
           sudo git status
           sudo npm install --only=pro
           sudo npm run build

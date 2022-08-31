@@ -3,11 +3,11 @@ import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, OTP_TABLE_ID } fro
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     country: 'otpData.countryCode',
-    date: 'STRING(DATE(otpData.requestDate))',
+    date: `STRING(DATE(otpData.requestDate,'${DEFAULT_TIMEZONE}'))`,
     vendorId: 'otpData.smsc'
 };
 
@@ -27,6 +27,8 @@ class OtpAnalyticsService {
     }
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
+        startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
@@ -44,7 +46,7 @@ class OtpAnalyticsService {
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
-        let conditions = `(DATETIME(otpData.requestDate, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
+        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').plus({ days: 1 }).toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
