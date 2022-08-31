@@ -42,7 +42,7 @@ async function processMsgs(msgs: any[]) {
 
     try {
         const mailEvents: Array<MailEvent> = [];
-        msgs.map((mailEvent: any) => mailEvents.push(new MailEvent(mailEvent)));
+        msgs.map(msg => msg.map((mailEvent: any) => mailEvents.push(new MailEvent(mailEvent))));
         if (mailEvents.length) await MailEvent.insertMany(mailEvents);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;

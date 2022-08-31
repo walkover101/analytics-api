@@ -1,4 +1,5 @@
 import "../startup/dotenv";
+import '../startup/string.extensions';
 import logger from "./../logger/logger";
 import { has } from 'lodash';
 import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-job';
