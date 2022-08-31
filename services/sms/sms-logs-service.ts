@@ -1,6 +1,5 @@
 
 import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
-import Download from '../../models/download.model';
 import { getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';

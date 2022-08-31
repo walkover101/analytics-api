@@ -3,7 +3,7 @@ import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
 import Download, { DOWNLOAD_STATUS, GCS_CSV_RETENTION } from '../models/download.model';
 
-const DEFAULT_PAGE_SIZE = 30;
+const DEFAULT_PAGE_SIZE = +(process.env.DEFAULT_PAGE_SIZE || 30);
 
 // POST '/exports/sms' | '/exports/otp' | '/exports/mail'
 const downloadCsv = async (req: Request, res: Response) => {
