@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
-import Download, { DOWNLOAD_STATUS } from '../models/download.model';
+import Download, { DOWNLOAD_STATUS, GCS_CSV_RETENTION } from '../models/download.model';
 
 // POST '/exports/sms' | '/exports/otp' | '/exports/mail'
 const downloadCsv = async (req: Request, res: Response) => {
@@ -42,6 +42,7 @@ const getDownloadLinks = async (req: Request, res: Response) => {
         const results = docs.map(doc => {
             const document = doc.data();
             document.id = doc.id;
+            document.expiry = `${GCS_CSV_RETENTION} days`;
             return document;
         });
         res.send(results);

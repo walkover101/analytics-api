@@ -21,7 +21,9 @@ export enum RESOURCE_TYPE {
     OTP = 'otp'
 }
 
-const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
+export const GCS_CSV_RETENTION = process.env.GCS_CSV_RETENTION || 30; // in days
+
+const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
 const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const GCS_FOLDER_NAME = process.env.GCS_SMS_EXPORTS_FOLDER || 'sms-exports';
