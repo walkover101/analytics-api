@@ -3,7 +3,7 @@ import { getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
     requestId: 'mailRequest.requestId',
