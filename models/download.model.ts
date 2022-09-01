@@ -65,12 +65,21 @@ export default class Download {
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
     }
 
-    public static index(page: number, pageSize: number, companyId?: string, resourceType?: string) {
+    public static async index(page: number, pageSize: number, companyId?: string, resourceType?: string) {
         let query: any = collection;
         if (resourceType) query = query.where('resourceType', '==', resourceType);
         if (companyId) query = query.where('companyId', 'in', [companyId, `${companyId}`]);
         const offset = page > 1 ? (page - 1) * pageSize : 0;
-        return query.limit(pageSize).offset(offset).get();
+        const dataSnapshot = await query.limit(pageSize).offset(offset).get();
+        const countSnapshot = await query.select().get();
+        const docs = dataSnapshot.docs;
+        const results = docs.map((doc: any) => {
+            const document = doc.data();
+            document.id = doc.id;
+            document.expiry = `${GCS_CSV_RETENTION} days`;
+            return document;
+        });
+        return { data: results, pagination: { total: countSnapshot.docs?.length, page, pageSize } }
     }
 
     public save() {

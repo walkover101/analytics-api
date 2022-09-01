@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
-import Download, { DOWNLOAD_STATUS, GCS_CSV_RETENTION } from '../models/download.model';
+import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 
 const DEFAULT_PAGE_SIZE = +(process.env.DEFAULT_PAGE_SIZE || 30);
 
@@ -41,15 +41,8 @@ const getDownloadLinks = async (req: Request, res: Response) => {
         const offset = pageSize ? +pageSize : DEFAULT_PAGE_SIZE;
         resourceType = req.params[0] || resourceType; // Pick from path param else from query
         logger.info(`[DOWNLOAD](companyId: ${companyId} | resourceType: ${resourceType}) Fetching records...`);
-        const snapshot = await Download.index(pageNumber, offset, companyId as string, resourceType as string);
-        const docs = snapshot.docs;
-        const results = docs.map((doc: any) => {
-            const document = doc.data();
-            document.id = doc.id;
-            document.expiry = `${GCS_CSV_RETENTION} days`;
-            return document;
-        });
-        res.send({ data: results });
+        const result = await Download.index(pageNumber, offset, companyId as string, resourceType as string);
+        res.send(result);
     } catch (err: any) {
         logger.error(err);
         res.status(500).send({ "error": err.message });
