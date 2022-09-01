@@ -8,7 +8,7 @@ const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
     status: 'reportData.status',
-    sentTime: `STRING(DATE(requestData.sentTime,'${DEFAULT_TIMEZONE}'))`,
+    sentTime: `STRING(DATE(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
     deliveryTime: 'STRING(reportData.deliveryTime)',
     requestId: 'reportData.requestID',
     telNum: 'reportData.telNum',

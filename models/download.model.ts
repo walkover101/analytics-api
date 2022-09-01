@@ -28,7 +28,7 @@ const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
 const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const GCS_FOLDER_NAME = process.env.GCS_SMS_EXPORTS_FOLDER || 'sms-exports';
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const collection: CollectionReference = db.collection(DOWNLOADS_COLLECTION);
 
 export default class Download {
