@@ -80,6 +80,10 @@ function getDefaultDate(dayDiff: number = 7): { from: string, to: string } {
     };
 }
 
+function getAgeInDays(date: string) {
+    return (DateTime.fromISO(date).diffNow('days').days) * -1
+}
+
 export {
     delay,
     formatDate,
@@ -88,5 +92,6 @@ export {
     isValidObjectId,
     extractCountryCode,
     getHashCode,
-    getDefaultDate
+    getDefaultDate,
+    getAgeInDays
 }
