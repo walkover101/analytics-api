@@ -5,12 +5,16 @@ import { has } from 'lodash';
 import { mailRequestsConsumer } from './mail-requests-consumer';
 import { mailReportsConsumer } from './mail-reports-consumer';
 import { mailEventsConsumer } from './mail-events-consumer';
+import { waReportsConsumer } from "./wa-reports-consumer";
+import { waRequestsConsumer } from "./wa-requests-consumer";
 
 // Register your consumers here
 const Consumers: any = {
     mailRequestsConsumer,
     mailReportsConsumer,
-    mailEventsConsumer
+    mailEventsConsumer,
+    waReportsConsumer,
+    waRequestsConsumer
 };
 
 function invalidConsumerName(consumerName: string): Boolean {
