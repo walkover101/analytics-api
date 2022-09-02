@@ -4,6 +4,7 @@ import logger from '../logger/logger';
 const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: 'analytics.sqlite',
+    logging: false
 });
 
 export default async function () {

@@ -1,11 +1,13 @@
 
-import msg91Dataset from '../database/big-query-service';
 import { DateTime } from 'luxon';
 import { db } from '../firebase';
-import logger from '../logger/logger';
-import smsExportService from '../services/sms/sms-export-service';
-import mailExportService from '../services/email/mail-export-service';
 import { CollectionReference } from 'firebase-admin/firestore';
+import logger from '../logger/logger';
+import msg91Dataset from '../database/big-query-service';
+import smsLogsService from '../services/sms/sms-logs-service';
+import mailLogsService from '../services/email/mail-logs-service';
+import otpLogsService from '../services/otp/otp-logs-service';
+import { getAgeInDays } from '../services/utility-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -16,14 +18,17 @@ export enum DOWNLOAD_STATUS {
 
 export enum RESOURCE_TYPE {
     SMS = 'sms',
-    EMAIL = 'mail'
+    EMAIL = 'mail',
+    OTP = 'otp'
 }
 
-const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads'
+export const GCS_CSV_RETENTION = +(process.env.GCS_CSV_RETENTION || 30); // in days
+
+const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
 const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const GCS_FOLDER_NAME = process.env.GCS_SMS_EXPORTS_FOLDER || 'sms-exports';
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const collection: CollectionReference = db.collection(DOWNLOADS_COLLECTION);
 
 export default class Download {
@@ -42,7 +47,17 @@ export default class Download {
     updatedAt: Date = new Date();
 
     constructor(resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, fields: string = '', query: any) {
-        this.resourceType = resourceType === RESOURCE_TYPE.EMAIL ? RESOURCE_TYPE.EMAIL : RESOURCE_TYPE.SMS;
+        switch (resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                this.resourceType = RESOURCE_TYPE.EMAIL;
+                break;
+            case RESOURCE_TYPE.OTP:
+                this.resourceType = RESOURCE_TYPE.OTP;
+                break;
+            default:
+                this.resourceType = RESOURCE_TYPE.SMS;
+        }
+
         this.companyId = companyId;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -51,12 +66,23 @@ export default class Download {
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
     }
 
-    public static index(resourceType: string, companyId?: string) {
-        if (companyId) {
-            return collection.where('companyId', '==', companyId).where('resourceType', '==', resourceType).get();
-        }
-
-        return collection.get();
+    public static async index(page: number, pageSize: number, companyId?: string, resourceType?: string) {
+        let query: any = collection;
+        if (resourceType) query = query.where('resourceType', '==', resourceType);
+        if (companyId) query = query.where('companyId', 'in', [companyId, `${companyId}`]);
+        const offset = page > 1 ? (page - 1) * pageSize : 0;
+        const dataSnapshot = await query.limit(pageSize).offset(offset).get();
+        const countSnapshot = await query.select().get();
+        const docs = dataSnapshot.docs;
+        const results = docs.map((doc: any) => {
+            const document = doc.data();
+            document.id = doc.id;
+            document.retentionStatus = this.getExpiryStatus(document.createdAt);
+            document.isExpired = getAgeInDays(document.createdAt) > GCS_CSV_RETENTION;
+            if (document.isExpired) document.file = null;
+            return document;
+        });
+        return { data: results, pagination: { total: countSnapshot.docs?.length, page, pageSize } }
     }
 
     public save() {
@@ -93,9 +119,11 @@ export default class Download {
     private getQueryStatement() {
         switch (this.resourceType) {
             case RESOURCE_TYPE.EMAIL:
-                return mailExportService.getQuery(this);
+                return mailLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
+            case RESOURCE_TYPE.OTP:
+                return otpLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             default:
-                return smsExportService.getQuery(this);
+                return smsLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
         }
     }
 
@@ -117,5 +145,10 @@ export default class Download {
                 SELECT * FROM _SESSION.${downloadId};
             END;
         `;
+    }
+
+    private static getExpiryStatus(createdAt: string) {
+        const days = GCS_CSV_RETENTION - Math.floor(getAgeInDays(createdAt));
+        return days > 0 ? `Removed after ${days} days` : 'Removed'
     }
 }

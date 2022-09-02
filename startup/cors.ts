@@ -9,4 +9,12 @@ export default function (app: Application) {
       preflightContinue: true,
     })
   );
+  app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.end();
+    } else {
+      next();
+    }
+  });
 };

@@ -3,11 +3,11 @@ import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 import { getValidFields } from '../utility-service';
 
-const DEFAULT_TIMEZONE: string = '+05:30';
+const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request
-    date: 'STRING(DATE(request.createdAt))',
+    date: `STRING(DATE(request.createdAt,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'request.nodeId'
 };
 
@@ -27,6 +27,8 @@ class MailAnalyticsService {
     }
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
+        startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
@@ -51,13 +53,13 @@ class MailAnalyticsService {
                     ARRAY_AGG(eventId ORDER BY createdAt DESC)[OFFSET(0)] as eventId
                 FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REP_TABLE_ID}\`
                 WHERE
-                    (DATETIME(requestTime, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))
+                    (requestTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
                     AND companyId = "${companyId}"
                 GROUP BY requestId`;
     }
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
-        let conditions = `(DATETIME(request.createdAt, '${timeZone}') BETWEEN DATETIME("${startDate.toFormat('yyyy-MM-dd')}", '${timeZone}') AND DATETIME("${endDate.toFormat('yyyy-MM-dd')}", '${timeZone}'))`;
+        let conditions = `(request.createdAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
         conditions += ` AND request.companyId = "${companyId}"`;
 
         // optional conditions

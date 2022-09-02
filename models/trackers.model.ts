@@ -1,9 +1,11 @@
 import { sequelize, DataTypes } from '../database/sequelize-service';
 import { isValidObjectId } from '../services/utility-service';
+import { DateTime } from 'luxon';
 
 export enum jobType {
     REQUEST_DATA = 'requestData',
-    REPORT_DATA = 'reportData'
+    REPORT_DATA = 'reportData',
+    OTP_REPORT = 'otpReport'
 };
 
 const Tracker = sequelize.define("Tracker", {
@@ -23,13 +25,22 @@ const Tracker = sequelize.define("Tracker", {
     },
     lastDocumentId: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
         set(value: string) {
-            if (!isValidObjectId(value)) {
+            if (value && !isValidObjectId(value)) {
                 throw new Error('Invalid lastDocumentId');
             }
 
             this.setDataValue('lastDocumentId', value);
+        }
+    },
+    lastTimestamp: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        set(value: string) {
+            if (!DateTime.fromISO(value).isValid) throw new Error('Invalid lastTimestamp');
+
+            this.setDataValue('lastTimestamp', value);
         }
     }
 });
