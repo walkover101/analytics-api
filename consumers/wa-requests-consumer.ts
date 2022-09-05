@@ -41,7 +41,15 @@ async function processMsgs(msgs: any[]) {
     logger.info(`[CONSUMER](WA Requests) Buffer full, processing ${msgs.length} messages...`);
     try {
         const waRequests: Array<WARequest> = [];
-        msgs.map(msg => waRequests.push(new WARequest(msg)));
+        msgs.map(msg => {
+            let temp = msg.content = msg?.content;
+            try{
+                msg.content = JSON.stringify(msg?.content);
+            }catch(error){
+                msg.content = temp;
+            }
+            waRequests.push(new WARequest(msg))
+        });
         if (waRequests.length) await WARequest.insertMany(waRequests);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
