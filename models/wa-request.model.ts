@@ -5,10 +5,10 @@ const waRequestTable: Table = msg91Dataset.table(WA_REQ_TABLE_ID);
 
 export default class WARequest {
     uuid: string;
-    companyId: number;
+    companyId: string;
     integratedNumber: string;
     customerNumber: string;
-    vendorId: number;
+    vendorId: string;
     messageType: string;
     direction: number;
     timestamp: Date;

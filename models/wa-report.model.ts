@@ -5,10 +5,10 @@ const waReportTable: Table = msg91Dataset.table(WA_REP_TABLE_ID);
 
 export default class WAReport {
     uuid: string;
-    companyId: number;
+    companyId: string;
     price: number;
     origin: string;
-    window_exp: Date;
+    windowExp: Date;
     status: string;
     timestamp: Date;
     submittedAt: Date;
@@ -21,7 +21,7 @@ export default class WAReport {
         this.submittedAt = attr['submitted_at'];
         this.price = attr['price'];
         this.origin = attr['origin'];
-        this.window_exp = attr['window_exp'];
+        this.windowExp = attr['window_exp'];
     }
 
     public static insertMany(rows: Array<WAReport>) {
