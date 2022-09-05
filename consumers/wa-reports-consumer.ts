@@ -42,7 +42,7 @@ async function processMsgs(msgs: any[]) {
 
     try {
         const waReports: Array<WAReport> = [];
-        msgs.map(msg => msg.map((waRep: any) => waReports.push(new WAReport(waRep))));
+        msgs.map(msg => waReports.push(new WAReport(msg)));
         if (waReports.length) await WAReport.insertMany(waReports);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;

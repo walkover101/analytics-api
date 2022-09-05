@@ -10,6 +10,7 @@ export default class WAReport {
     origin: string;
     windowExp: Date;
     status: string;
+    reason: string;
     timestamp: Date;
     submittedAt: Date;
 
@@ -17,6 +18,7 @@ export default class WAReport {
         this.uuid = attr['message_uuid']; // Uniquely identifies each request
         this.companyId = attr['company_id']; // Comapany Id
         this.status = attr['status']; // Sent/ Delivered/ Read
+        this.reason = attr['failure_reason'];
         this.timestamp = attr['sent_at'] || attr['delivered_at'] || attr['read_at'];
         this.submittedAt = attr['submitted_at'];
         this.price = attr['price'];
