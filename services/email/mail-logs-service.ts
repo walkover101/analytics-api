@@ -47,7 +47,7 @@ class MailLogsService {
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes}
             FROM ${MAIL_REQ_TABLE_ID} AS mailRequest 
-            JOIN ${MAIL_REP_TABLE_ID} as mailReport 
+            LEFT JOIN ${MAIL_REP_TABLE_ID} as mailReport 
             ON mailRequest.requestId = mailReport.requestId 
             WHERE ${whereClause}`;
         logger.info(query);
