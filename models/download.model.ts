@@ -27,7 +27,6 @@ export const GCS_CSV_RETENTION = +(process.env.GCS_CSV_RETENTION || 30); // in d
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
 const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
-const GCS_FOLDER_NAME = process.env.GCS_SMS_EXPORTS_FOLDER || 'sms-exports';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const collection: CollectionReference = db.collection(DOWNLOADS_COLLECTION);
 
@@ -108,7 +107,8 @@ export default class Download {
 
     public createJob(format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${this.id}`;
+        const GCS_FOLDER_NAME = this.resourceType || 'default';
+        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${this.companyId}_${this.id}`;
         const exportFilePath = `gs://${filePath}_ *.csv`;
         this.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
         let queryStatement = this.getQueryStatement();
@@ -140,7 +140,7 @@ export default class Download {
                     format='${format}',
                     overwrite=true,
                     header=true,
-                    field_delimiter=';'
+                    field_delimiter=','
                 ) AS
                 SELECT * FROM _SESSION.${downloadId};
             END;
