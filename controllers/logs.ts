@@ -5,6 +5,7 @@ import smsLogsService from "../services/sms/sms-logs-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
 import MailEvent from '../models/mail-event.model';
 import otpLogsService from "../services/otp/otp-logs-service";
+import waLogsService from "../services/whatsapp/wa-logs-service";
 
 // GET '/logs/sms'
 const getSmsLogs = async (req: Request, res: Response) => {
@@ -33,6 +34,23 @@ const getOtpLogs = async (req: Request, res: Response) => {
         const attributes = fields?.length ? fields.splitAndTrim(',') : [];
 
         const logs = await otpLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
+        res.send(logs);
+    } catch (error: any) {
+        logger.error(error);
+        res.status(400).send({ error: error?.message || error });
+    }
+}
+
+// GET '/logs/wa'
+const getWaLogs = async (req: Request, res: Response) => {
+    try {
+        const params = { ...req.query, ...req.params } as any;
+        let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
+        const fromDate = formatDate(startDate);
+        const toDate = formatDate(endDate);
+        const attributes = fields?.length ? fields.splitAndTrim(',') : [];
+
+        const logs = await waLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
         res.send(logs);
     } catch (error: any) {
         logger.error(error);
@@ -76,6 +94,7 @@ const getMailLogDetails = async (req: Request, res: Response) => {
 export {
     getSmsLogs,
     getOtpLogs,
+    getWaLogs,
     getMailLogs,
     getMailLogDetails
 };

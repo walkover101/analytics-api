@@ -5,7 +5,7 @@ import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 
 const DEFAULT_PAGE_SIZE = +(process.env.DEFAULT_PAGE_SIZE || 30);
 
-// POST '/exports/sms' | '/exports/otp' | '/exports/mail'
+// POST '/exports/sms' | '/exports/otp' | '/exports/mail' | '/exports/wa'
 const downloadCsv = async (req: Request, res: Response) => {
     try {
         const { companyId, fields, timezone } = req.query;
@@ -33,7 +33,7 @@ const downloadCsv = async (req: Request, res: Response) => {
     }
 }
 
-// GET '/exports' | '/exports/sms' | '/exports/otp' | '/exports/mail'
+// GET '/exports' | '/exports/sms' | '/exports/otp' | '/exports/mail' | '/exports/wa'
 const getDownloadLinks = async (req: Request, res: Response) => {
     try {
         let { companyId, resourceType, page, pageSize } = req.query;
