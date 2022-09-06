@@ -41,11 +41,13 @@ class MailLogsService {
     }
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
+        startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes}
             FROM ${MAIL_REQ_TABLE_ID} AS mailRequest 
-            JOIN ${MAIL_REP_TABLE_ID} as mailReport 
+            LEFT JOIN ${MAIL_REP_TABLE_ID} as mailReport 
             ON mailRequest.requestId = mailReport.requestId 
             WHERE ${whereClause}`;
         logger.info(query);
@@ -56,8 +58,8 @@ class MailLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(DATETIME(mailRequest.createdAt, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.toFormat('yyyy-MM-dd')}")`;
-        conditions += ` AND (DATETIME(mailReport.requestTime, '${timeZone}') BETWEEN "${startDate.toFormat('yyyy-MM-dd')}" AND "${endDate.toFormat('yyyy-MM-dd')}")`;
+        let conditions = `(mailRequest.createdAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        conditions += ` AND (mailReport.requestTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (query.subject) conditions += ` AND UPPER(mailRequest.subject) LIKE '%${query.subject.toUpperCase()}%'`;

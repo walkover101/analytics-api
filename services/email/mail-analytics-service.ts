@@ -37,7 +37,7 @@ class MailAnalyticsService {
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REQ_TABLE_ID}\` AS request
-            JOIN (${responseSubQuery}) AS response
+            LEFT JOIN (${responseSubQuery}) AS response
             ON request.requestId = response.requestId
             WHERE ${whereClause}
             GROUP BY ${groupBy}
