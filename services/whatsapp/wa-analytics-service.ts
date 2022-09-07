@@ -50,7 +50,7 @@ class WaAnalyticsService {
         return `SELECT uuid, ARRAY_AGG(status ORDER BY timestamp DESC)[OFFSET(0)] AS status,
                 ARRAY_AGG(timestamp ORDER BY timestamp ASC)[OFFSET(0)] AS sentTime
                 FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${WA_REP_TABLE_ID}\` AS report
-                WHERE (submittedAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
+                WHERE (submittedAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
                 AND companyId = "${companyId}"
                 GROUP BY uuid`;
     }
