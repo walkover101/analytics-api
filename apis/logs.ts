@@ -9,6 +9,9 @@ router.get('/sms', logsController.getSmsLogs);
 // GET '/logs/otp'
 router.get('/otp', logsController.getOtpLogs);
 
+// GET '/logs/wa'
+router.get('/wa', logsController.getWaLogs);
+
 // GET '/logs/mail'
 router.get('/mail', logsController.getMailLogs);
 

@@ -37,8 +37,8 @@ class SmsLogsService {
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
             FROM ${REPORT_DATA_TABLE_ID} as reportData 
-            LEFT JOIN ${REQUEST_DATA_TABLE_ID} as requestData 
-            ON reportData.requestId = requestData.requestId 
+            JOIN ${REQUEST_DATA_TABLE_ID} as requestData 
+            ON reportData.requestId = requestData._id 
             WHERE ${whereClause}`;
         logger.info(query);
         return query;

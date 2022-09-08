@@ -12,6 +12,9 @@ router.get('/mail', analyticsController.getMailAnalytics);
 // GET '/analytics/otp'
 router.get('/otp', analyticsController.getOtpAnalytics);
 
+// GET '/analytics/wa'
+router.get('/wa', analyticsController.getWaAnalytics);
+
 // GET '/analytics/campaigns'
 router.get('/campaigns', analyticsController.getCampaignAnalytics);
 
