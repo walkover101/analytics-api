@@ -75,7 +75,7 @@ export default class Download {
         if (resourceType) query = query.where('resourceType', '==', resourceType);
         if (companyId) query = query.where('companyId', 'in', [companyId, `${companyId}`]);
         const offset = page > 1 ? (page - 1) * pageSize : 0;
-        const dataSnapshot = await query.limit(pageSize).offset(offset).get();
+        const dataSnapshot = await query.orderBy('createdAt', 'desc').limit(pageSize).offset(offset).get();
         const countSnapshot = await query.select().get();
         const docs = dataSnapshot.docs;
         const results = docs.map((doc: any) => {
