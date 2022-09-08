@@ -3,10 +3,10 @@ import * as downloadsController from '../controllers/downloads';
 
 const router = express.Router();
 
-// POST '/exports/sms' | '/exports/otp' | '/exports/mail'
-router.post(/^\/(sms|otp|mail)/, downloadsController.downloadCsv);
+// POST '/exports/sms' | '/exports/otp' | '/exports/mail' | '/exports/wa'
+router.post(/^\/(sms|otp|mail|wa)/, downloadsController.downloadCsv);
 
-// GET '/exports' | '/exports/sms' | '/exports/otp' | '/exports/mail'
-router.get(/^\/($|sms|otp|mail)/, downloadsController.getDownloadLinks);
+// GET '/exports' | '/exports/sms' | '/exports/otp' | '/exports/mail' | '/exports/wa'
+router.get(/^\/($|sms|otp|mail|wa)/, downloadsController.getDownloadLinks);
 
 export default router;

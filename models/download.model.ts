@@ -8,6 +8,7 @@ import smsLogsService from '../services/sms/sms-logs-service';
 import mailLogsService from '../services/email/mail-logs-service';
 import otpLogsService from '../services/otp/otp-logs-service';
 import { getAgeInDays } from '../services/utility-service';
+import waLogsService from '../services/whatsapp/wa-logs-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -19,7 +20,8 @@ export enum DOWNLOAD_STATUS {
 export enum RESOURCE_TYPE {
     SMS = 'sms',
     EMAIL = 'mail',
-    OTP = 'otp'
+    OTP = 'otp',
+    WA = 'wa'
 }
 
 export const GCS_CSV_RETENTION = +(process.env.GCS_CSV_RETENTION || 30); // in days
@@ -52,6 +54,9 @@ export default class Download {
                 break;
             case RESOURCE_TYPE.OTP:
                 this.resourceType = RESOURCE_TYPE.OTP;
+                break;
+            case RESOURCE_TYPE.WA:
+                this.resourceType = RESOURCE_TYPE.WA;
                 break;
             default:
                 this.resourceType = RESOURCE_TYPE.SMS;
@@ -122,6 +127,8 @@ export default class Download {
                 return mailLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             case RESOURCE_TYPE.OTP:
                 return otpLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
+            case RESOURCE_TYPE.WA:
+                return waLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             default:
                 return smsLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
         }
