@@ -33,7 +33,7 @@ class SmsAnalyticsService {
 
     private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
@@ -59,6 +59,8 @@ class SmsAnalyticsService {
 
         // optional conditions
         if (companyId) conditions += `AND reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
+        if (filters.campaignId) conditions += ` AND requestData.campaign_pid in (${getQuotedStrings(filters.campaignId.splitAndTrim(','))})`;
+        if (filters.campaignName) conditions += ` AND requestData.campaign_name in (${getQuotedStrings(filters.campaignName.splitAndTrim(','))})`;
         if (filters.vendorIds) conditions += `AND reportData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
         if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
