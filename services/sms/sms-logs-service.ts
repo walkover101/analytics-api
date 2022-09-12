@@ -7,9 +7,28 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    status: 'reportData.status',
-    sentTime: `STRING(DATE(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
-    deliveryTime: 'STRING(reportData.deliveryTime)',
+    status: `CASE reportData.status 
+    WHEN 1 THEN "Delivered" 
+    WHEN 26 THEN "Delivered" 
+    WHEN 3 THEN "Delivered" 
+    WHEN 2 THEN "Failed" 
+    WHEN 13 THEN "Failed" 
+    WHEN 7 THEN "Auto Failed" 
+    WHEN 9 THEN "NDNC Number" 
+    WHEN 25 THEN "Rejected" 
+    WHEN 16 THEN "Rejected By Provider" 
+    WHEN 17 THEN "Blocked Number" 
+    WHEN 18 THEN "Blocked Circle" 
+    WHEN 20 THEN "Country Code Blocked" 
+    WHEN 28 THEN "Invalid Number" 
+    WHEN 29 THEN "Invalid Number" 
+    WHEN 6 THEN "Submitted" 
+    WHEN 5 THEN "Pending" 
+    WHEN 8 THEN "Sent" 
+    ELSE CAST(reportData.status AS STRING) END`,
+    sentTime: `STRING(DATE(reportData.sentTime,'${DEFAULT_TIMEZONE}')) AS sentDate`,
+    deliveryDate: 'STRING(DATE(reportData.deliveryTime)) AS deliveryDate',
+    deliveryTime: 'STRING(TIME(reportData.deliveryTime)) AS deliveryTime',
     requestId: 'reportData.requestID',
     telNum: 'reportData.telNum',
     credit: 'reportData.credit',
