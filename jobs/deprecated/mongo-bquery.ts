@@ -96,7 +96,11 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
         batch.push(new ReportData(doc));
 
         if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
-            await ReportData.insertMany(batch);
+            try {
+                await ReportData.insertMany(batch);
+            } catch (error: any) {
+                logger.error(JSON.stringify(error.errors));
+            }
             batch = [];
         } else {
             continue;

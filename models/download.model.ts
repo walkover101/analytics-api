@@ -1,7 +1,6 @@
 
 import { DateTime } from 'luxon';
 import { db } from '../firebase';
-import { CollectionReference } from 'firebase-admin/firestore';
 import logger from '../logger/logger';
 import msg91Dataset from '../database/big-query-service';
 import smsLogsService from '../services/sms/sms-logs-service';
@@ -9,6 +8,8 @@ import mailLogsService from '../services/email/mail-logs-service';
 import otpLogsService from '../services/otp/otp-logs-service';
 import { getAgeInDays } from '../services/utility-service';
 import waLogsService from '../services/whatsapp/wa-logs-service';
+import smsAnalyticsService from '../services/sms/sms-analytics-service';
+import mailAnalyticsService from '../services/email/mail-analytics-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -24,17 +25,23 @@ export enum RESOURCE_TYPE {
     WA = 'wa'
 }
 
+export enum REPORT_TYPE {
+    ANALYTICS = 'analytics',
+    LOGS = 'logs'
+}
+
 export const GCS_CSV_RETENTION = +(process.env.GCS_CSV_RETENTION || 30); // in days
 
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
-const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
-const collection: CollectionReference = db.collection(DOWNLOADS_COLLECTION);
+const getCollectionName = (reportType: REPORT_TYPE = REPORT_TYPE.LOGS) => `${DOWNLOADS_COLLECTION}_${reportType}`;
+const getCollection = (reportType: REPORT_TYPE = REPORT_TYPE.LOGS) => db.collection(getCollectionName(reportType));
 
 export default class Download {
     id?: string;
     resourceType: RESOURCE_TYPE;
+    reportType: REPORT_TYPE;
     companyId: string;
     startDate: DateTime;
     endDate: DateTime;
@@ -42,12 +49,13 @@ export default class Download {
     timezone: string = DEFAULT_TIMEZONE;
     fields?: Array<string>;
     file?: string;
+    zipInfo?: { bucket: string, srcFolder: string, destFileName: string, firebase: { collection: string, id: string } };
     query?: { [key: string]: string };
     err?: string;
     createdAt: Date = new Date();
     updatedAt: Date = new Date();
 
-    constructor(resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, fields: string = '', query: any) {
+    constructor(reportType: REPORT_TYPE, resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, fields: string = '', query: any) {
         switch (resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 this.resourceType = RESOURCE_TYPE.EMAIL;
@@ -62,6 +70,7 @@ export default class Download {
                 this.resourceType = RESOURCE_TYPE.SMS;
         }
 
+        this.reportType = reportType;
         this.companyId = companyId;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -70,8 +79,8 @@ export default class Download {
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
     }
 
-    public static async index(page: number, pageSize: number, companyId?: string, resourceType?: string) {
-        let query: any = collection;
+    public static async index(reportType: REPORT_TYPE, page: number, pageSize: number, companyId?: string, resourceType?: string) {
+        let query: any = getCollection(reportType);
         if (resourceType) query = query.where('resourceType', '==', resourceType);
         if (companyId) query = query.where('companyId', 'in', [companyId, `${companyId}`]);
         const offset = page > 1 ? (page - 1) * pageSize : 0;
@@ -91,7 +100,7 @@ export default class Download {
 
     public save() {
         logger.info('[DOWNLOAD] Creating entry in firestore...');
-        return collection.add(JSON.parse(JSON.stringify(this)));
+        return getCollection(this.reportType).add(JSON.parse(JSON.stringify(this)));
     }
 
     public update(params: any) {
@@ -107,21 +116,20 @@ export default class Download {
         if (file) data.file = file;
         if (err) data.err = err;
         data.updatedAt = new Date().toISOString();
-        return collection.doc(this.id).update(data);
+        return getCollection(this.reportType).doc(this.id).update(data);
     }
 
     public createJob(format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const GCS_FOLDER_NAME = this.resourceType || 'default';
-        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${this.companyId}_${this.id}`;
-        const exportFilePath = `gs://${filePath}_ *.csv`;
-        this.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
-        let queryStatement = this.getQueryStatement();
-        logger.info(`Query: ${queryStatement}`);
+        const srcFolder = `${this.reportType || REPORT_TYPE.LOGS}/${this.resourceType || 'default'}/${this.id}`;
+        const destFileName = `${this.companyId}_${this.id}`;
+        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${srcFolder}/${destFileName}_*.csv`;
+        this.zipInfo = { bucket: GCS_BUCKET_NAME, srcFolder, destFileName, firebase: { collection: getCollectionName(this.reportType), id: this.id || '' } }
+        let queryStatement = this.reportType === REPORT_TYPE.ANALYTICS ? this.getAnalyticsQueryStatement() : this.getLogsQueryStatement();
         return msg91Dataset.createQueryJob({ query: this.getExportQuery(this.id, queryStatement, exportFilePath, format) });
     }
 
-    private getQueryStatement() {
+    private getLogsQueryStatement() {
         switch (this.resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 return mailLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
@@ -131,6 +139,15 @@ export default class Download {
                 return waLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             default:
                 return smsLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
+        }
+    }
+
+    private getAnalyticsQueryStatement() {
+        switch (this.resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                return mailAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
+            default:
+                return smsAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
         }
     }
 
