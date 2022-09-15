@@ -26,9 +26,9 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     WHEN 5 THEN "Pending" 
     WHEN 8 THEN "Sent" 
     ELSE CAST(reportData.status AS STRING) END`,
-    sentTime: `STRING(DATE(reportData.sentTime,'${DEFAULT_TIMEZONE}')) AS sentDate`,
-    deliveryDate: 'STRING(DATE(reportData.deliveryTime)) AS deliveryDate',
-    deliveryTime: 'STRING(TIME(reportData.deliveryTime)) AS deliveryTime',
+    sentDate: `STRING(DATE(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
+    deliveryDate: 'STRING(DATE(reportData.deliveryTime))',
+    deliveryTime: 'STRING(TIME(reportData.deliveryTime))',
     requestId: 'reportData.requestID',
     telNum: 'reportData.telNum',
     credit: 'reportData.credit',

@@ -33,10 +33,10 @@ export enum REPORT_TYPE {
 export const GCS_CSV_RETENTION = +(process.env.GCS_CSV_RETENTION || 30); // in days
 
 const DOWNLOADS_COLLECTION = process.env.DOWNLOADS_COLLECTION || 'downloads';
-const GCS_BASE_URL = process.env.GCS_BASE_URL || 'https://storage.googleapis.com';
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'msg91-analytics';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
-const getCollection = (reportType: REPORT_TYPE = REPORT_TYPE.LOGS) => db.collection(`${DOWNLOADS_COLLECTION}_${reportType}`);
+const getCollectionName = (reportType: REPORT_TYPE = REPORT_TYPE.LOGS) => `${DOWNLOADS_COLLECTION}_${reportType}`;
+const getCollection = (reportType: REPORT_TYPE = REPORT_TYPE.LOGS) => db.collection(getCollectionName(reportType));
 
 export default class Download {
     id?: string;
@@ -49,6 +49,7 @@ export default class Download {
     timezone: string = DEFAULT_TIMEZONE;
     fields?: Array<string>;
     file?: string;
+    zipInfo?: { bucket: string, srcFolder: string, destFileName: string, firebase: { collection: string, id: string } };
     query?: { [key: string]: string };
     err?: string;
     createdAt: Date = new Date();
@@ -120,12 +121,11 @@ export default class Download {
 
     public createJob(format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
-        const GCS_FOLDER_NAME = `${this.reportType || REPORT_TYPE.LOGS}/${this.resourceType || 'default'}`;
-        const filePath = `${GCS_BUCKET_NAME}/${GCS_FOLDER_NAME}/${this.companyId}_${this.id}`;
-        const exportFilePath = `gs://${filePath}_ *.csv`;
-        this.file = `${GCS_BASE_URL}/${filePath}_%20000000000000.csv`;
+        const srcFolder = `${this.reportType || REPORT_TYPE.LOGS}/${this.resourceType || 'default'}/${this.id}`;
+        const destFileName = `${this.companyId}_${this.id}`;
+        const exportFilePath = `gs://${GCS_BUCKET_NAME}/${srcFolder}/${destFileName}_*.csv`;
+        this.zipInfo = { bucket: GCS_BUCKET_NAME, srcFolder, destFileName, firebase: { collection: getCollectionName(this.reportType), id: this.id || '' } }
         let queryStatement = this.reportType === REPORT_TYPE.ANALYTICS ? this.getAnalyticsQueryStatement() : this.getLogsQueryStatement();
-        logger.info(`Query: ${queryStatement}`);
         return msg91Dataset.createQueryJob({ query: this.getExportQuery(this.id, queryStatement, exportFilePath, format) });
     }
 
