@@ -82,7 +82,7 @@ async function processMessage(msg: Message, { baseURL }: any) {
         fromBucket: msg.bucket,
         fromPath: msg.srcFolder,
         toBucket: msg.bucket,
-        toPath: `${baseURL}/${msg.firebase?.id}.zip`
+        toPath: `${msg.srcFolder}/${msg.firebase?.id}.zip`
     }
     await zipBucket(options);
     let docRef = null;
@@ -92,7 +92,7 @@ async function processMessage(msg: Message, { baseURL }: any) {
             docRef = db.collection(msg.firebase?.collection).doc(msg.firebase?.id);
             await docRef.update({
                 status: DOWNLOAD_STATUS.SUCCESS,
-                file: `${process.env.GCS_BASE_URL}/${options.toPath}`
+                file: `${baseURL}/${options.toPath}`
             });
         }
     } catch (error) {
