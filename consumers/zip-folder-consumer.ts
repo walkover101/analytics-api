@@ -82,7 +82,7 @@ async function processMessage(msg: Message, { baseURL }: any) {
         fromBucket: msg.bucket,
         fromPath: msg.srcFolder,
         toBucket: msg.bucket,
-        toPath: `${msg.srcFolder}/${msg.firebase?.id}.zip`
+        toPath: `${msg.srcFolder}/${msg.destFileName}.zip`
     }
     await zipBucket(options);
     let docRef = null;
