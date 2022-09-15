@@ -122,7 +122,7 @@ export default class Download {
     public createJob(format: string = 'CSV') {
         logger.info('[DOWNLOAD] Creating job...');
         const srcFolder = `${this.reportType || REPORT_TYPE.LOGS}/${this.resourceType || 'default'}/${this.id}`;
-        const destFileName = `${this.companyId}_${this.id}`;
+        const destFileName = `${this.companyId}_${this.startDate}_${this.endDate}`;
         const exportFilePath = `gs://${GCS_BUCKET_NAME}/${srcFolder}/${destFileName}_*.csv`;
         this.zipInfo = { bucket: GCS_BUCKET_NAME, srcFolder, destFileName, firebase: { collection: getCollectionName(this.reportType), id: this.id || '' } }
         let queryStatement = this.reportType === REPORT_TYPE.ANALYTICS ? this.getAnalyticsQueryStatement() : this.getLogsQueryStatement();
