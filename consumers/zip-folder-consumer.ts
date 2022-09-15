@@ -92,7 +92,7 @@ async function processMessage(msg: Message, { baseURL }: any) {
             docRef = db.collection(msg.firebase?.collection).doc(msg.firebase?.id);
             await docRef.update({
                 status: DOWNLOAD_STATUS.SUCCESS,
-                file: `${baseURL}/${options.toPath}`
+                file: `${baseURL}/${options.toBucket}/${options.toPath}`
             });
         }
     } catch (error) {
