@@ -3,8 +3,10 @@ import logger from '../logger/logger';
 import { formatDate } from "../services/utility-service";
 import Download, { DOWNLOAD_STATUS } from '../models/download.model';
 import { REPORT_TYPE } from '../models/download.model';
+import rabbitmqProducer from "../database/rabbitmq-producer";
 
 const DEFAULT_PAGE_SIZE = +(process.env.DEFAULT_PAGE_SIZE || 30);
+const ZIP_FOLDER_QUEUE = process.env.RABBIT_ZIP_FOLDER_QUEUE_NAME || 'zip-folder';
 
 // POST '/exports/sms' | '/exports/otp' | '/exports/mail' | '/exports/wa'
 const downloadCsv = (reportType: REPORT_TYPE) => {
@@ -24,7 +26,7 @@ const downloadCsv = (reportType: REPORT_TYPE) => {
                 const [exportJob] = await download.createJob();
                 download.update({ status: DOWNLOAD_STATUS.PROCESSING });
                 await exportJob.getQueryResults();
-                download.update({ status: DOWNLOAD_STATUS.SUCCESS, file: download.file });
+                rabbitmqProducer.publishToQueue(ZIP_FOLDER_QUEUE, download.zipInfo)
             } catch (err: any) {
                 download.update({ status: DOWNLOAD_STATUS.ERROR, err: err.message });
                 console.error(err);

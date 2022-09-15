@@ -33,7 +33,9 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^6.0.0",
+    "@google-cloud/storage": "^6.4.2",
     "amqplib": "^0.10.0",
+    "axios": "^0.27.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
@@ -49,6 +51,7 @@
     "response-time": "^2.3.2",
     "sequelize": "^6.21.3",
     "sqlite3": "^5.0.9",
-    "winston": "^3.7.2"
+    "winston": "^3.7.2",
+    "zip-bucket": "^1.8.2"
   }
 }
