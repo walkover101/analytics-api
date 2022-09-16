@@ -41,7 +41,7 @@ class MailAnalyticsService {
             ON request.requestId = response.requestId
             WHERE ${whereClause}
             GROUP BY ${groupBy}
-            ORDER BY ${groupBy};`;
+            ORDER BY ${groupBy}`;
 
         logger.info(query);
         return query;
