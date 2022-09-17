@@ -75,16 +75,16 @@ const getWaAnalytics = async (req: Request, res: Response) => {
 const getCampaignAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, smsNodeIds, smsReqIds, waNodeIds, emailNodeIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
+        let { companyId, smsNodeIds, smsReqIds, waNodeIds, emailNodeIds, emailReqIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
         if (!companyId) throw "companyId required";
-        if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !emailNodeIds?.length) throw "smsNodeIds OR smsReqIds OR waNodeIds OR emailNodeIds required";
+        if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !emailNodeIds?.length && !emailReqIds?.length) throw "smsNodeIds OR smsReqIds OR waNodeIds OR emailNodeIds OR emailReqIds required";
 
         let smsAnalytics, waAnalytics, mailAnalytics;
         if (smsNodeIds?.length || smsReqIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         if (waNodeIds?.length) waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        if (emailNodeIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
+        if (emailNodeIds?.length || emailReqIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
         res.send({ sms: smsAnalytics, mail: mailAnalytics, wa: waAnalytics });
     } catch (error: any) {
         logger.error(error);
