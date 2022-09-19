@@ -10,6 +10,7 @@ import { getAgeInDays } from '../services/utility-service';
 import waLogsService from '../services/whatsapp/wa-logs-service';
 import smsAnalyticsService from '../services/sms/sms-analytics-service';
 import mailAnalyticsService from '../services/email/mail-analytics-service';
+import OtpAnalyticsService from '../services/otp/otp-analytics-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -146,6 +147,8 @@ export default class Download {
         switch (this.resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 return mailAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
+            case RESOURCE_TYPE.OTP:
+                return OtpAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
             default:
                 return smsAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
         }
