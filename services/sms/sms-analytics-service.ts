@@ -31,8 +31,7 @@ class SmsAnalyticsService {
     }
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string) {
-        if (filters.smsNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
-        if (filters.smsReqIds?.length) groupings = `reqId,${groupings?.length ? groupings : 'date'}`;
+        if (filters.smsNodeIds?.length || filters.smsReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
