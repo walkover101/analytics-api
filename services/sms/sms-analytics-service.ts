@@ -9,6 +9,7 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
     country: 'reportData.countryCode',
     vendorId: 'reportData.smsc',
+    reqId: 'reportData.requestID',
 
     // from request-data
     date: `STRING(DATE(requestData.requestDate,'${DEFAULT_TIMEZONE}'))`,
@@ -31,6 +32,7 @@ class SmsAnalyticsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string) {
         if (filters.smsNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
+        if (filters.smsReqIds?.length) groupings = `reqId,${groupings?.length ? groupings : 'date'}`;
         if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
@@ -64,6 +66,7 @@ class SmsAnalyticsService {
         if (filters.vendorIds) conditions += `AND reportData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
         if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
+        if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
 
         return conditions;
     }
@@ -97,7 +100,7 @@ class SmsAnalyticsService {
 
         total["filtered"] = total["message"] - total["delivered"];
         total["totalCredits"] = Number(total["totalCredits"].toFixed(3));
-        
+
         return total;
     }
 }

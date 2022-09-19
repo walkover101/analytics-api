@@ -59,14 +59,14 @@ class OtpAnalyticsService {
         // Don't add credit if request gets blocked or NDNC
 
         return `COUNT(otpData.id) as sent,
-            ROUND(SUM(IF(otpData.status in (17, 9), 0, otpData.credits)), 2) as balanceDeducted,
-            COUNTIF(otpData.status in (1, 3, 26)) as delivered,
-            COUNTIF(otpData.status in (2, 13, 7)) as failed,
-            COUNTIF(otpData.status in (25, 16)) as rejected,
-            COUNTIF(otpData.status = 9) as ndnc,
-            COUNTIF(otpData.status = 17) as blocked,
-            COUNTIF(otpData.status = 7) as autoFailed,
-            ROUND(SUM(IF(otpData.status = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.status = 1), 0) as deliveryTime`;
+            ROUND(SUM(IF(otpData.reportStatus in (17, 9), 0, otpData.credits)), 2) as balanceDeducted,
+            COUNTIF(otpData.reportStatus in (1, 3, 26)) as delivered,
+            COUNTIF(otpData.reportStatus in (2, 13, 7)) as failed,
+            COUNTIF(otpData.reportStatus in (25, 16)) as rejected,
+            COUNTIF(otpData.reportStatus = 9) as ndnc,
+            COUNTIF(otpData.reportStatus = 17) as blocked,
+            COUNTIF(otpData.reportStatus = 7) as autoFailed,
+            ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as deliveryTime`;
     }
 
     private calculateTotalAggr(data: any) {

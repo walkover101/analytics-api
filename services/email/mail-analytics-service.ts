@@ -1,14 +1,15 @@
 import { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID, MAIL_REQ_TABLE_ID, MAIL_REP_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
-import { getValidFields } from '../utility-service';
+import { getValidFields, getQuotedStrings } from '../utility-service';
 
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request
     date: `STRING(DATE(request.createdAt,'${DEFAULT_TIMEZONE}'))`,
-    nodeId: 'request.nodeId'
+    nodeId: 'request.nodeId',
+    reqId: 'request.mailerRequestId'
 };
 
 class MailAnalyticsService {
@@ -27,6 +28,7 @@ class MailAnalyticsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings?: string) {
         if (filters.emailNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
+        if (filters.emailReqIds?.length) groupings = `reqId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
@@ -41,7 +43,7 @@ class MailAnalyticsService {
             ON request.requestId = response.requestId
             WHERE ${whereClause}
             GROUP BY ${groupBy}
-            ORDER BY ${groupBy};`;
+            ORDER BY ${groupBy}`;
 
         logger.info(query);
         return query;
@@ -64,6 +66,7 @@ class MailAnalyticsService {
 
         // optional conditions
         if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
+        if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
 
         return conditions;
     }

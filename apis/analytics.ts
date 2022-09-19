@@ -26,4 +26,7 @@ router.post(/^\/(sms|mail)\/export\b/, downloadsController.downloadCsv(REPORT_TY
 // GET '/analytics/sms/export' | '/analytics/mail/export'
 router.get(/^\/(sms|mail)\/export\b/, downloadsController.getDownloadLinks(REPORT_TYPE.ANALYTICS));
 
+// GET '/analytics/export' | '/analytics/export'
+router.get('/export', downloadsController.getDownloadLinks(REPORT_TYPE.ANALYTICS));
+
 export default router;
