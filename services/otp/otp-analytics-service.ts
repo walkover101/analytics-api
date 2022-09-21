@@ -19,18 +19,18 @@ class OtpAnalyticsService {
     }
 
     public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
-        if (filters.vendorIds?.length) groupBy = `vendorId,${groupBy?.length ? groupBy : 'date'}`;
-        const query: string = this.getAnalyticsQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
+        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
         const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    private getAnalyticsQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings: string = DEFAULT_GROUP_BY) {
+    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string) {
+        if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
-        const validFields = getValidFields(PERMITTED_GROUPINGS, groupings.splitAndTrim(','));
+        const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
 

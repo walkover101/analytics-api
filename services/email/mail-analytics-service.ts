@@ -27,8 +27,7 @@ class MailAnalyticsService {
     }
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings?: string) {
-        if (filters.emailNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
-        if (filters.emailReqIds?.length) groupings = `reqId,${groupings?.length ? groupings : 'date'}`;
+        if (filters.emailNodeIds?.length || filters.emailReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
