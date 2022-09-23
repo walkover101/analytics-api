@@ -40,7 +40,7 @@ class WaAnalyticsService {
             ON reportData.uuid = requestData.uuid
             WHERE ${whereClause}
             GROUP BY ${groupBy}
-            ORDER BY ${groupBy};`;
+            ORDER BY ${groupBy}`;
 
         logger.info(query);
         return query;
