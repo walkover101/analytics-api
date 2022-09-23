@@ -6,11 +6,29 @@ import logger from '../../logger/logger';
 
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
+    status: `CASE otpData.reportStatus 
+    WHEN 1 THEN "Delivered" 
+    WHEN 26 THEN "Delivered" 
+    WHEN 3 THEN "Delivered" 
+    WHEN 2 THEN "Failed" 
+    WHEN 13 THEN "Failed" 
+    WHEN 7 THEN "Auto Failed" 
+    WHEN 9 THEN "NDNC Number" 
+    WHEN 25 THEN "Rejected" 
+    WHEN 16 THEN "Rejected By Provider" 
+    WHEN 17 THEN "Blocked Number" 
+    WHEN 18 THEN "Blocked Circle" 
+    WHEN 20 THEN "Country Code Blocked" 
+    WHEN 28 THEN "Invalid Number" 
+    WHEN 29 THEN "Invalid Number" 
+    WHEN 6 THEN "Submitted" 
+    WHEN 5 THEN "Pending" 
+    WHEN 8 THEN "Sent" 
+    ELSE CAST(otpData.reportStatus AS STRING) END`,
     telNum: "otpData.telNum",
     oppri: "otpData.oppri",
     crcy: "otpData.crcy",
-    reportStatus: "otpData.reportStatus",
-    sentTimeReport: "STRING(DATE(otpData.sentTimeReport))",
+    sentTimeReport: `STRING(DATETIME(otpData.sentTimeReport,'${DEFAULT_TIMEZONE}'))`,
     providerSmsid: "otpData.providerSmsid",
     smsc: "otpData.smsc",
     description: "otpData.description",
@@ -19,19 +37,15 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     campaignPid: "otpData.campaignPid",
     credits: "otpData.credits",
     expiry: "otpData.expiry",
-    mobiles: "otpData.mobiles",
     requestDate: "STRING(DATE(otpData.requestDate))",
-    msgData: "otpData.msgData",
     countryCode: "otpData.countryCode",
     pauseReason: "otpData.pauseReason",
     requestDateString: "STRING(DATE(otpData.requestDateString))",
     noOfSms: "otpData.noOfSms",
     requestUserid: "otpData.requestUserid",
-    otp: "otpData.otp",
     requestSender: "otpData.requestSender",
-    sentTime: "STRING(DATE(otpData.sentTime))",
+    sentTime: `STRING(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'))`,
     unicode: "otpData.unicode",
-    status: "otpData.status",
     userCredit: "otpData.userCredit",
     templateId: "otpData.templateId",
     extraParam: "otpData.extraParam",
@@ -41,7 +55,8 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     otpRetry: "otpData.otpRetry",
     verified: "otpData.verified",
     otpVerCount: "otpData.otpVerCount",
-    deliveryTime: "STRING(DATE(otpData.deliveryTime))",
+    deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
+    deliveryTime: 'STRING(TIME(otpData.deliveryTime))',
     dts: "otpData.dts",
     route: "otpData.route",
     credit: "otpData.credit",
@@ -65,7 +80,7 @@ class OtpLogsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
