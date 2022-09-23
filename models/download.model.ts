@@ -172,7 +172,7 @@ export default class Download {
                     header=true,
                     field_delimiter=','
                 ) AS
-                SELECT * FROM _SESSION.${downloadId};
+                SELECT * FROM _SESSION.${downloadId} order by 1;
             END;
         `;
     }

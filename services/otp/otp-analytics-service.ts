@@ -6,8 +6,8 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
-    country: 'otpData.countryCode',
     date: `STRING(DATE(otpData.requestDate,'${DEFAULT_TIMEZONE}'))`,
+    country: 'otpData.countryCode',
     vendorId: 'otpData.smsc'
 };
 

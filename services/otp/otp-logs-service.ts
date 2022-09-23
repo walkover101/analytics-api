@@ -6,6 +6,7 @@ import logger from '../../logger/logger';
 
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
+    requestDate: "STRING(DATE(otpData.requestDate))",
     status: `CASE otpData.reportStatus 
     WHEN 1 THEN "Delivered" 
     WHEN 26 THEN "Delivered" 
@@ -37,7 +38,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     campaignPid: "otpData.campaignPid",
     credits: "otpData.credits",
     expiry: "otpData.expiry",
-    requestDate: "STRING(DATE(otpData.requestDate))",
     countryCode: "otpData.countryCode",
     pauseReason: "otpData.pauseReason",
     requestDateString: "STRING(DATE(otpData.requestDateString))",
