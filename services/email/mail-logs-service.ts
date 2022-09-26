@@ -6,7 +6,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
-    createdAt: 'STRING(mailRequest.createdAt)',
+    createdAt: 'STRING(DATETIME(mailRequest.createdAt))',
     requestId: 'mailRequest.requestId',
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
@@ -14,14 +14,29 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     senderEmail: 'mailRequest.senderEmail',
     recipientEmail: 'mailRequest.recipientEmail',
     outboundEmailId: 'mailRequest.outboundEmailId',
-    mailTypeId: 'mailRequest.mailTypeId',
     templateSlug: 'mailRequest.templateSlug',
     mailerRequestId: 'mailRequest.mailerRequestId',
     nodeId: 'mailRequest.nodeId',
     clientRequestIP: 'mailRequest.clientRequestIP',
+    mailTypeId: `CASE mailRequest.mailTypeId 
+    WHEN 1 THEN "Transactional" 
+    WHEN 2 THEN "Notification" 
+    WHEN 3 THEN "Promotional" 
+    ELSE CAST(mailRequest.mailTypeId AS STRING) END`,
 
     // Mail Report
-    eventId: 'mailReport.eventId',
+    eventId: `CASE mailReport.eventId 
+    WHEN 1 THEN "Queued" 
+    WHEN 2 THEN "Delivered" 
+    WHEN 3 THEN "Rejected" 
+    WHEN 4 THEN "Delivered" 
+    WHEN 5 THEN "Opened" 
+    WHEN 6 THEN "Unsubscribed" 
+    WHEN 7 THEN "Clicked" 
+    WHEN 8 THEN "Bounced" 
+    WHEN 9 THEN "Failed" 
+    WHEN 10 THEN "Complaints" 
+    ELSE CAST(mailReport.eventId AS STRING) END`,
     senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
     statusCode: 'mailReport.statusCode',
     enhancedStatusCode: 'mailReport.enhancedStatusCode',
