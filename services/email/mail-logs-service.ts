@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
+
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
     createdAt: 'STRING(DATETIME(mailRequest.createdAt))',
@@ -13,19 +14,16 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     domain: 'mailRequest.domain',
     senderEmail: 'mailRequest.senderEmail',
     recipientEmail: 'mailRequest.recipientEmail',
-    outboundEmailId: 'mailRequest.outboundEmailId',
     templateSlug: 'mailRequest.templateSlug',
     mailerRequestId: 'mailRequest.mailerRequestId',
-    nodeId: 'mailRequest.nodeId',
-    clientRequestIP: 'mailRequest.clientRequestIP',
-    mailTypeId: `CASE mailRequest.mailTypeId 
+    mailType: `CASE mailRequest.mailTypeId 
     WHEN 1 THEN "Transactional" 
     WHEN 2 THEN "Notification" 
     WHEN 3 THEN "Promotional" 
     ELSE CAST(mailRequest.mailTypeId AS STRING) END`,
 
     // Mail Report
-    eventId: `CASE mailReport.eventId 
+    status: `CASE mailReport.eventId 
     WHEN 1 THEN "Queued" 
     WHEN 2 THEN "Delivered" 
     WHEN 3 THEN "Rejected" 
@@ -37,15 +35,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     WHEN 9 THEN "Failed" 
     WHEN 10 THEN "Complaints" 
     ELSE CAST(mailReport.eventId AS STRING) END`,
-    senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
-    statusCode: 'mailReport.statusCode',
     enhancedStatusCode: 'mailReport.enhancedStatusCode',
-    resultState: 'mailReport.resultState',
-    reason: 'mailReport.reason',
-    remoteMX: 'mailReport.remoteMX',
-    remoteIP: 'mailReport.remoteIP',
-    contentSize: 'mailReport.contentSize',
-    hostname: 'mailReport.hostname'
 };
 
 class MailLogsService {
