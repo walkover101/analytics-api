@@ -20,11 +20,11 @@ router.get('/wa', analyticsController.getWaAnalytics);
 // GET '/analytics/campaigns'
 router.get('/campaigns', analyticsController.getCampaignAnalytics);
 
-// POST '/analytics/sms/export' | '/analytics/mail/export'
-router.post(/^\/(sms|mail)\/export\b/, downloadsController.downloadCsv(REPORT_TYPE.ANALYTICS));
+// POST '/analytics/sms/export' | '/analytics/mail/export' | '/analytics/otp/export' | '/analytics/wa/export'
+router.post(/^\/(sms|mail|otp|wa)\/export\b/, downloadsController.downloadCsv(REPORT_TYPE.ANALYTICS));
 
-// GET '/analytics/sms/export' | '/analytics/mail/export'
-router.get(/^\/(sms|mail)\/export\b/, downloadsController.getDownloadLinks(REPORT_TYPE.ANALYTICS));
+// GET '/analytics/sms/export' | '/analytics/mail/export' | '/analytics/otp/export' | '/analytics/wa/export'
+router.get(/^\/(sms|mail|otp|wa)\/export\b/, downloadsController.getDownloadLinks(REPORT_TYPE.ANALYTICS));
 
 // GET '/analytics/export' | '/analytics/export'
 router.get('/export', downloadsController.getDownloadLinks(REPORT_TYPE.ANALYTICS));

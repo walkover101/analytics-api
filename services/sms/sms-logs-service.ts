@@ -7,6 +7,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
+    sentTime: `STRING(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
     status: `CASE reportData.status 
     WHEN 1 THEN "Delivered" 
     WHEN 26 THEN "Delivered" 
@@ -26,7 +27,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     WHEN 5 THEN "Pending" 
     WHEN 8 THEN "Sent" 
     ELSE CAST(reportData.status AS STRING) END`,
-    sentTime: `STRING(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
     deliveryDate: 'STRING(DATE(reportData.deliveryTime))',
     deliveryTime: 'STRING(TIME(reportData.deliveryTime))',
     requestId: 'reportData.requestID',

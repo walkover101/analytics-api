@@ -6,6 +6,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
+    createdAt: 'STRING(mailRequest.createdAt)',
     requestId: 'mailRequest.requestId',
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
@@ -18,7 +19,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     mailerRequestId: 'mailRequest.mailerRequestId',
     nodeId: 'mailRequest.nodeId',
     clientRequestIP: 'mailRequest.clientRequestIP',
-    createdAt: 'STRING(mailRequest.createdAt)',
 
     // Mail Report
     eventId: 'mailReport.eventId',
@@ -42,7 +42,7 @@ class MailLogsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes}

@@ -7,12 +7,12 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
+    submittedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
     windowExp: 'STRING(reportData.windowExp)',
     reportStatus: 'reportData.status',
     reason: 'reportData.reason',
-    submittedAt: 'STRING(reportData.submittedAt)',
 
     // from request-data
     uuid: 'requestData.uuid',
