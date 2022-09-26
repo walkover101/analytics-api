@@ -1,10 +1,26 @@
 import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID } from '../../database/big-query-service';
-import { getQuotedStrings, getValidFields } from '../utility-service';
+import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
+const STATUS_CODES = {
+    1: "Queued",
+    2: "Accepted",
+    3: "Rejected",
+    4: "Delivered",
+    5: "Opened",
+    6: "Unsubscribed",
+    7: "Clicked",
+    8: "Bounced",
+    9: "Failed",
+    10: "Complaints",
+}
+const MAIL_TYPES = {
+    1: "Transactional",
+    2: "Notification",
+    3: "Promotional",
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
-
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
     createdAt: 'STRING(DATETIME(mailRequest.createdAt))',
@@ -16,25 +32,10 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     recipientEmail: 'mailRequest.recipientEmail',
     templateSlug: 'mailRequest.templateSlug',
     mailerRequestId: 'mailRequest.mailerRequestId',
-    mailType: `CASE mailRequest.mailTypeId 
-    WHEN 1 THEN "Transactional" 
-    WHEN 2 THEN "Notification" 
-    WHEN 3 THEN "Promotional" 
-    ELSE CAST(mailRequest.mailTypeId AS STRING) END`,
+    mailType: convertCodesToMessage('mailRequest.mailTypeId', MAIL_TYPES),
 
     // Mail Report
-    status: `CASE mailReport.eventId 
-    WHEN 1 THEN "Queued" 
-    WHEN 2 THEN "Delivered" 
-    WHEN 3 THEN "Rejected" 
-    WHEN 4 THEN "Delivered" 
-    WHEN 5 THEN "Opened" 
-    WHEN 6 THEN "Unsubscribed" 
-    WHEN 7 THEN "Clicked" 
-    WHEN 8 THEN "Bounced" 
-    WHEN 9 THEN "Failed" 
-    WHEN 10 THEN "Complaints" 
-    ELSE CAST(mailReport.eventId AS STRING) END`,
+    status: convertCodesToMessage('mailReport.eventId', STATUS_CODES),
     enhancedStatusCode: 'mailReport.enhancedStatusCode',
 };
 

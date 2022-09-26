@@ -84,6 +84,16 @@ function getAgeInDays(date: string) {
     return (DateTime.fromISO(date).diffNow('days').days) * -1
 }
 
+function convertCodesToMessage(fieldName: string, codes: { [code: string | number]: string }) {
+    let result = `CASE ${fieldName}`;
+    Object.keys(codes).forEach(code => result += `
+WHEN ${code} THEN "${codes[code]}"`);
+    result += `
+ELSE CAST(${fieldName} AS STRING) END`;
+
+    return result;
+}
+
 export {
     delay,
     formatDate,
@@ -93,5 +103,6 @@ export {
     extractCountryCode,
     getHashCode,
     getDefaultDate,
-    getAgeInDays
+    getAgeInDays,
+    convertCodesToMessage
 }

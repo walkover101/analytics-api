@@ -1,73 +1,47 @@
 
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, OTP_TABLE_ID } from '../../database/big-query-service';
-import { getValidFields } from '../utility-service';
+import { convertCodesToMessage, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
+const STATUS_CODES = {
+    1: "Delivered",
+    2: "Failed",
+    3: "Delivered",
+    5: "Pending",
+    6: "Submitted",
+    7: "Auto Failed",
+    8: "Sent",
+    9: "NDNC Number",
+    13: "Failed",
+    16: "Rejected By Provider",
+    17: "Blocked Number",
+    18: "Blocked Circle",
+    20: "Country Code Blocked",
+    25: "Rejected",
+    26: "Delivered",
+    28: "Invalid Number",
+    29: "Invalid Number",
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
-    requestDate: "STRING(DATE(otpData.requestDate))",
-    status: `CASE otpData.reportStatus 
-    WHEN 1 THEN "Delivered" 
-    WHEN 26 THEN "Delivered" 
-    WHEN 3 THEN "Delivered" 
-    WHEN 2 THEN "Failed" 
-    WHEN 13 THEN "Failed" 
-    WHEN 7 THEN "Auto Failed" 
-    WHEN 9 THEN "NDNC Number" 
-    WHEN 25 THEN "Rejected" 
-    WHEN 16 THEN "Rejected By Provider" 
-    WHEN 17 THEN "Blocked Number" 
-    WHEN 18 THEN "Blocked Circle" 
-    WHEN 20 THEN "Country Code Blocked" 
-    WHEN 28 THEN "Invalid Number" 
-    WHEN 29 THEN "Invalid Number" 
-    WHEN 6 THEN "Submitted" 
-    WHEN 5 THEN "Pending" 
-    WHEN 8 THEN "Sent" 
-    ELSE CAST(otpData.reportStatus AS STRING) END`,
+    requestDate: "STRING(DATETIME(otpData.requestDate))",
+    requestId: "otpData.id",
     telNum: "otpData.telNum",
-    oppri: "otpData.oppri",
-    crcy: "otpData.crcy",
-    sentTimeReport: `STRING(DATETIME(otpData.sentTimeReport,'${DEFAULT_TIMEZONE}'))`,
-    providerSmsid: "otpData.providerSmsid",
-    smsc: "otpData.smsc",
-    description: "otpData.description",
-    requestRoute: "otpData.requestRoute",
-    campaignName: "otpData.campaignName",
-    campaignPid: "otpData.campaignPid",
-    credits: "otpData.credits",
-    expiry: "otpData.expiry",
-    countryCode: "otpData.countryCode",
-    pauseReason: "otpData.pauseReason",
-    requestDateString: "STRING(DATE(otpData.requestDateString))",
-    noOfSms: "otpData.noOfSms",
-    requestUserid: "otpData.requestUserid",
-    requestSender: "otpData.requestSender",
     sentTime: `STRING(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'))`,
-    unicode: "otpData.unicode",
+    status: convertCodesToMessage('otpData.reportStatus', STATUS_CODES),
+    senderId: "otpData.requestSender",
+    deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
+    deliveryTime: 'STRING(TIME(otpData.deliveryTime))',
+    credit: "otpData.credit",
     userCredit: "otpData.userCredit",
-    templateId: "otpData.templateId",
-    extraParam: "otpData.extraParam",
-    dcc: "otpData.dcc",
-    peId: "otpData.peId",
-    dltTeId: "otpData.dltTeId",
+    description: "otpData.description",
+    pauseReason: "otpData.pauseReason",
+    requestUserid: "otpData.requestUserid",
+    voiceRetryCount: "otpData.voiceRetryCount",
     otpRetry: "otpData.otpRetry",
     verified: "otpData.verified",
     otpVerCount: "otpData.otpVerCount",
-    deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
-    deliveryTime: 'STRING(TIME(otpData.deliveryTime))',
-    dts: "otpData.dts",
-    route: "otpData.route",
-    credit: "otpData.credit",
-    retryCount: "otpData.retryCount",
-    voiceReportTime: "otpData.voiceReportTime",
-    voiceResponse: "otpData.voiceResponse",
-    voiceRetryCount: "otpData.voiceRetryCount",
-    voiceService: "otpData.voiceService",
-    voiceStatus: "otpData.voiceStatus",
-    demoAccount: "otpData.demoAccount",
-    source: "otpData.source"
 };
 
 class OtpLogsService {
