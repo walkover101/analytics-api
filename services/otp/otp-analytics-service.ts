@@ -6,8 +6,8 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
-    country: 'otpData.countryCode',
     date: `STRING(DATE(otpData.requestDate,'${DEFAULT_TIMEZONE}'))`,
+    country: 'otpData.countryCode',
     vendorId: 'otpData.smsc'
 };
 
@@ -38,7 +38,7 @@ class OtpAnalyticsService {
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${OTP_TABLE_ID}\` AS otpData
             WHERE ${whereClause}
             GROUP BY ${groupBy}
-            ORDER BY ${groupBy};`;
+            ORDER BY ${groupBy}`;
 
         logger.info(query);
         return query;
@@ -46,7 +46,7 @@ class OtpAnalyticsService {
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
-        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').plus({ days: 1 }).toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;

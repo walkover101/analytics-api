@@ -6,14 +6,14 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const DEFAULT_GROUP_BY = 'date';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
+    // from request-data
+    date: `STRING(DATE(requestData.requestDate,'${DEFAULT_TIMEZONE}'))`,
+    nodeId: 'requestData.node_id',
+
     // from report-data
     country: 'reportData.countryCode',
     vendorId: 'reportData.smsc',
     reqId: 'reportData.requestID',
-
-    // from request-data
-    date: `STRING(DATE(requestData.requestDate,'${DEFAULT_TIMEZONE}'))`,
-    nodeId: 'requestData.node_id'
 };
 
 class SmsAnalyticsService {

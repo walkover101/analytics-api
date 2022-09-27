@@ -1,32 +1,33 @@
 
 import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
-import { getQuotedStrings, getValidFields } from '../utility-service';
+import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
+const STATUS_CODES = {
+    1: "Delivered",
+    2: "Failed",
+    3: "Delivered",
+    5: "Pending",
+    6: "Submitted",
+    7: "Auto Failed",
+    8: "Sent",
+    9: "NDNC Number",
+    13: "Failed",
+    16: "Rejected By Provider",
+    17: "Blocked Number",
+    18: "Blocked Circle",
+    20: "Country Code Blocked",
+    25: "Rejected",
+    26: "Delivered",
+    28: "Invalid Number",
+    29: "Invalid Number",
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    status: `CASE reportData.status 
-    WHEN 1 THEN "Delivered" 
-    WHEN 26 THEN "Delivered" 
-    WHEN 3 THEN "Delivered" 
-    WHEN 2 THEN "Failed" 
-    WHEN 13 THEN "Failed" 
-    WHEN 7 THEN "Auto Failed" 
-    WHEN 9 THEN "NDNC Number" 
-    WHEN 25 THEN "Rejected" 
-    WHEN 16 THEN "Rejected By Provider" 
-    WHEN 17 THEN "Blocked Number" 
-    WHEN 18 THEN "Blocked Circle" 
-    WHEN 20 THEN "Country Code Blocked" 
-    WHEN 28 THEN "Invalid Number" 
-    WHEN 29 THEN "Invalid Number" 
-    WHEN 6 THEN "Submitted" 
-    WHEN 5 THEN "Pending" 
-    WHEN 8 THEN "Sent" 
-    ELSE CAST(reportData.status AS STRING) END`,
     sentTime: `STRING(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'))`,
+    status: convertCodesToMessage('reportData.status', STATUS_CODES),
     deliveryDate: 'STRING(DATE(reportData.deliveryTime))',
     deliveryTime: 'STRING(TIME(reportData.deliveryTime))',
     requestId: 'reportData.requestID',

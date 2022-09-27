@@ -1,36 +1,42 @@
 import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID } from '../../database/big-query-service';
-import { getQuotedStrings, getValidFields } from '../utility-service';
+import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
+const STATUS_CODES = {
+    1: "Queued",
+    2: "Accepted",
+    3: "Rejected",
+    4: "Delivered",
+    5: "Opened",
+    6: "Unsubscribed",
+    7: "Clicked",
+    8: "Bounced",
+    9: "Failed",
+    10: "Complaints",
+}
+const MAIL_TYPES = {
+    1: "Transactional",
+    2: "Notification",
+    3: "Promotional",
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
+    createdAt: 'STRING(DATETIME(mailRequest.createdAt))',
     requestId: 'mailRequest.requestId',
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
     domain: 'mailRequest.domain',
     senderEmail: 'mailRequest.senderEmail',
     recipientEmail: 'mailRequest.recipientEmail',
-    outboundEmailId: 'mailRequest.outboundEmailId',
-    mailTypeId: 'mailRequest.mailTypeId',
     templateSlug: 'mailRequest.templateSlug',
     mailerRequestId: 'mailRequest.mailerRequestId',
-    nodeId: 'mailRequest.nodeId',
-    clientRequestIP: 'mailRequest.clientRequestIP',
-    createdAt: 'STRING(mailRequest.createdAt)',
+    mailType: convertCodesToMessage('mailRequest.mailTypeId', MAIL_TYPES),
 
     // Mail Report
-    eventId: 'mailReport.eventId',
-    senderDedicatedIPId: 'mailReport.senderDedicatedIPId',
-    statusCode: 'mailReport.statusCode',
+    status: convertCodesToMessage('mailReport.eventId', STATUS_CODES),
     enhancedStatusCode: 'mailReport.enhancedStatusCode',
-    resultState: 'mailReport.resultState',
-    reason: 'mailReport.reason',
-    remoteMX: 'mailReport.remoteMX',
-    remoteIP: 'mailReport.remoteIP',
-    contentSize: 'mailReport.contentSize',
-    hostname: 'mailReport.hostname'
 };
 
 class MailLogsService {
@@ -42,7 +48,7 @@ class MailLogsService {
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        endDate = endDate.plus({days: 1}).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
+        endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes}
