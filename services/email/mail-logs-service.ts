@@ -31,7 +31,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     senderEmail: 'mailRequest.senderEmail',
     recipientEmail: 'mailRequest.recipientEmail',
     templateSlug: 'mailRequest.templateSlug',
-    mailerRequestId: 'mailRequest.mailerRequestId',
     mailType: convertCodesToMessage('mailRequest.mailTypeId', MAIL_TYPES),
 
     // Mail Report

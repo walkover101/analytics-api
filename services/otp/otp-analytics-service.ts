@@ -66,7 +66,7 @@ class OtpAnalyticsService {
             COUNTIF(otpData.reportStatus = 9) as ndnc,
             COUNTIF(otpData.reportStatus = 17) as blocked,
             COUNTIF(otpData.reportStatus = 7) as autoFailed,
-            ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as deliveryTime`;
+            ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as avgDeliveryTime`;
     }
 
     private calculateTotalAggr(data: any) {
@@ -83,7 +83,7 @@ class OtpAnalyticsService {
             total["message"] += row["sent"] || 0;
             total["delivered"] += row["delivered"] || 0;
             total["totalCredits"] += row["balanceDeducted"] || 0;
-            totalDeliveryTime += row["deliveryTime"] || 0;
+            totalDeliveryTime += row["avgDeliveryTime"] || 0;
         })
 
         total["filtered"] = total["message"] - total["delivered"];
