@@ -51,7 +51,7 @@ class MailAnalyticsService {
     private getResponseSubQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         return `SELECT
                     requestId,
-                    ARRAY_AGG(eventId ORDER BY eventId DESC)[OFFSET(0)] as eventId
+                    ARRAY_REVERSE(ARRAY_AGG(eventId ORDER BY createdAt,eventId ASC))[OFFSET(0)] as eventId
                 FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${MAIL_REP_TABLE_ID}\`
                 WHERE
                     (requestTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
