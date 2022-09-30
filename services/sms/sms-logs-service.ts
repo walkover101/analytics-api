@@ -17,6 +17,7 @@ const STATUS_CODES = {
     16: "Rejected By Provider",
     17: "Blocked Number",
     18: "Blocked Circle",
+    19: "Price Range Blocked",
     20: "Country Code Blocked",
     25: "Rejected",
     26: "Delivered",
