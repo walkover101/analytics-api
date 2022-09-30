@@ -75,6 +75,9 @@ class SmsAnalyticsService {
 
         return `COUNT(reportData._id) as sent,
             ROUND(SUM(IF(reportData.status in (17, 9), 0, reportData.credit)), 2) as balanceDeducted,
+            ROUND(SUM(IF(reportData.status in (1,3,26), reportData.credit,0)), 2) as deliveredCredit,
+            ROUND(SUM(IF(reportData.status in (2,13,7), reportData.credit,0)), 2) as failedCredit,
+            ROUND(SUM(IF(reportData.status in (25,16), reportData.credit,0)), 2) as rejectedCredit,
             COUNTIF(reportData.status in (1, 3, 26)) as delivered,
             COUNTIF(reportData.status in (2, 13, 7)) as failed,
             COUNTIF(reportData.status in (25, 16)) as rejected,
@@ -88,6 +91,9 @@ class SmsAnalyticsService {
             "message": 0,
             "delivered": 0,
             "totalCredits": 0,
+            "failedCredits": 0,
+            "rejectedCredits": 0,
+            "deliveredCredits": 0,
             "filtered": 0
         }
 
@@ -95,6 +101,9 @@ class SmsAnalyticsService {
             total["message"] += row["sent"] || 0;
             total["delivered"] += row["delivered"] || 0;
             total["totalCredits"] += row["balanceDeducted"] || 0;
+            total["deliveredCredits"] += row["deliveredCredit"] || 0;
+            total["failedCredits"] += row["failedCredit"] || 0;
+            total["rejectedCredits"] += row["rejectedCredit"] || 0;
         })
 
         total["filtered"] = total["message"] - total["delivered"];

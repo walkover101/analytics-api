@@ -23,7 +23,7 @@ const MAIL_TYPES = {
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
-    createdAt: 'STRING(DATETIME(mailRequest.createdAt))',
+    createdAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailRequest.createdAt), SECOND))`,
     requestId: 'mailRequest.requestId',
     companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
@@ -31,7 +31,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     senderEmail: 'mailRequest.senderEmail',
     recipientEmail: 'mailRequest.recipientEmail',
     templateSlug: 'mailRequest.templateSlug',
-    mailerRequestId: 'mailRequest.mailerRequestId',
     mailType: convertCodesToMessage('mailRequest.mailTypeId', MAIL_TYPES),
 
     // Mail Report

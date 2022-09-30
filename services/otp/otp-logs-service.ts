@@ -25,10 +25,10 @@ const STATUS_CODES = {
 }
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
-    requestDate: "STRING(DATETIME(otpData.requestDate))",
+    requestDate: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.requestDate), SECOND))`,
     requestId: "otpData.id",
     telNum: "otpData.telNum",
-    sentTime: `STRING(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'))`,
+    sentTime: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
     status: convertCodesToMessage('otpData.reportStatus', STATUS_CODES),
     senderId: "otpData.requestSender",
     deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
