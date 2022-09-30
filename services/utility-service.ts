@@ -1,6 +1,7 @@
 import { uniq } from 'lodash';
 import { DateTime } from 'luxon';
 import { ObjectId } from 'mongodb';
+import { Stat } from '../apis';
 
 const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
@@ -94,6 +95,60 @@ ELSE CAST(${fieldName} AS STRING) END`;
     return result;
 }
 
+
+
+function generateStatHTML(map: Map<string, Stat>) {
+    let rows = ``;
+    map.forEach((stat, key) => {
+      {
+        rows += `  <tr>
+      <td>${key}</td>
+      <td>${stat.count}</td>
+      <td>${stat.avg}</td>
+      <td>${stat.max}</td>
+      <td>${stat.min}</td>
+    </tr>`
+      }
+    })
+    return `
+    <!DOCTYPE html>
+  <html>
+
+<style>
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #DDD;
+}
+
+tr:hover {background-color: #D6EEEE;}
+</style>
+
+
+  <body>
+  
+  <h2 style="text-align: center;">Stats</h2>
+  
+  <table style="width:100%">
+    <tr>
+      <th>URL</th>
+      <th>COUNT</th>
+      <th>AVG</th>
+      <th>MAX</th>
+      <th>MIN</th>
+    </tr>
+    ${rows}
+  
+  </table>
+  </body>
+  </html>
+    `
+  }
 export {
     delay,
     formatDate,
@@ -104,5 +159,6 @@ export {
     getHashCode,
     getDefaultDate,
     getAgeInDays,
-    convertCodesToMessage
+    convertCodesToMessage,
+    generateStatHTML
 }
