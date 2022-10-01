@@ -78,11 +78,12 @@ class SmsAnalyticsService {
             ROUND(SUM(IF(reportData.status in (1,3,26), reportData.credit,0)), 2) as deliveredCredit,
             ROUND(SUM(IF(reportData.status in (2,13,7), reportData.credit,0)), 2) as failedCredit,
             ROUND(SUM(IF(reportData.status in (25,16), reportData.credit,0)), 2) as rejectedCredit,
+            ROUND(SUM(IF(reportData.status in (18,19,20), reportData.credit,0)), 2) as blockedCredit,
             COUNTIF(reportData.status in (1, 3, 26)) as delivered,
             COUNTIF(reportData.status in (2, 13, 7)) as failed,
             COUNTIF(reportData.status in (25, 16)) as rejected,
             COUNTIF(reportData.status = 9) as ndnc,
-            COUNTIF(reportData.status = 17) as blocked,
+            COUNTIF(reportData.status in (17,18,19,20)) as blocked,
             COUNTIF(reportData.status = 7) as autoFailed`;
     }
 
@@ -94,6 +95,7 @@ class SmsAnalyticsService {
             "failedCredits": 0,
             "rejectedCredits": 0,
             "deliveredCredits": 0,
+            "blockedCredits": 0,
             "filtered": 0
         }
 
@@ -104,10 +106,15 @@ class SmsAnalyticsService {
             total["deliveredCredits"] += row["deliveredCredit"] || 0;
             total["failedCredits"] += row["failedCredit"] || 0;
             total["rejectedCredits"] += row["rejectedCredit"] || 0;
+            total["blockedCredits"] += row["blockedCredit"] || 0;
         })
 
         total["filtered"] = total["message"] - total["delivered"];
         total["totalCredits"] = Number(total["totalCredits"].toFixed(3));
+        total["deliveredCredits"] = Number(total["deliveredCredits"].toFixed(3));
+        total["failedCredits"] = Number(total["failedCredits"].toFixed(3));
+        total["rejectedCredits"] = Number(total["rejectedCredits"].toFixed(3));
+        total["blockedCredits"] = Number(total["blockedCredits"].toFixed(3));
 
         return total;
     }

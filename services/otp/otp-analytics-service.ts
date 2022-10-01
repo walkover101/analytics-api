@@ -61,10 +61,14 @@ class OtpAnalyticsService {
         return `COUNT(otpData.id) as sent,
             ROUND(SUM(IF(otpData.reportStatus in (17, 9), 0, otpData.credits)), 2) as balanceDeducted,
             COUNTIF(otpData.reportStatus in (1, 3, 26)) as delivered,
+            ROUND(SUM(IF(reportData.status in (1,3,26), reportData.credit,0)), 2) as deliveredCredit,
+            ROUND(SUM(IF(reportData.status in (2,13,7), reportData.credit,0)), 2) as failedCredit,
+            ROUND(SUM(IF(reportData.status in (25,16), reportData.credit,0)), 2) as rejectedCredit,
+            ROUND(SUM(IF(reportData.status in (18,19,20), reportData.credit,0)), 2) as blockedCredit,
             COUNTIF(otpData.reportStatus in (2, 13, 7)) as failed,
             COUNTIF(otpData.reportStatus in (25, 16)) as rejected,
             COUNTIF(otpData.reportStatus = 9) as ndnc,
-            COUNTIF(otpData.reportStatus = 17) as blocked,
+            COUNTIF(reportData.status in (17,18,19,20)) as blocked,
             COUNTIF(otpData.reportStatus = 7) as autoFailed,
             ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as avgDeliveryTime`;
     }
@@ -75,6 +79,10 @@ class OtpAnalyticsService {
             "message": 0,
             "delivered": 0,
             "totalCredits": 0,
+            "failedCredits": 0,
+            "rejectedCredits": 0,
+            "deliveredCredits": 0,
+            "blockedCredits": 0,
             "filtered": 0,
             "avgDeliveryTime": 0
         }
@@ -83,11 +91,19 @@ class OtpAnalyticsService {
             total["message"] += row["sent"] || 0;
             total["delivered"] += row["delivered"] || 0;
             total["totalCredits"] += row["balanceDeducted"] || 0;
+            total["deliveredCredits"] += row["deliveredCredit"] || 0;
+            total["failedCredits"] += row["failedCredit"] || 0;
+            total["rejectedCredits"] += row["rejectedCredit"] || 0;
+            total["blockedCredits"] += row["blockedCredit"] || 0;
             totalDeliveryTime += row["avgDeliveryTime"] || 0;
         })
 
         total["filtered"] = total["message"] - total["delivered"];
         total["totalCredits"] = Number(total["totalCredits"].toFixed(3));
+        total["deliveredCredits"] = Number(total["deliveredCredits"].toFixed(3));
+        total["failedCredits"] = Number(total["failedCredits"].toFixed(3));
+        total["rejectedCredits"] = Number(total["rejectedCredits"].toFixed(3));
+        total["blockedCredits"] = Number(total["blockedCredits"].toFixed(3));
         total["avgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
         return total;
     }
