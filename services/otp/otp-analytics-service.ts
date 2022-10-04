@@ -10,6 +10,13 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     country: 'otpData.countryCode',
     vendorId: 'otpData.smsc'
 };
+const DELIVERED_STATUS_CODES = [1, 3, 26];
+const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
+const FAILED_STATUS_CODES = [2, 5, 6, 7, 8, 13, 25, 28, 30, 81];
+const NDNC_STATUS_CODES = [9];
+// Don't add credit if request gets blocked or NDNC
+const BLOCKED_STATUS_CODES = [17, 18, 19, 20];
+const BLOCKED_AND_NDNC_CODES = BLOCKED_STATUS_CODES.concat(NDNC_STATUS_CODES);
 
 class OtpAnalyticsService {
     private static instance: OtpAnalyticsService;
@@ -56,20 +63,15 @@ class OtpAnalyticsService {
     }
 
     private aggregateAttribs() {
-        // Don't add credit if request gets blocked or NDNC
-
         return `COUNT(otpData.id) as sent,
-            ROUND(SUM(IF(otpData.reportStatus in (17, 9), 0, otpData.credits)), 2) as balanceDeducted,
-            COUNTIF(otpData.reportStatus in (1, 3, 26)) as delivered,
-            ROUND(SUM(IF(otpData.status in (1,3,26), otpData.credit,0)), 2) as deliveredCredit,
-            ROUND(SUM(IF(otpData.status in (2,13,7), otpData.credit,0)), 2) as failedCredit,
-            ROUND(SUM(IF(otpData.status in (25,16), otpData.credit,0)), 2) as rejectedCredit,
-            ROUND(SUM(IF(otpData.status in (18,19,20), otpData.credit,0)), 2) as blockedCredit,
-            COUNTIF(otpData.reportStatus in (2, 13, 7)) as failed,
-            COUNTIF(otpData.reportStatus in (25, 16)) as rejected,
-            COUNTIF(otpData.reportStatus = 9) as ndnc,
-            COUNTIF(otpData.status in (17,18,19,20)) as blocked,
-            COUNTIF(otpData.reportStatus = 7) as autoFailed,
+            ROUND(SUM(IF(otpData.reportStatus in (${BLOCKED_AND_NDNC_CODES.join(',')}), 0, otpData.credits)), 2) as balanceDeducted,
+            ROUND(SUM(IF(otpData.status in (${DELIVERED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as deliveredCredit,
+            ROUND(SUM(IF(otpData.status in (${FAILED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as failedCredit,
+            ROUND(SUM(IF(otpData.status in (${REJECTED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as rejectedCredit,
+            COUNTIF(otpData.reportStatus in (${DELIVERED_STATUS_CODES.join(',')})) as delivered,
+            COUNTIF(otpData.reportStatus in (${FAILED_STATUS_CODES.join(',')})) as failed,
+            COUNTIF(otpData.reportStatus in (${REJECTED_STATUS_CODES.join(',')})) as rejected,
+            COUNTIF(otpData.reportStatus in (${NDNC_STATUS_CODES.join(',')})) as ndnc,
             ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as avgDeliveryTime`;
     }
 
@@ -82,7 +84,6 @@ class OtpAnalyticsService {
             "failedCredits": 0,
             "rejectedCredits": 0,
             "deliveredCredits": 0,
-            "blockedCredits": 0,
             "filtered": 0,
             "avgDeliveryTime": 0
         }
@@ -94,7 +95,6 @@ class OtpAnalyticsService {
             total["deliveredCredits"] += row["deliveredCredit"] || 0;
             total["failedCredits"] += row["failedCredit"] || 0;
             total["rejectedCredits"] += row["rejectedCredit"] || 0;
-            total["blockedCredits"] += row["blockedCredit"] || 0;
             totalDeliveryTime += row["avgDeliveryTime"] || 0;
         })
 
@@ -103,7 +103,6 @@ class OtpAnalyticsService {
         total["deliveredCredits"] = Number(total["deliveredCredits"].toFixed(3));
         total["failedCredits"] = Number(total["failedCredits"].toFixed(3));
         total["rejectedCredits"] = Number(total["rejectedCredits"].toFixed(3));
-        total["blockedCredits"] = Number(total["blockedCredits"].toFixed(3));
         total["avgDeliveryTime"] = Number((totalDeliveryTime / data.length).toFixed(3));
         return total;
     }
