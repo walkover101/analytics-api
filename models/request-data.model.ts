@@ -28,6 +28,7 @@ export default class RequestData {
     deliveryTime: Date;
     route: string;
     credit: number;
+    credits: number;
     oppri: number;
     crcy: string;
     node_id: string;
@@ -59,6 +60,7 @@ export default class RequestData {
         this.deliveryTime = attr['deliveryTime'] || null;
         this.route = attr['route'];
         this.credit = parseFloat(attr['credit']);
+        this.credits = +attr['credits'];
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.crcy = attr['crcy'];
         this.node_id = attr['node_id'];

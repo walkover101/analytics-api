@@ -23,6 +23,8 @@ const STATUS_CODES = {
     26: "Delivered",
     28: "Invalid Number",
     29: "Invalid Number",
+    30: "DLR not available",
+    81: "Pending"
 }
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {

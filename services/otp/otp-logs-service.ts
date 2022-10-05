@@ -26,7 +26,6 @@ const STATUS_CODES = {
 }
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
-    requestDate: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.requestDate), SECOND))`,
     requestId: "otpData.id",
     telNum: "otpData.telNum",
     sentTime: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
@@ -35,8 +34,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
     deliveryTime: 'STRING(TIME(otpData.deliveryTime))',
     credit: "otpData.credit",
-    userCredit: "otpData.userCredit",
-    description: "otpData.description",
+    msgLength: "otpData.credits",
     pauseReason: "otpData.pauseReason",
     requestUserid: "otpData.requestUserid",
     voiceRetryCount: "otpData.voiceRetryCount",
