@@ -12,12 +12,12 @@ const ZIP_FOLDER_QUEUE = process.env.RABBIT_ZIP_FOLDER_QUEUE_NAME || 'zip-folder
 const downloadCsv = (reportType: REPORT_TYPE) => {
     return async (req: Request, res: Response) => {
         try {
-            const { companyId, fields, timezone } = req.query;
+            const { companyId, fields, timezone, email } = req.query;
             const resourceType = req.params[0]; // sms or otp or mail or wa
             const startDate = formatDate(req.query.startDate as string);
             const endDate = formatDate(req.query.endDate as string);
             if (!companyId) throw 'Company Id is mandatory';
-            const download = new Download(reportType, resourceType as string, companyId as string, startDate, endDate, timezone as string, fields as string, req.query);
+            const download = new Download(reportType, resourceType as string, companyId as string, startDate, endDate, timezone as string, email as string, fields as string, req.query);
             const downloadDoc = await download.save();
             download.id = downloadDoc.id;
             res.send({ status: DOWNLOAD_STATUS.PROCESSING, message: 'Request Accepted. Please check back after few minutes.' });

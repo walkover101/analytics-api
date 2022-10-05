@@ -51,13 +51,14 @@ export default class Download {
     timezone: string = DEFAULT_TIMEZONE;
     fields?: Array<string>;
     file?: string;
-    zipInfo?: { bucket: string, srcFolder: string, destFileName: string, firebase: { collection: string, id: string } };
+    zipInfo?: { bucket: string, srcFolder: string, destFileName: string, email?: string, firebase: { collection: string, id: string } };
     query?: { [key: string]: string };
+    email?: string;
     err?: string;
     createdAt: Date = new Date();
     updatedAt: Date = new Date();
 
-    constructor(reportType: REPORT_TYPE, resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, fields: string = '', query: any) {
+    constructor(reportType: REPORT_TYPE, resourceType: string, companyId: string, startDate: DateTime, endDate: DateTime, timezone: string, email: string, fields: string = '', query: any) {
         switch (resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 this.resourceType = RESOURCE_TYPE.EMAIL;
@@ -76,6 +77,8 @@ export default class Download {
         this.companyId = companyId;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.email = email;
+        delete query?.email;
         this.query = query;
         if (timezone) this.timezone = timezone;
         if (fields && fields.length) this.fields = fields.splitAndTrim(',');
@@ -126,7 +129,7 @@ export default class Download {
         const srcFolder = `${this.reportType || REPORT_TYPE.LOGS}/${this.resourceType || 'default'}/${this.id}`;
         const destFileName = `${this.companyId}_${this.startDate?.toFormat('dd-MM-yyyy')}_${this.endDate?.toFormat('dd-MM-yyyy')}_${this.id}`;
         const exportFilePath = `gs://${GCS_BUCKET_NAME}/${srcFolder}/${destFileName}_*.csv`;
-        this.zipInfo = { bucket: GCS_BUCKET_NAME, srcFolder, destFileName, firebase: { collection: getCollectionName(this.reportType), id: this.id || '' } }
+        this.zipInfo = { bucket: GCS_BUCKET_NAME, srcFolder, destFileName, email: this.email, firebase: { collection: getCollectionName(this.reportType), id: this.id || '' } }
         let queryStatement = this.reportType === REPORT_TYPE.ANALYTICS ? this.getAnalyticsQueryStatement() : this.getLogsQueryStatement();
         return msg91Dataset.createQueryJob({ query: this.getExportQuery(this.id, queryStatement, exportFilePath, format) });
     }

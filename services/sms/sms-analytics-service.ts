@@ -15,6 +15,13 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     vendorId: 'reportData.smsc',
     reqId: 'reportData.requestID',
 };
+const DELIVERED_STATUS_CODES = [1, 3, 26];
+const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
+const FAILED_STATUS_CODES = [2, 5, 6, 7, 8, 13, 25, 28, 30, 81];
+const NDNC_STATUS_CODES = [9];
+// Don't add credit if request gets blocked or NDNC
+const BLOCKED_STATUS_CODES = [17, 18, 19, 20];
+const BLOCKED_AND_NDNC_CODES = BLOCKED_STATUS_CODES.concat(NDNC_STATUS_CODES);
 
 class SmsAnalyticsService {
     private static instance: SmsAnalyticsService;
@@ -71,20 +78,15 @@ class SmsAnalyticsService {
     }
 
     private aggregateAttribs() {
-        // Don't add credit if request gets blocked or NDNC
-
         return `COUNT(reportData._id) as sent,
-            ROUND(SUM(IF(reportData.status in (17, 9), 0, reportData.credit)), 2) as balanceDeducted,
-            ROUND(SUM(IF(reportData.status in (1,3,26), reportData.credit,0)), 2) as deliveredCredit,
-            ROUND(SUM(IF(reportData.status in (2,13,7), reportData.credit,0)), 2) as failedCredit,
-            ROUND(SUM(IF(reportData.status in (25,16), reportData.credit,0)), 2) as rejectedCredit,
-            ROUND(SUM(IF(reportData.status in (18,19,20), reportData.credit,0)), 2) as blockedCredit,
-            COUNTIF(reportData.status in (1, 3, 26)) as delivered,
-            COUNTIF(reportData.status in (2, 13, 7)) as failed,
-            COUNTIF(reportData.status in (25, 16)) as rejected,
-            COUNTIF(reportData.status = 9) as ndnc,
-            COUNTIF(reportData.status in (17,18,19,20)) as blocked,
-            COUNTIF(reportData.status = 7) as autoFailed`;
+            ROUND(SUM(IF(reportData.status in (${BLOCKED_AND_NDNC_CODES.join(',')}), 0, reportData.credit)), 2) as balanceDeducted,
+            ROUND(SUM(IF(reportData.status in (${DELIVERED_STATUS_CODES.join(',')}), reportData.credit, 0)), 2) as deliveredCredit,
+            ROUND(SUM(IF(reportData.status in (${FAILED_STATUS_CODES.join(',')}), reportData.credit, 0)), 2) as failedCredit,
+            ROUND(SUM(IF(reportData.status in (${REJECTED_STATUS_CODES.join(',')}), reportData.credit, 0)), 2) as rejectedCredit,
+            COUNTIF(reportData.status in (${DELIVERED_STATUS_CODES.join(',')})) as delivered,
+            COUNTIF(reportData.status in (${FAILED_STATUS_CODES.join(',')})) as failed,
+            COUNTIF(reportData.status in (${REJECTED_STATUS_CODES.join(',')})) as rejected,
+            COUNTIF(reportData.status in (${NDNC_STATUS_CODES.join(',')})) as ndnc`;
     }
 
     private calculateTotalAggr(data: any) {
@@ -95,7 +97,6 @@ class SmsAnalyticsService {
             "failedCredits": 0,
             "rejectedCredits": 0,
             "deliveredCredits": 0,
-            "blockedCredits": 0,
             "filtered": 0
         }
 
@@ -106,7 +107,6 @@ class SmsAnalyticsService {
             total["deliveredCredits"] += row["deliveredCredit"] || 0;
             total["failedCredits"] += row["failedCredit"] || 0;
             total["rejectedCredits"] += row["rejectedCredit"] || 0;
-            total["blockedCredits"] += row["blockedCredit"] || 0;
         })
 
         total["filtered"] = total["message"] - total["delivered"];
@@ -114,7 +114,6 @@ class SmsAnalyticsService {
         total["deliveredCredits"] = Number(total["deliveredCredits"].toFixed(3));
         total["failedCredits"] = Number(total["failedCredits"].toFixed(3));
         total["rejectedCredits"] = Number(total["rejectedCredits"].toFixed(3));
-        total["blockedCredits"] = Number(total["blockedCredits"].toFixed(3));
 
         return total;
     }
