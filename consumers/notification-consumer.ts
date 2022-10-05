@@ -165,5 +165,5 @@ const notificationConsumer = () => {
 }
 
 export {
-    notificationConsumer as zipFolderConsumer
+    notificationConsumer
 };

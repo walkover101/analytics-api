@@ -8,6 +8,7 @@ import { mailEventsConsumer } from './mail-events-consumer';
 import { waReportsConsumer } from "./wa-reports-consumer";
 import { waRequestsConsumer } from "./wa-requests-consumer";
 import { zipFolderConsumer } from "./zip-folder-consumer";
+import { notificationConsumer } from "./notification-consumer";
 
 // Register your consumers here
 const Consumers: any = {
@@ -16,7 +17,8 @@ const Consumers: any = {
     mailEventsConsumer,
     waReportsConsumer,
     waRequestsConsumer,
-    zipFolderConsumer
+    zipFolderConsumer,
+    notificationConsumer
 };
 
 function invalidConsumerName(consumerName: string): Boolean {
