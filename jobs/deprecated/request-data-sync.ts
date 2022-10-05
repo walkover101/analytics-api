@@ -112,9 +112,9 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             const insertRequest = RequestData.insertMany(requestData);
             tasks.push(insertRequest);
-            try{
-                await Promise.all(tasks);
-            }catch(error:any){
+            try {
+                await Promise.allSettled(tasks);
+            } catch (error: any) {
                 logger.error(JSON.stringify(error.errors));
             }
             batch = [];
