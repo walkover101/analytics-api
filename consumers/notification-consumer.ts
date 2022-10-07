@@ -115,12 +115,16 @@ async function sendToChannel(msg: SpaceChannel, options: { orgId: string, authKe
 
 async function sendEmail(msg: Email, apiKey: string) {
     // TODO: ANKIT : Add validation
+
     let data = JSON.stringify({
-        "to": msg.to,
-        "from": msg.from,
+        "personalizations": [{ "to": [{ "email": msg.to }] }],
+        "from": { "email": msg.from },
         "subject": msg.subject,
-        "html": msg.body
-    });
+        "content": [{
+            "type": "text/plain",
+            "value": msg.body
+        }]
+    })
     let config = {
         method: 'post',
         url: 'https://api.sendgrid.com/v3/mail/send',
