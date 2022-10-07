@@ -108,9 +108,7 @@ async function sendToChannel(msg: SpaceChannel, options: { orgId: string, authKe
         },
         data
     };
-    await axios(config).catch(error => {
-        logger.error(error);
-    });
+    await axios(config);
 }
 
 async function sendEmail(msg: Email, apiKey: string) {
@@ -134,9 +132,7 @@ async function sendEmail(msg: Email, apiKey: string) {
         },
         data
     };
-    await axios(config).catch(error => {
-        logger.error(error);
-    });
+    await axios(config);
 }
 
 const notificationConsumer = () => {
