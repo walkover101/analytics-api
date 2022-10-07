@@ -115,7 +115,7 @@ async function sendEmail(msg: Email, apiKey: string) {
     // TODO: ANKIT : Add validation
 
     let data = JSON.stringify({
-        "personalizations": [{ "to": [{ "email": msg.to }] }],
+        "personalizations": [{ "to": [{ "email": msg?.to[0] }] }],
         "from": { "email": msg.from },
         "subject": msg.subject,
         "content": [{
