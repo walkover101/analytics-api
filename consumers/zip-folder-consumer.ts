@@ -28,6 +28,7 @@ type Message = {
         id: string,
         collection: string
     },
+    email?: string,
     retry?: number
 }
 const QUEUE_NAME = process.env.RABBIT_ZIP_FOLDER_QUEUE_NAME;
@@ -35,7 +36,7 @@ const AUTH_KEY = process.env.CHANNEL_AUTH_KEY;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const ORG_ID = process.env.CHANNEL_ORG_ID;
 const BASE_URL = process.env.GCS_BASE_URL;
-
+const NOTIFICATION_QUEUE = process.env.RABBIT_NOTIFICATION_QUEUE_NAME || 'notification';
 async function consume(connection: Connection, options: any) {
     try {
         const { authKey, queueName, channelId, orgId } = options;
@@ -61,6 +62,21 @@ async function consume(connection: Connection, options: any) {
                     } else {
                         logger.info(message);
                         await sendNotification(msgContent, options).catch(reason => logger.error(reason));
+                    }
+                }).then((value) => {
+                    // Send Email If Required
+                    if (message.email) {
+                        let url = `${options?.baseURL}/${message?.bucket}/${message?.srcFolder}/${message?.destFileName}.zip`
+                        let notification: any = {
+                            type: "email",
+                            data: {
+                                from: "noreply@msg91.in",
+                                to: [message.email],
+                                subject: "MSG91 - Report Ready For Download",
+                                body: `Your requested report is ready for download. \n${url}`
+                            }
+                        }
+                        channel.sendToQueue(NOTIFICATION_QUEUE, Buffer.from(JSON.stringify(notification)), { persistent: true })
                     }
                 });
             } catch (error) {

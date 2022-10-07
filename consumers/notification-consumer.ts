@@ -108,16 +108,14 @@ async function sendToChannel(msg: SpaceChannel, options: { orgId: string, authKe
         },
         data
     };
-    await axios(config).catch(error => {
-        logger.error(error);
-    });
+    await axios(config);
 }
 
 async function sendEmail(msg: Email, apiKey: string) {
     // TODO: ANKIT : Add validation
 
     let data = JSON.stringify({
-        "personalizations": [{ "to": [{ "email": msg.to }] }],
+        "personalizations": [{ "to": [{ "email": msg?.to[0] }] }],
         "from": { "email": msg.from },
         "subject": msg.subject,
         "content": [{
@@ -134,9 +132,7 @@ async function sendEmail(msg: Email, apiKey: string) {
         },
         data
     };
-    await axios(config).catch(error => {
-        logger.error(error);
-    });
+    await axios(config);
 }
 
 const notificationConsumer = () => {
