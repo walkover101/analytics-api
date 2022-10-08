@@ -29,7 +29,7 @@ const STATUS_CODES = {
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    sentTime: `STRING(TIMESTAMP_TRUNC(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
+    sentDateTime: `STRING(TIMESTAMP_TRUNC(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
     status: convertCodesToMessage('reportData.status', STATUS_CODES),
     deliveryDate: 'STRING(DATE(reportData.deliveryTime))',
     deliveryTime: 'STRING(TIME(reportData.deliveryTime))',
