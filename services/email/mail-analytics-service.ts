@@ -9,7 +9,8 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request
     date: `STRING(DATE(request.createdAt,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'request.nodeId',
-    reqId: 'request.mailerRequestId'
+    reqId: 'request.mailerRequestId',
+    microservice: '(SELECT "MAIL")'
 };
 
 class MailAnalyticsService {
@@ -30,7 +31,7 @@ class MailAnalyticsService {
         if (filters.emailNodeIds?.length || filters.emailReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, groupings);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -59,13 +60,18 @@ class MailAnalyticsService {
                 GROUP BY requestId`;
     }
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, groupings?: string) {
         let conditions = `(request.createdAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
-        conditions += ` AND request.companyId = "${companyId}"`;
 
         // optional conditions
-        if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
-        if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
+        if (companyId) conditions += ` AND request.companyId = "${companyId}"`;
+
+        if (groupings === 'microservice') {
+            conditions += ` AND request.nodeId is NOT NULL`;
+        } else {
+            if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
+            if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
+        }
 
         return conditions;
     }
