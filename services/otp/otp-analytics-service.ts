@@ -64,10 +64,10 @@ class OtpAnalyticsService {
 
     private aggregateAttribs() {
         return `COUNT(otpData.id) as sent,
-            ROUND(SUM(IF(otpData.reportStatus in (${BLOCKED_AND_NDNC_CODES.join(',')}), 0, otpData.credits)), 2) as balanceDeducted,
-            ROUND(SUM(IF(otpData.status in (${DELIVERED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as deliveredCredit,
-            ROUND(SUM(IF(otpData.status in (${FAILED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as failedCredit,
-            ROUND(SUM(IF(otpData.status in (${REJECTED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as rejectedCredit,
+            ROUND(SUM(IF(otpData.reportStatus in (${BLOCKED_AND_NDNC_CODES.join(',')}), 0, otpData.credit)), 2) as balanceDeducted,
+            ROUND(SUM(IF(otpData.reportStatus in (${DELIVERED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as deliveredCredit,
+            ROUND(SUM(IF(otpData.reportStatus in (${FAILED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as failedCredit,
+            ROUND(SUM(IF(otpData.reportStatus in (${REJECTED_STATUS_CODES.join(',')}), otpData.credit,0)), 2) as rejectedCredit,
             COUNTIF(otpData.reportStatus in (${DELIVERED_STATUS_CODES.join(',')})) as delivered,
             COUNTIF(otpData.reportStatus in (${FAILED_STATUS_CODES.join(',')})) as failed,
             COUNTIF(otpData.reportStatus in (${REJECTED_STATUS_CODES.join(',')})) as rejected,
