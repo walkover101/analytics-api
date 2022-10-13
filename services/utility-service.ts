@@ -85,12 +85,14 @@ function getAgeInDays(date: string) {
     return (DateTime.fromISO(date).diffNow('days').days) * -1
 }
 
-function convertCodesToMessage(fieldName: string, codes: { [code: string | number]: string }) {
-    let result = `CASE ${fieldName}`;
+function convertCodesToMessage(caseStatement: string, codes: { [code: string | number]: any }, encodeValues: boolean = true, elseStatement?: string) {
+    elseStatement = elseStatement || `CAST(${caseStatement} AS STRING)`;
+
+    let result = `CASE ${caseStatement}`;
     Object.keys(codes).forEach(code => result += `
-WHEN ${code} THEN "${codes[code]}"`);
+WHEN ${code} THEN ${encodeValues ? `"${codes[code]}"` : codes[code]}`);
     result += `
-ELSE CAST(${fieldName} AS STRING) END`;
+ELSE ${elseStatement} END`;
 
     return result;
 }
@@ -100,15 +102,15 @@ ELSE CAST(${fieldName} AS STRING) END`;
 function generateStatHTML(map: Map<string, Stat>) {
     let rows = ``;
     map.forEach((stat, key) => {
-      {
-        rows += `  <tr>
+        {
+            rows += `  <tr>
       <td>${key}</td>
       <td>${stat.count}</td>
       <td>${stat.avg}</td>
       <td>${stat.max}</td>
       <td>${stat.min}</td>
     </tr>`
-      }
+        }
     })
     return `
     <!DOCTYPE html>
@@ -148,7 +150,7 @@ tr:hover {background-color: #D6EEEE;}
   </body>
   </html>
     `
-  }
+}
 export {
     delay,
     formatDate,

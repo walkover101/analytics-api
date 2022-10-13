@@ -24,6 +24,13 @@ const STATUS_CODES = {
     28: "Invalid Number",
     29: "Invalid Number",
 }
+const BLOCKED_CREDITS = {
+    9: 0,
+    17: 0,
+    18: 0,
+    19: 0,
+    20: 0
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     sentDateTime: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
@@ -33,7 +40,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     senderId: "otpData.requestSender",
     deliveryDate: 'STRING(DATE(otpData.deliveryTime))',
     deliveryTime: 'STRING(TIME(otpData.deliveryTime))',
-    credit: "otpData.credit",
+    credit: convertCodesToMessage('otpData.reportStatus', BLOCKED_CREDITS, false, 'otpData.credit'),
     msgLength: "otpData.credits",
     pauseReason: "otpData.pauseReason",
     requestUserid: "otpData.requestUserid",

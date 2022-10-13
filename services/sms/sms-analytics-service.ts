@@ -14,6 +14,7 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     country: 'reportData.countryCode',
     vendorId: 'reportData.smsc',
     reqId: 'reportData.requestID',
+    microservice: '(SELECT "SMS")'
 };
 const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
@@ -42,7 +43,7 @@ class SmsAnalyticsService {
         if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, groupings);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -60,7 +61,7 @@ class SmsAnalyticsService {
     }
 
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, groupings?: string) {
         // mandatory conditions
         let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
         conditions += ` AND (requestData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
@@ -71,8 +72,13 @@ class SmsAnalyticsService {
         if (filters.campaignName) conditions += ` AND requestData.campaign_name in (${getQuotedStrings(filters.campaignName.splitAndTrim(','))})`;
         if (filters.vendorIds) conditions += `AND reportData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
-        if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
-        if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
+
+        if (groupings === 'microservice') {
+            conditions += ` AND requestData.node_id is NOT NULL`;
+        } else {
+            if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
+            if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
+        }
 
         return conditions;
     }
@@ -93,6 +99,9 @@ class SmsAnalyticsService {
         const total = {
             "message": 0,
             "delivered": 0,
+            "failed": 0,
+            "rejected": 0,
+            "ndnc": 0,
             "totalCredits": 0,
             "failedCredits": 0,
             "rejectedCredits": 0,
@@ -103,6 +112,9 @@ class SmsAnalyticsService {
         data.forEach((row: any) => {
             total["message"] += row["sent"] || 0;
             total["delivered"] += row["delivered"] || 0;
+            total["failed"] += row["failed"] || 0;
+            total["rejected"] += row["rejected"] || 0;
+            total["ndnc"] += row["ndnc"] || 0;
             total["totalCredits"] += row["balanceDeducted"] || 0;
             total["deliveredCredits"] += row["deliveredCredit"] || 0;
             total["failedCredits"] += row["failedCredit"] || 0;
