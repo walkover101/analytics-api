@@ -8,7 +8,6 @@ import analyticRoutes from "./analytics";
 import logRoutes from "./logs";
 import downloadRoutes from "./downloads";
 import profitRoutes from "./profits";
-import dataIntegrity from './data-integrity';
 import { generateStatHTML } from "../services/utility-service";
 export type Stat = {
   avg: number,
@@ -34,7 +33,6 @@ export default function (app: Application) {
   app.use("/logs", authenticate, logRoutes);
   app.use("/exports", authenticate, downloadRoutes);
   app.use("/profits", authenticate, profitRoutes);
-  app.use('/integrity', dataIntegrity);
   app.use(options);
   app.use(error);
 }
