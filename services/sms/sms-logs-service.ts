@@ -26,6 +26,13 @@ const STATUS_CODES = {
     30: "DLR not available",
     81: "Pending"
 }
+const BLOCKED_CREDITS = {
+    9: 0,
+    17: 0,
+    18: 0,
+    19: 0,
+    20: 0
+}
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
@@ -35,7 +42,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     deliveryTime: 'STRING(TIME(reportData.deliveryTime))',
     requestId: 'reportData.requestID',
     telNum: 'reportData.telNum',
-    credit: 'reportData.credit',
+    credit: convertCodesToMessage('reportData.status', BLOCKED_CREDITS, false, 'reportData.credit'),
     senderId: 'reportData.senderID',
 
     // from request-data
