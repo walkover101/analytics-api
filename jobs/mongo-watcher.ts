@@ -10,6 +10,7 @@ import firebaseLogger from '../logger/firebase-logger';
 import OtpModel from "../models/otp-model";
 
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
+const DB_NAME = process.env.MONGO_DB_NAME || '';
 let mongoConnection: MongoClient;
 let changeStream: ChangeStream;
 
