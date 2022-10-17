@@ -15,7 +15,6 @@ const test = async (req: Request, res: Response) => {
     try {
         mongoService().on("connect", (connection: MongoClient) => {
             const collection = connection.db().collection(REQUEST_DATA_COLLECTION);
-            collection.insertMany(req.body.data);
         });
         const result: any = req.body.data;
 
