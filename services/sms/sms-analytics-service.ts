@@ -13,8 +13,7 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from report-data
     country: 'reportData.countryCode',
     vendorId: 'reportData.smsc',
-    reqId: 'reportData.requestID',
-    microservice: '(SELECT "SMS")'
+    reqId: 'reportData.requestID'
 };
 const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
@@ -43,7 +42,7 @@ class SmsAnalyticsService {
         if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, groupings);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -61,7 +60,7 @@ class SmsAnalyticsService {
     }
 
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, groupings?: string) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
         let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
         conditions += ` AND (requestData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
@@ -72,13 +71,8 @@ class SmsAnalyticsService {
         if (filters.campaignName) conditions += ` AND requestData.campaign_name in (${getQuotedStrings(filters.campaignName.splitAndTrim(','))})`;
         if (filters.vendorIds) conditions += `AND reportData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
-
-        if (groupings === 'microservice') {
-            conditions += ` AND requestData.node_id is NOT NULL`;
-        } else {
-            if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
-            if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
-        }
+        if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
+        if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
 
         return conditions;
     }

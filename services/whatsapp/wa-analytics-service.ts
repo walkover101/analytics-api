@@ -9,7 +9,6 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request-data
     date: `STRING(DATE(requestData.timestamp,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'requestData.nodeId',
-    microservice: '(SELECT "WHATSAPP")'
 };
 
 class WaAnalyticsService {
@@ -30,7 +29,7 @@ class WaAnalyticsService {
         if (filters.waNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, filters, groupings);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, filters);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -57,18 +56,13 @@ class WaAnalyticsService {
                 GROUP BY uuid`;
     }
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, filters: { [field: string]: string }, groupings?: string) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, filters: { [field: string]: string }) {
         // mandatory conditions
         let conditions = `(requestData.timestamp BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
-
-        if (groupings === 'microservice') {
-            conditions += ` AND requestData.nodeId is NOT NULL`;
-        } else {
-            if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${filters.waNodeIds.splitAndTrim(',')})`;
-        }
+        if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${filters.waNodeIds.splitAndTrim(',')})`;
 
         return conditions;
     }
