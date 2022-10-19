@@ -83,6 +83,7 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
         if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !emailNodeIds?.length && !emailReqIds?.length) {
             smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
             mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy, true);
+            waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
         } else {
             if (smsNodeIds?.length || smsReqIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
             if (waNodeIds?.length) waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);

@@ -18,18 +18,18 @@ class WaAnalyticsService {
         return WaAnalyticsService.instance ||= new WaAnalyticsService();
     }
 
-    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
+    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string, onlyNodes: boolean = false) {
+        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy, onlyNodes);
         const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string) {
+    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string, onlyNodes: boolean = false) {
         if (filters.waNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, filters);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, filters, onlyNodes);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -56,13 +56,14 @@ class WaAnalyticsService {
                 GROUP BY uuid`;
     }
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, filters: { [field: string]: string }) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, filters: { [field: string]: string }, onlyNodes: boolean = false) {
         // mandatory conditions
         let conditions = `(requestData.timestamp BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
         if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${filters.waNodeIds.splitAndTrim(',')})`;
+        if (onlyNodes) conditions += ` AND requestData.nodeId IS NOT NULL`;
 
         return conditions;
     }
