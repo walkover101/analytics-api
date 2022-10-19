@@ -30,19 +30,19 @@ class SmsAnalyticsService {
         return SmsAnalyticsService.instance ||= new SmsAnalyticsService();
     }
 
-    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
+    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string, onlyNodes: boolean = false) {
+        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy, onlyNodes);
         const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string) {
+    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string, onlyNodes: boolean = false) {
         if (filters.smsNodeIds?.length || filters.smsReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         if (filters.vendorIds?.length) groupings = `vendorId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, onlyNodes);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -60,19 +60,20 @@ class SmsAnalyticsService {
     }
 
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, onlyNodes: boolean = false) {
         // mandatory conditions
         let conditions = `(reportData.sentTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.plus({ days: 1 }).setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
         conditions += ` AND (requestData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
-        if (companyId) conditions += `AND reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
+        if (companyId) conditions += ` AND reportData.user_pid = "${companyId}" AND requestData.requestUserid = "${companyId}"`;
         if (filters.campaignId) conditions += ` AND requestData.campaign_pid in (${getQuotedStrings(filters.campaignId.splitAndTrim(','))})`;
         if (filters.campaignName) conditions += ` AND requestData.campaign_name in (${getQuotedStrings(filters.campaignName.splitAndTrim(','))})`;
         if (filters.vendorIds) conditions += `AND reportData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
         if (filters.route) conditions += ` AND requestData.curRoute in (${getQuotedStrings(filters.route.splitAndTrim(','))})`;
         if (filters.smsNodeIds) conditions += ` AND requestData.node_id in (${getQuotedStrings(filters.smsNodeIds.splitAndTrim(','))})`;
         if (filters.smsReqIds) conditions += ` AND reportData.requestID in (${getQuotedStrings(filters.smsReqIds.splitAndTrim(','))})`;
+        if (onlyNodes) conditions += ` AND requestData.node_id IS NOT NULL`;
 
         return conditions;
     }
