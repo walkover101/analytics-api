@@ -78,7 +78,7 @@ class WaAnalyticsService {
             COUNTIF(reportData.status = "sent") AS sent,
             COUNTIF(reportData.status = "delivered") AS delivered,
             COUNTIF(reportData.status = "read") AS read,
-            TIMESTAMP_DIFF(ANY_VALUE(reportData.sentTime),ANY_VALUE(requestData.timestamp)), SECOND) AS avgDeliveryTime`;
+            TIMESTAMP_DIFF(ANY_VALUE(reportData.sentTime),ANY_VALUE(requestData.timestamp), SECOND) AS avgDeliveryTime`;
     }
 
     private calculateTotalAggr(data: any) {
