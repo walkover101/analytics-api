@@ -1,4 +1,4 @@
-import { getValidFields } from "../utility-service";
+import { getQuotedStrings, getValidFields } from "../utility-service";
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, WA_REQ_TABLE_ID, WA_REP_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
@@ -67,7 +67,7 @@ class WaAnalyticsService {
         if (groupings === 'microservice') {
             conditions += ` AND requestData.nodeId is NOT NULL`;
         } else {
-            if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${filters.waNodeIds.splitAndTrim(',')})`;
+            if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${getQuotedStrings(filters.waNodeIds.splitAndTrim(','))})`;
         }
 
         return conditions;
