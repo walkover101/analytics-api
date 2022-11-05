@@ -1,8 +1,13 @@
 import { uniq } from 'lodash';
 import { DateTime } from 'luxon';
 import { ObjectId } from 'mongodb';
-import { Stat } from '../apis';
+import { Stat } from '../apis'; import { CacheContainer } from 'node-ts-cache';
+import { MemoryStorage } from 'node-ts-cache-storage-memory';
+import logger from '../logger/logger';
+import axios from 'axios';
 
+const cache = new CacheContainer(new MemoryStorage());
+const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API;
 const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
@@ -97,7 +102,23 @@ ELSE ${elseStatement} END`;
     return result;
 }
 
+async function getErrorCodes() {
+    let errorCodes;
 
+    try {
+        errorCodes = await cache.getItem<string>('errorCodes');
+
+        if (!errorCodes && SMPP_ERROR_CODES_API) {
+            const response = await axios.get(SMPP_ERROR_CODES_API);
+            errorCodes = response.data?.data;
+            await cache.setItem('errorCodes', errorCodes, { ttl: 3600 });
+        }
+    } catch (error) {
+        logger.error(error);
+    }
+
+    return errorCodes;
+}
 
 function generateStatHTML(map: Map<string, Stat>) {
     let rows = ``;
@@ -162,5 +183,6 @@ export {
     getDefaultDate,
     getAgeInDays,
     convertCodesToMessage,
-    generateStatHTML
+    generateStatHTML,
+    getErrorCodes
 }
