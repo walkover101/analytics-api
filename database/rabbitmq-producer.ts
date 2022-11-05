@@ -10,9 +10,11 @@ class RabbitMqProducer {
     constructor() {
         logger.info(`[PRODUCER] Listening for connection...`);
 
-        rabbitmqService().on("connect", (connection) => {
+        rabbitmqService().on("connect", async (connection) => {
             logger.info(`[PRODUCER] Connection received...`);
             rabbitConnection = connection;
+            logger.info(`[PRODUCER] Creating channel...`);
+            rabbitChannel = await rabbitConnection.createChannel();
         });
     }
 
@@ -25,14 +27,13 @@ class RabbitMqProducer {
             logger.info(`[PRODUCER] Preparing payload...`);
             payload = (typeof payload === 'string') ? payload : JSON.stringify(payload);
             const payloadBuffer: Buffer = Buffer.from(payload);
-            logger.info(`[PRODUCER] Creating channel...`);
-            rabbitChannel = await rabbitConnection.createChannel();
             logger.info(`[PRODUCER] Asserting '${queueName}' queue...`);
             await rabbitChannel.assertQueue(queueName, { durable: true });
             logger.info(`[PRODUCER] Producing to '${queueName}' queue...`);
             rabbitChannel.sendToQueue(queueName, payloadBuffer);
         } catch (error: any) {
             console.error('[RabbitMqProducer] publishToQueue', error);
+            throw error;
         }
     }
 }
