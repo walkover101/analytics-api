@@ -120,6 +120,33 @@ async function getErrorCodes() {
     return errorCodes;
 }
 
+async function getSmsStatus(description: string, smsc: string) {
+   let errorCodes =  await getErrorCodes();
+
+    try {
+    if(description) {
+        let temp = description.split(':');
+        temp = temp[1].split(' ');
+        let code: string = temp[0];
+        
+        if( code && errorCodes && smsc) {
+               let obj = errorCodes[smsc];
+               if(obj[code]) {
+               let result = obj[code]
+             return result;
+            
+            } return ' code not matched '
+        }  
+        return 'Insufficient data';
+    } 
+     return 'description is required'
+    
+    } catch (error) {
+        logger.error(error);
+    }
+
+}
+
 function generateStatHTML(map: Map<string, Stat>) {
     let rows = ``;
     map.forEach((stat, key) => {
@@ -184,5 +211,6 @@ export {
     getAgeInDays,
     convertCodesToMessage,
     generateStatHTML,
-    getErrorCodes
+    getErrorCodes,
+    getSmsStatus
 }
