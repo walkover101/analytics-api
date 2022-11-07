@@ -100,10 +100,10 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             const tasks = [];
             let requestData: any[] = [];
             let reportData: any[] = [];
-            batch.forEach((row) => {
+            batch.forEach(async (row) => {
                 requestData.push(new RequestData(row));
                 if (row.isSingleRequest == "1") {
-                    reportData.push(new ReportData({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid }))
+                    reportData.push(await ReportData.createAsync({ ...row, status: row?.reportStatus, sentTime: row?.requestDate, user_pid: row?.requestUserid }))
                 }
             })
             if (reportData.length > 0) {

@@ -92,7 +92,7 @@ async function syncDataToBigQuery(job: jobType, mongoDocs: any[]) {
 async function insertBatchInBigQuery(job: jobType, batch: any[]) {
     try {
         if (job === jobType.REQUEST_DATA) await RequestData.insertMany(batch.map(doc => new RequestData(doc)));
-        if (job === jobType.REPORT_DATA) await ReportData.insertMany(batch.map(doc => new ReportData(doc)));
+        if (job === jobType.REPORT_DATA) await ReportData.insertMany(await Promise.all(batch.map(async doc => await ReportData.createAsync(doc))));
         if (job === jobType.OTP_REPORT) await OtpModel.insertMany(await Promise.all(batch.map(async doc => await OtpModel.createAsync(doc))));
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
