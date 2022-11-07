@@ -1,5 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset, { OTP_TABLE_ID } from "../database/big-query-service";
+import { getFailureReason } from '../services/utility-service';
 
 const otpReportTable: Table = msg91Dataset.table(OTP_TABLE_ID);
 
@@ -13,6 +14,7 @@ export default class OtpModel {
     providerSmsid: string;
     smsc: string;
     description: string;
+    failureReason?: string;
     requestRoute: string;
     campaignName: string;
     campaignPid: string;
@@ -53,7 +55,7 @@ export default class OtpModel {
     demoAccount: number;
     source: number;
 
-    constructor(attr: any) {
+    private constructor(attr: any) {
         this.id = attr['_id'].toString();
         this.telNum = attr['telNum'];
         this.oppri = parseFloat(attr['oppri'] || 0);
@@ -102,6 +104,12 @@ export default class OtpModel {
         this.voiceStatus = +attr['voice_status'];
         this.demoAccount = +attr['demo_account'];
         this.source = +attr['source'];
+    }
+
+    public static createAsync = async (attr: any) => {
+        const otp: OtpModel = new OtpModel(attr);
+        otp.failureReason = await getFailureReason(otp.smsc, otp.description);
+        return otp;
     }
 
     public static insertMany(rows: Array<OtpModel>) {

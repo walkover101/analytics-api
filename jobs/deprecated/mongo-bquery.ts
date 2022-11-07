@@ -93,7 +93,7 @@ async function syncData(collection: any, startTime: DateTime, endTime: DateTime,
             }
             continue;
         }
-        batch.push(new ReportData(doc));
+        batch.push(await ReportData.createAsync(doc));
 
         if (batch.length > 0 && (batch.length >= BATCH_SIZE || i == (docs.length - 1))) {
             try {
