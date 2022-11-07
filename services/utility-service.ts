@@ -120,31 +120,16 @@ async function getErrorCodes() {
     return errorCodes;
 }
 
-async function getSmsStatus(description: string, smsc: string) {
-   let errorCodes =  await getErrorCodes();
+async function getFailureReason(smsc: string, description: string) {
+    if (!smsc || !description) return;
 
     try {
-    if(description) {
-        let temp = description.split(':');
-        temp = temp[1].split(' ');
-        let code: string = temp[0];
-        
-        if( code && errorCodes && smsc) {
-               let obj = errorCodes[smsc];
-               if(obj[code]) {
-               let result = obj[code]
-             return result;
-            
-            } return ' code not matched '
-        }  
-        return 'Insufficient data';
-    } 
-     return 'description is required'
-    
+        const code: string = description.split('err:')[1].split(' ')[0];
+        const errorCodes = await getErrorCodes();
+        return errorCodes[smsc][code];
     } catch (error) {
         logger.error(error);
     }
-
 }
 
 function generateStatHTML(map: Map<string, Stat>) {
@@ -212,5 +197,5 @@ export {
     convertCodesToMessage,
     generateStatHTML,
     getErrorCodes,
-    getSmsStatus
+    getFailureReason as getSmsStatus
 }
