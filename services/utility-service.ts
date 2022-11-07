@@ -197,5 +197,5 @@ export {
     convertCodesToMessage,
     generateStatHTML,
     getErrorCodes,
-    getFailureReason as getSmsStatus
+    getFailureReason
 }
