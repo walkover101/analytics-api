@@ -1,24 +1,27 @@
 import express from 'express';
 import * as analyticsController from '../controllers/analytics';
 import * as downloadsController from '../controllers/downloads';
-import { REPORT_TYPE } from '../models/download.model';
+import { REPORT_TYPE, RESOURCE_TYPE } from '../models/download.model';
 
 const router = express.Router();
 
 // GET '/analytics/sms'
-router.get('/sms', analyticsController.getSmsAnalytics);
+// router.get('/sms', analyticsController.getSmsAnalytics);
 
 // GET '/analytics/mail'
-router.get('/mail', analyticsController.getMailAnalytics);
+// router.get('/mail', analyticsController.getMailAnalytics);
 
 // GET '/analytics/otp'
-router.get('/otp', analyticsController.getOtpAnalytics);
+// router.get('/otp', analyticsController.getOtpAnalytics);
 
 // GET '/analytics/wa'
-router.get('/wa', analyticsController.getWaAnalytics);
+// router.get('/wa', analyticsController.getWaAnalytics);
 
 // GET '/analytics/campaigns'
 router.get('/campaigns', analyticsController.getCampaignAnalytics);
+
+// GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa'
+router.get(/^\/(sms|otp|mail|wa)/, analyticsController.getAnalytics);
 
 // POST '/analytics/sms/export' | '/analytics/mail/export' | '/analytics/otp/export' | '/analytics/wa/export'
 router.post(/^\/(sms|mail|otp|wa)\/export\b/, downloadsController.downloadCsv(REPORT_TYPE.ANALYTICS));

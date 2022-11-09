@@ -6,6 +6,7 @@ import mailAnalyticsService from "../services/email/mail-analytics-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
 import waAnalyticsService from "../services/whatsapp/wa-analytics-service";
 import { RESOURCE_TYPE } from "../models/download.model";
+import { DateTime } from "luxon";
 
 // GET '/analytics/sms'
 const getSmsAnalytics = async (req: Request, res: Response) => {
@@ -72,7 +73,7 @@ const getWaAnalytics = async (req: Request, res: Response) => {
     }
 }
 
-//GET '/Refactor'
+// GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa'
 const getAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
@@ -80,6 +81,17 @@ const getAnalytics = async (req: Request, res: Response) => {
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
 
+        const analytics = await getData(companyId, fromDate, toDate, timeZone, params, groupBy, resourceType);
+        res.send(analytics);
+
+    } catch (error: any) {
+        logger.error(error);
+        res.status(400).send({ error: error?.message || error });
+    }
+}
+
+const getData = (companyId: string, fromDate: DateTime, toDate: DateTime, timeZone: string | undefined, params: { [key: string]: string; } | undefined, groupBy: string | undefined, resourceType: any) => {
+    try {
         switch (resourceType) {
             case RESOURCE_TYPE.EMAIL:
                 return mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
@@ -90,10 +102,8 @@ const getAnalytics = async (req: Request, res: Response) => {
             default:
                 return smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         }
-
     } catch (error: any) {
         logger.error(error);
-        res.status(400).send({ error: error?.message || error });
     }
 }
 
@@ -131,4 +141,5 @@ export {
     getWaAnalytics,
     getOtpAnalytics,
     getCampaignAnalytics,
+    getAnalytics
 };
