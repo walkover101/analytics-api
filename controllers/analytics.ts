@@ -5,6 +5,7 @@ import otpAnalyticsService from "../services/otp/otp-analytics-service";
 import mailAnalyticsService from "../services/email/mail-analytics-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
 import waAnalyticsService from "../services/whatsapp/wa-analytics-service";
+import { RESOURCE_TYPE } from "../models/download.model";
 
 // GET '/analytics/sms'
 const getSmsAnalytics = async (req: Request, res: Response) => {
@@ -65,6 +66,31 @@ const getWaAnalytics = async (req: Request, res: Response) => {
 
         const analytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         res.send(analytics);
+    } catch (error: any) {
+        logger.error(error);
+        res.status(400).send({ error: error?.message || error });
+    }
+}
+
+//GET '/Refactor'
+const getAnalytics = async (req: Request, res: Response) => {
+    try {
+        const params = { ...req.query, ...req.params } as any;
+        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to, resourceType } = params;
+        const fromDate = formatDate(startDate);
+        const toDate = formatDate(endDate);
+
+        switch (resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                return mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+            case RESOURCE_TYPE.OTP:
+                return otpAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+            case RESOURCE_TYPE.WA:
+                return waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+            default:
+                return smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
+        }
+
     } catch (error: any) {
         logger.error(error);
         res.status(400).send({ error: error?.message || error });
