@@ -1,6 +1,6 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset, { REPORT_DATA_TABLE_ID } from '../database/big-query-service';
-import { extractCountryCode } from "../services/utility-service";
+import { extractCountryCode, getFailureReason } from "../services/utility-service";
 
 const reportDataTable: Table = msg91Dataset.table(REPORT_DATA_TABLE_ID);
 export default class ReportData {
@@ -14,6 +14,8 @@ export default class ReportData {
     user_pid: string;
     senderID: string;
     smsc: string;
+    description: string;
+    failureReason?: string;
     deliveryTime: Date;
     route: string;
     credit: number;
@@ -24,7 +26,7 @@ export default class ReportData {
     oppri: number;
     isSingleRequest: string;
 
-    constructor(attr: any) {
+    private constructor(attr: any) {
         this._id = attr['_id']?.toString();
         this.requestID = attr['requestID'];
         this.telNum = attr['telNum'];
@@ -35,6 +37,7 @@ export default class ReportData {
         this.user_pid = attr['user_pid'];
         this.senderID = attr['senderID'];
         this.smsc = attr['smsc'];
+        this.description = attr['description'];
         this.deliveryTime = attr['deliveryTime'] || null;
         this.route = attr['route'];
         this.credit = parseFloat(attr['credit']);
@@ -44,6 +47,12 @@ export default class ReportData {
         this.node_id = attr['node_id'];
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.isSingleRequest = attr['isSingleRequest'];
+    }
+
+    public static createAsync = async (attr: any) => {
+        const reportData: ReportData = new ReportData(attr);
+        reportData.failureReason = await getFailureReason(reportData.smsc, reportData.description);
+        return reportData;
     }
 
     public static insertMany(rows: Array<ReportData>) {

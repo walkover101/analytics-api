@@ -14,8 +14,8 @@ export default class WARequest {
     timestamp: Date;
     content: string;
     status: string;
-    nodeId: number;
-   
+    nodeId: string;
+
 
     constructor(attr: any) {
         this.uuid = attr['message_uuid']; // Uniquely identifies each request

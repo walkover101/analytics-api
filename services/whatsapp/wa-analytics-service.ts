@@ -1,4 +1,4 @@
-import { getValidFields } from "../utility-service";
+import { getQuotedStrings, getValidFields } from "../utility-service";
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, WA_REQ_TABLE_ID, WA_REP_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
@@ -62,7 +62,7 @@ class WaAnalyticsService {
 
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
-        if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${filters.waNodeIds.splitAndTrim(',')})`;
+        if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${getQuotedStrings(filters.waNodeIds.splitAndTrim(','))})`;
         if (onlyNodes) conditions += ` AND requestData.nodeId IS NOT NULL`;
 
         return conditions;
@@ -73,7 +73,7 @@ class WaAnalyticsService {
             COUNTIF(reportData.status = "sent") AS sent,
             COUNTIF(reportData.status = "delivered") AS delivered,
             COUNTIF(reportData.status = "read") AS read,
-            TIMESTAMP_DIFF(ANY_VALUE(requestData.timestamp), ANY_VALUE(reportData.sentTime), SECOND) AS avgDeliveryTime`;
+            TIMESTAMP_DIFF(ANY_VALUE(reportData.sentTime),ANY_VALUE(requestData.timestamp), SECOND) AS avgDeliveryTime`;
     }
 
     private calculateTotalAggr(data: any) {
