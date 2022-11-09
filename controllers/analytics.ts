@@ -6,104 +6,21 @@ import mailAnalyticsService from "../services/email/mail-analytics-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
 import waAnalyticsService from "../services/whatsapp/wa-analytics-service";
 import { RESOURCE_TYPE } from "../models/download.model";
-import { DateTime } from "luxon";
-
-// GET '/analytics/sms'
-const getSmsAnalytics = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-
-        const analytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        res.send(analytics);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/analytics/mail'
-const getMailAnalytics = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-        if (!companyId) throw "companyId required";
-
-        const analytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        res.send(analytics);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/analytics/otp'
-const getOtpAnalytics = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-
-        const analytics = await otpAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        res.send(analytics);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/analytics/wa'
-const getWaAnalytics = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-
-        const analytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        res.send(analytics);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
 
 // GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa'
 const getAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to, resourceType } = params;
+        const resourceType = req.params[0]; // sms or otp or mail or wa
+        let { companyId, timeZone, groupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
 
-        const analytics = await getData(companyId, fromDate, toDate, timeZone, params, groupBy, resourceType);
+        const analytics = await getService(resourceType)?.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
         res.send(analytics);
-
     } catch (error: any) {
         logger.error(error);
         res.status(400).send({ error: error?.message || error });
-    }
-}
-
-const getData = (companyId: string, fromDate: DateTime, toDate: DateTime, timeZone: string | undefined, params: { [key: string]: string; } | undefined, groupBy: string | undefined, resourceType: any) => {
-    try {
-        switch (resourceType) {
-            case RESOURCE_TYPE.EMAIL:
-                return mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-            case RESOURCE_TYPE.OTP:
-                return otpAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-            case RESOURCE_TYPE.WA:
-                return waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-            default:
-                return smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
-        }
-    } catch (error: any) {
-        logger.error(error);
     }
 }
 
@@ -135,11 +52,24 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
     }
 }
 
+const getService = (resourceType: string) => {
+    try {
+        switch (resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                return mailAnalyticsService;
+            case RESOURCE_TYPE.OTP:
+                return otpAnalyticsService;
+            case RESOURCE_TYPE.WA:
+                return waAnalyticsService;
+            default:
+                return smsAnalyticsService;
+        }
+    } catch (error: any) {
+        logger.error(error);
+    }
+}
+
 export {
-    getSmsAnalytics,
-    getMailAnalytics,
-    getWaAnalytics,
-    getOtpAnalytics,
     getCampaignAnalytics,
     getAnalytics
 };
