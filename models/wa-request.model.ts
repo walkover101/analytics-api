@@ -16,7 +16,6 @@ export default class WARequest {
     status: string;
     nodeId: string;
 
-
     constructor(attr: any) {
         this.uuid = attr['message_uuid']; // Uniquely identifies each request
         this.companyId = attr['company_id']; // Comapany Id 
