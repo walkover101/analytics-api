@@ -28,7 +28,7 @@ const getAnalytics = async (req: Request, res: Response) => {
 const getCampaignAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, smsNodeIds, smsReqIds, waNodeIds, emailNodeIds, emailReqIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
+        let { companyId, smsNodeIds, smsReqIds, waNodeIds, waReqIds, emailNodeIds, emailReqIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
         if (!companyId) throw "companyId required";

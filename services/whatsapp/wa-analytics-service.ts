@@ -63,7 +63,7 @@ class WaAnalyticsService {
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
         if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${getQuotedStrings(filters.waNodeIds.splitAndTrim(','))})`;
-        if (filters.waReqIds) conditions += ` AND requestData.reqId in (${getQuotedStrings(filters.waReqIds.splitAndTrim(','))})`;
+        if (filters.waReqIds) conditions += ` AND requestData.requestId in (${getQuotedStrings(filters.waReqIds.splitAndTrim(','))})`;
         if (onlyNodes) conditions += ` AND requestData.nodeId IS NOT NULL`;
 
         return conditions;
