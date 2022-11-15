@@ -33,7 +33,7 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
         const toDate = formatDate(endDate);
         if (!companyId) throw "companyId required";
         let smsAnalytics, waAnalytics, mailAnalytics;
-        if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !emailNodeIds?.length && !emailReqIds?.length) {
+        if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !waReqIds?.length && !emailNodeIds?.length && !emailReqIds?.length) {
             smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
             mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy, true);
             waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
@@ -41,7 +41,7 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
             if (smsNodeIds?.length || smsReqIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
             if (waNodeIds?.length || waReqIds?.length) waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
             if (emailNodeIds?.length || emailReqIds?.length) mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy);
-        } 
+        }
 
         res.send({ sms: smsAnalytics, mail: mailAnalytics, wa: waAnalytics });
     } catch (error: any) {
