@@ -26,7 +26,7 @@ class WaAnalyticsService {
     }
 
     public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupings?: string, onlyNodes: boolean = false) {
-        if (filters.waNodeIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
+        if (filters.waNodeIds?.length || filters.waReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const whereClause = this.getWhereClause(companyId, startDate, endDate, filters, onlyNodes);
@@ -63,6 +63,7 @@ class WaAnalyticsService {
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
         if (filters.waNodeIds) conditions += ` AND requestData.nodeId in (${getQuotedStrings(filters.waNodeIds.splitAndTrim(','))})`;
+        if (filters.waReqIds) conditions += ` AND requestData.reqId in (${getQuotedStrings(filters.waReqIds.splitAndTrim(','))})`;
         if (onlyNodes) conditions += ` AND requestData.nodeId IS NOT NULL`;
 
         return conditions;
