@@ -25,7 +25,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
     createdAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailRequest.createdAt), SECOND))`,
     requestId: 'mailRequest.requestId',
-    companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
     domain: 'mailRequest.domain',
     senderEmail: 'mailRequest.senderEmail',
@@ -35,7 +34,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
 
     // Mail Report
     status: convertCodesToMessage('mailReport.eventId', STATUS_CODES),
-    enhancedStatusCode: 'mailReport.enhancedStatusCode',
 };
 
 class MailLogsService {
