@@ -33,7 +33,7 @@ const BLOCKED_CREDITS = {
 }
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
-    sentDateTime: `STRING(TIMESTAMP_TRUNC(DATETIME(otpData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
+    sentDateTime: `STRING(TIMESTAMP_TRUNC(otpData.sentTime, SECOND))`,
     requestId: "otpData.id",
     telNum: "otpData.telNum",
     status: convertCodesToMessage('otpData.reportStatus', STATUS_CODES),
@@ -52,8 +52,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
 
 class OtpLogsService {
     private static instance: OtpLogsService;
-
-
     public static getSingletonInstance(): OtpLogsService {
         return OtpLogsService.instance ||= new OtpLogsService();
     }
