@@ -33,6 +33,7 @@ export default class MailEvent {
         this.companyId = attr['cid'];
         this.requestTime = attr['mct'] && new Date(attr['mct']);
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
+        if(this.eventId == null || !this.companyId) throw new Error("eventId or companyId can't be null");
     }
 
     public static insertMany(rows: Array<MailEvent>) {

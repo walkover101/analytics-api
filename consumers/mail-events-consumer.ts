@@ -37,12 +37,14 @@ function startConsumption() {
     }, { noAck: false }); // Auto Ack Off
 }
 
-async function processMsgs(msgs: any[]) {
-    logger.info(`[CONSUMER](Mail Events) Buffer full, processing ${msgs.length} messages...`);
+async function processMsgs(events: any[]) {
+    logger.info(`[CONSUMER](Mail Events) Buffer full, processing ${events.length} messages...`);
 
+    let mailEvents: Array<MailEvent> = [];
+    events.forEach(msgs => {
+        msgs.forEach((msg: any) => mailEvents.push(new MailEvent(msg)));
+    })
     try {
-        const mailEvents: Array<MailEvent> = [];
-        msgs.map(msg => msg.map((mailEvent: any) => mailEvents.push(new MailEvent(mailEvent))));
         if (mailEvents.length) await MailEvent.insertMany(mailEvents);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
