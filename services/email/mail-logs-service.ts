@@ -34,6 +34,8 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
 
     // Mail Report
     status: convertCodesToMessage('mailReport.eventId', STATUS_CODES),
+    statusUpdatedAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailReport.createdAt), SECOND))`,
+    description: 'mailReport.reason',
 };
 
 class MailLogsService {
