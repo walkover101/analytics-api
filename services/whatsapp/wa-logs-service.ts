@@ -10,22 +10,22 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     submittedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    windowExp: 'STRING(reportData.windowExp)',
+    // windowExp: 'STRING(reportData.windowExp)', -- Don't need in logs
     reportStatus: 'reportData.status',
     reason: 'reportData.reason',
 
     // from request-data
     uuid: 'requestData.uuid',
-    companyId: 'requestData.companyId',
+    // companyId: 'requestData.companyId', -- Don't need in logs
     integratedNumber: 'requestData.integratedNumber',
     customerNumber: 'requestData.customerNumber',
     vendorId: 'requestData.vendorId',
     messageType: 'requestData.messageType',
     direction: 'requestData.direction',
-    timestamp: 'STRING(requestData.timestamp)',
+    timestamp: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
     requestStatus: 'requestData.status',
-    nodeId: 'requestData.nodeId'
+    // nodeId: 'requestData.nodeId' -- Don't need in logs
 };
 
 class WaLogsService {
