@@ -74,6 +74,8 @@ class WaAnalyticsService {
             COUNTIF(reportData.status = "sent") AS sent,
             COUNTIF(reportData.status = "delivered") AS delivered,
             COUNTIF(reportData.status = "read") AS read,
+            COUNTIF(reportData.status = "submitted") AS submitted,
+            COUNTIF(reportData.status = "failed") AS failed,
             ROUND(SUM(TIMESTAMP_DIFF(reportData.sentTime,requestData.timestamp, SECOND))/COUNT(requestData.uuid),0) as avgDeliveryTime`;
     }
 
@@ -85,6 +87,8 @@ class WaAnalyticsService {
             "sent": 0,
             "delivered": 0,
             "read": 0,
+            "submitted": 0,
+            "failed": 0,
             "avgDeliveryTime": 0
         }
 
@@ -93,6 +97,8 @@ class WaAnalyticsService {
             total["sent"] += row["sent"] || 0;
             total["delivered"] += row["delivered"] || 0;
             total["read"] += row["read"] || 0;
+            total["submitted"] += row["submitted"] || 0;
+            total["failed"] += row["failed"] || 0;
             avgDeliveryTime += row["avgDeliveryTime"] || 0;
         });
 
