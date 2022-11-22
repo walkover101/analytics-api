@@ -45,11 +45,11 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     telNum: 'reportData.telNum',
     credit: convertCodesToMessage('reportData.status', BLOCKED_CREDITS, false, 'reportData.credit'),
     senderId: 'reportData.senderID',
+    failureReason: 'reportData.failureReason',
 
     // from request-data
     campaignName: 'requestData.campaign_name',
     scheduleDateTime: 'STRING(requestData.scheduleDateTime)',
-    // msgData: 'requestData.msgData',
     msgData: `CASE
     WHEN reportData.message IS NOT NULL
     THEN reportData.message
