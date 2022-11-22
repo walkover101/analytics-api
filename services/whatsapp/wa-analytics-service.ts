@@ -37,7 +37,7 @@ class WaAnalyticsService {
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${WA_REQ_TABLE_ID}\` AS requestData
-            JOIN (${responseSubQuery}) AS reportData
+            LEFT JOIN (${responseSubQuery}) AS reportData
             ON reportData.uuid = requestData.uuid
             WHERE ${whereClause}
             GROUP BY ${groupBy}
@@ -70,12 +70,12 @@ class WaAnalyticsService {
     }
 
     private aggregateAttribs() {
-        return `COUNT(requestData.uuid) AS total,
+        return `COUNT(*) AS total,
             COUNTIF(reportData.status = "sent") AS sent,
             COUNTIF(reportData.status = "delivered") AS delivered,
             COUNTIF(reportData.status = "read") AS read,
-            COUNTIF(reportData.status = "submitted") AS submitted,
-            COUNTIF(reportData.status = "failed") AS failed,
+            COUNTIF(reportData.status IS null AND requestData.status = "submitted") AS submitted,
+            COUNTIF(reportData.status = "failed" OR requestData.status = "failed") AS failed,
             ROUND(SUM(TIMESTAMP_DIFF(reportData.sentTime,requestData.timestamp, SECOND))/COUNT(requestData.uuid),0) as avgDeliveryTime`;
     }
 
