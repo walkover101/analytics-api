@@ -48,6 +48,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     otpRetry: "otpData.otpRetry",
     verified: "otpData.verified",
     otpVerCount: "otpData.otpVerCount",
+    failureReason: "otpData.failureReason",
 };
 
 class OtpLogsService {
