@@ -130,7 +130,7 @@ async function getFailureReason(smsc: string, description: string) {
         if (!errorCodes[smsc]) throw `[${smsc} | ${code}] Not found in error codes list`;
         return errorCodes[smsc]?.[code];
     } catch (error) {
-        logger.error(error);
+        logger.debug(error);
     }
 }
 
