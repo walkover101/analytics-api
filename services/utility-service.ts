@@ -126,7 +126,7 @@ async function getFailureReason(smsc: string, description: string) {
     try {
         const code: string = description.split('err:')[1].split(' ')[0];
         const errorCodes = await getErrorCodes();
-        return errorCodes[smsc][code];
+        return errorCodes[smsc]?.[code];
     } catch (error) {
         logger.error(error);
     }
