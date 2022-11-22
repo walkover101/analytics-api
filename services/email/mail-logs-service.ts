@@ -23,9 +23,8 @@ const MAIL_TYPES = {
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // Mail Request
-    createdAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailRequest.createdAt), SECOND))`,
+    createdAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailRequest.createdAt,'${DEFAULT_TIMEZONE}'), SECOND))`,
     requestId: 'mailRequest.requestId',
-    companyId: 'mailRequest.companyId',
     subject: 'mailRequest.subject',
     domain: 'mailRequest.domain',
     senderEmail: 'mailRequest.senderEmail',
@@ -35,7 +34,8 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
 
     // Mail Report
     status: convertCodesToMessage('mailReport.eventId', STATUS_CODES),
-    enhancedStatusCode: 'mailReport.enhancedStatusCode',
+    statusUpdatedAt: `STRING(TIMESTAMP_TRUNC(DATETIME(mailReport.createdAt,'${DEFAULT_TIMEZONE}'), SECOND))`,
+    description: 'mailReport.reason',
 };
 
 class MailLogsService {

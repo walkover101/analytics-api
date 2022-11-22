@@ -10,7 +10,6 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     date: `STRING(DATE(request.createdAt,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'request.nodeId',
     reqId: 'request.mailerRequestId',
-    microservice: '(SELECT "MAIL")'
 };
 
 class MailAnalyticsService {
@@ -20,18 +19,18 @@ class MailAnalyticsService {
         return MailAnalyticsService.instance ||= new MailAnalyticsService();
     }
 
-    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy);
+    public async getAnalytics(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, groupBy?: string, onlyNodes: boolean = false) {
+        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, groupBy, onlyNodes);
         const data = await getQueryResults(query);
         const total = this.calculateTotalAggr(data);
         return { data, total };
     }
 
-    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings?: string) {
+    public getQuery(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [key: string]: string } = {}, groupings?: string, onlyNodes: boolean = false) {
         if (filters.emailNodeIds?.length || filters.emailReqIds?.length) groupings = `nodeId,${groupings?.length ? groupings : 'date'}`;
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
-        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, groupings);
+        const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters, onlyNodes);
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
@@ -60,18 +59,15 @@ class MailAnalyticsService {
                 GROUP BY requestId`;
     }
 
-    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, groupings?: string) {
+    private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }, onlyNodes: boolean = false) {
         let conditions = `(request.createdAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
         if (companyId) conditions += ` AND request.companyId = "${companyId}"`;
 
-        if (groupings === 'microservice') {
-            conditions += ` AND request.nodeId is NOT NULL`;
-        } else {
-            if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
-            if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
-        }
+        if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
+        if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
+        if (onlyNodes) conditions += ` AND request.nodeId IS NOT NULL`;
 
         return conditions;
     }

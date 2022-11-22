@@ -1,6 +1,6 @@
 
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, WA_REQ_TABLE_ID, WA_REP_TABLE_ID } from '../../database/big-query-service';
-import { getValidFields } from '../utility-service';
+import { getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -10,22 +10,19 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     submittedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    windowExp: 'STRING(reportData.windowExp)',
     reportStatus: 'reportData.status',
     reason: 'reportData.reason',
 
     // from request-data
     uuid: 'requestData.uuid',
-    companyId: 'requestData.companyId',
     integratedNumber: 'requestData.integratedNumber',
     customerNumber: 'requestData.customerNumber',
     vendorId: 'requestData.vendorId',
     messageType: 'requestData.messageType',
     direction: 'requestData.direction',
-    timestamp: 'STRING(requestData.timestamp)',
+    timestamp: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
-    requestStatus: 'requestData.status',
-    nodeId: 'requestData.nodeId'
+    requestStatus: 'requestData.status'
 };
 
 class WaLogsService {
@@ -59,6 +56,7 @@ class WaLogsService {
 
         // optional conditions
         if (companyId) conditions += `AND reportData.companyId = "${companyId}" AND requestData.companyId = "${companyId}"`;
+        if (query.status) conditions += ` AND reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})`;
 
         return conditions;
     }

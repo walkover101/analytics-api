@@ -10,7 +10,7 @@ const healthcheck = async (_req: Request, res: Response) => {
 const test = async (req: Request, res: Response) => {
     try {
         const result: any = req.body.data;
-
+        
         return res.send(result);
     } catch (err) {
         logger.error(err);
@@ -19,3 +19,7 @@ const test = async (req: Request, res: Response) => {
 }
 
 export { healthcheck, test };
+
+function description(description: any): any {
+    throw new Error("Function not implemented.");
+}

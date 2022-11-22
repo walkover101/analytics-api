@@ -3,6 +3,7 @@ import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '..
 import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
+import ReportData from '../../models/report-data.model';
 
 const STATUS_CODES = {
     1: "Delivered",
@@ -48,7 +49,13 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     // from request-data
     campaignName: 'requestData.campaign_name',
     scheduleDateTime: 'STRING(requestData.scheduleDateTime)',
-    msgData: 'requestData.msgData',
+    // msgData: 'requestData.msgData',
+    msgData: `CASE
+    WHEN reportData.message IS NOT NULL
+    THEN reportData.message
+    ELSE requestData.msgData
+    END
+    `,
     route: 'requestData.curRoute'
 };
 

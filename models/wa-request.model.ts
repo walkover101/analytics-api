@@ -5,6 +5,7 @@ const waRequestTable: Table = msg91Dataset.table(WA_REQ_TABLE_ID);
 
 export default class WARequest {
     uuid: string;
+    requestId: string;
     companyId: string;
     integratedNumber: string;
     customerNumber: string;
@@ -14,11 +15,11 @@ export default class WARequest {
     timestamp: Date;
     content: string;
     status: string;
-    nodeId: number;
-   
+    nodeId: string;
 
     constructor(attr: any) {
         this.uuid = attr['message_uuid']; // Uniquely identifies each request
+        this.requestId = attr['request_id']; // Uniquely identifies execution of each batch of a campaign
         this.companyId = attr['company_id']; // Comapany Id 
         this.integratedNumber = attr['integrated_number']; // Uniquely assigned phone number to company by WA
         this.customerNumber = attr['customer_number']; // WA number of customer
