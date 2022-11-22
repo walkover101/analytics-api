@@ -37,7 +37,7 @@ export default class MailReport {
         //common in all three email models
         this.recipientEmail = attr['rem']?.toLowerCase();
         this.outboundEmailId = parseInt(attr['oid']);
-        this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
+        this.requestId = getHashCode(`${attr['mri']}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
         this.requestTime = attr['mct'] && new Date(attr['mct']);
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
