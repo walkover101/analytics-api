@@ -124,7 +124,8 @@ async function getFailureReason(smsc: string, description: string) {
     if (!smsc || !description) return;
 
     try {
-        const code: string = description.split('err:')[1].split(' ')[0];
+        const error: string = description.split("err:")[1] || "";
+        const code: string = error?.split(' ')[0];
         const errorCodes = await getErrorCodes();
         if (!errorCodes[smsc]) throw `[${smsc} | ${code}] Not found in error codes list`;
         return errorCodes[smsc]?.[code];
