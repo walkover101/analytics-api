@@ -10,8 +10,13 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     submittedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    reportStatus: 'reportData.status',
     reason: 'reportData.reason',
+    status: `CASE
+    WHEN reportData.status IS NOT NULL
+    THEN reportData.status
+    ELSE requestData.status
+    END
+    `,
 
     // from request-data
     uuid: 'requestData.uuid',
@@ -22,7 +27,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     direction: 'requestData.direction',
     timestamp: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
-    requestStatus: 'requestData.status'
 };
 
 class WaLogsService {
@@ -63,7 +67,7 @@ class WaLogsService {
 
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
-        if (query.status) conditions += ` AND reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})`;
+        if (query.status) conditions += ` AND (reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))}) OR (reportData.status is NULL AND requestData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})))`;
 
         return conditions;
     }
