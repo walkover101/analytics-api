@@ -12,13 +12,15 @@ import OtpModel from "../models/otp-model";
 let mongoConnection: MongoClient;
 const COLLECTION = {
     requestData: process.env.REQUEST_DATA_COLLECTION || '',
+    rtRequestData: process.env.REQUEST_DATA_COLLECTION || '',
     reportData: process.env.REPORT_DATA_COLLECTION || '',
     otpReport: process.env.OTP_REPORT_COLLECTION || ''
 }
 const FILTER_BY = {
     requestData: 'requestDate',
     reportData: 'sentTime',
-    otpReport: 'requestDate'
+    otpReport: 'requestDate',
+    rtRequestData: 'rtRequestData'
 }
 
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);

@@ -4,6 +4,9 @@ import logger from "./../logger/logger";
 import { has } from 'lodash';
 import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-job';
 import { dataIntegrity } from "./data-integrity";
+import { requestSync } from "./request-sync";
+import { reportSync } from "./report-sync";
+import { rtRequestSync } from "./rt-request-sync";
 import sequelize from '../database/sequelize-service';
 import cron from 'node-cron';
 const args = require('minimist')(process.argv.slice(2));
@@ -12,7 +15,10 @@ const args = require('minimist')(process.argv.slice(2));
 const Jobs: any = {
     requestDataSyncJob,
     reportDataSyncJob,
-    otpReportSyncJob
+    otpReportSyncJob,
+    requestSync,
+    reportSync,
+    rtRequestSync
 };
 
 // Register your cron jobs

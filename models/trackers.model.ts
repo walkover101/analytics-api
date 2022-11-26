@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 
 export enum jobType {
     REQUEST_DATA = 'requestData',
+    RT_REQUEST_DATA = "rtRequestData",
     REPORT_DATA = 'reportData',
     OTP_REPORT = 'otpReport'
 };
@@ -41,6 +42,13 @@ const Tracker = sequelize.define("Tracker", {
             if (!DateTime.fromISO(value).isValid) throw new Error('Invalid lastTimestamp');
 
             this.setDataValue('lastTimestamp', value);
+        }
+    },
+    token: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        set(value: string) {
+            this.setDataValue('token', value);
         }
     }
 });

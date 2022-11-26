@@ -5,6 +5,7 @@ import { Stat } from '../apis'; import { CacheContainer } from 'node-ts-cache';
 import { MemoryStorage } from 'node-ts-cache-storage-memory';
 import logger from '../logger/logger';
 import axios from 'axios';
+import rabbitmqProducer from '../database/rabbitmq-producer';
 
 const cache = new CacheContainer(new MemoryStorage());
 const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API;
@@ -185,6 +186,14 @@ tr:hover {background-color: #D6EEEE;}
   </body>
   </html>
     `
+}
+
+export async function sendChannelNotification(channelId:string, message:any){
+    await rabbitmqProducer.publishToQueue("notification",{
+        type: "channel",
+        data: {channelId,message},
+        retry: 5
+    });
 }
 export {
     delay,

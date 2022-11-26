@@ -9,6 +9,8 @@ import { waReportsConsumer } from "./wa-reports-consumer";
 import { waRequestsConsumer } from "./wa-requests-consumer";
 import { zipFolderConsumer } from "./zip-folder-consumer";
 import { notificationConsumer } from "./notification-consumer";
+import { smsRTSync } from "./sms-rt-sync";
+import { requestSync } from "../jobs/request-sync";
 
 // Register your consumers here
 const Consumers: any = {
@@ -18,7 +20,8 @@ const Consumers: any = {
     waReportsConsumer,
     waRequestsConsumer,
     zipFolderConsumer,
-    notificationConsumer
+    notificationConsumer,
+    smsRTSync
 };
 
 function invalidConsumerName(consumerName: string): Boolean {
@@ -31,13 +34,13 @@ function getAvailableConsumers() {
     return numberedConsumerNames.join('\n');
 }
 
-function main() {
+async function main() {
     const consumerName = process.argv[2];
 
     if (invalidConsumerName(consumerName))
         return logger.error(`Valid consumer name is required\n\nAvailable consumers: \n${getAvailableConsumers()}`);
 
-    Consumers[consumerName]();
+    await Consumers[consumerName]();
 }
 
 main();

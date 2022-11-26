@@ -10,12 +10,12 @@ class RabbitMqProducer {
     constructor() {
         logger.info(`[PRODUCER] Listening for connection...`);
 
-        rabbitmqService().on("connect", async (connection) => {
-            logger.info(`[PRODUCER] Connection received...`);
-            rabbitConnection = connection;
-            logger.info(`[PRODUCER] Creating channel...`);
-            rabbitChannel = await rabbitConnection.createChannel();
-        });
+        // rabbitmqService().on("connect", async (connection) => {
+        //     logger.info(`[PRODUCER] Connection received...`);
+        //     rabbitConnection = connection;
+        //     logger.info(`[PRODUCER] Creating channel...`);
+        //     rabbitChannel = await rabbitConnection.createChannel();
+        // });
     }
 
     public static getSingletonInstance(): RabbitMqProducer {
