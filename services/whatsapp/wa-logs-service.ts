@@ -10,7 +10,12 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     submittedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    reason: 'reportData.reason',
+    reason: `CASE
+    WHEN requestData.reason IS NOT NULL
+    THEN requestData.reason
+    ELSE reportData.reason
+    END
+    `,
     status: `CASE
     WHEN reportData.status IS NOT NULL
     THEN reportData.status

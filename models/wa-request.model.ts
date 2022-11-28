@@ -15,6 +15,7 @@ export default class WARequest {
     timestamp: Date;
     content: string;
     status: string;
+    reason: string;
     nodeId: string;
 
     constructor(attr: any) {
@@ -29,6 +30,7 @@ export default class WARequest {
         this.timestamp = attr['submitted_at']; // When message was requested
         this.content = attr['content']; // Content of the message
         this.status = attr['status']; // Submitted / Failed
+        this.reason = attr['failure_reason'];
         this.nodeId = attr['node_id']; // Identifies if this message is a part of a campaign
     }
 
