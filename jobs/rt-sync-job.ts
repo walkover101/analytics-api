@@ -24,7 +24,7 @@ async function handleRequestStream(changeStream: ChangeStream) {
             // new SlowDown(1000),
             // new Log(["_id","_data"]),
             new WriteRequest(1000).on("data", (data) => {
-                JSON.stringify(data);
+                logger.info(JSON.stringify(data));
             })
         )
     } catch (error: any) {
@@ -45,7 +45,7 @@ async function handleReportStream(changeStream: ChangeStream) {
             // new SlowDown(1000),
             // new Log(["_id","_data"]),
             new WriteReport(1000).on("data", (data) => {
-                JSON.stringify(data);
+                logger.info(JSON.stringify(data));
             })
         )
     } catch (error: any) {
