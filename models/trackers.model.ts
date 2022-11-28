@@ -6,6 +6,7 @@ export enum jobType {
     REQUEST_DATA = 'requestData',
     RT_REQUEST_DATA = "rtRequestData",
     REPORT_DATA = 'reportData',
+    RT_REPORT_DATA = 'reportData',
     OTP_REPORT = 'otpReport'
 };
 
