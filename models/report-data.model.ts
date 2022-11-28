@@ -26,6 +26,7 @@ export default class ReportData {
     oppri: number;
     isSingleRequest: string;
     message: string;
+    timestamp?: string;
 
     private constructor(attr: any) {
         this._id = attr['_id']?.toString();
@@ -49,6 +50,7 @@ export default class ReportData {
         this.oppri = parseFloat(attr['oppri'] || 0);
         this.isSingleRequest = attr['isSingleRequest'];
         this.message = attr['message'];
+        this.timestamp = attr['timestamp'];
     }
 
     public static createAsync = async (attr: any) => {

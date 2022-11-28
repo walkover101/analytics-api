@@ -34,6 +34,7 @@ export default class RequestData {
     node_id: string;
     scheduleDateTime: Date;
     msgData: string;
+    timestamp: string;
 
     constructor(attr: any) {
         this._id = attr['_id'].toString();
@@ -66,6 +67,7 @@ export default class RequestData {
         this.node_id = attr['node_id'];
         this.scheduleDateTime = attr['scheduleDateTime'] || null;
         this.msgData = attr['msgData'];
+        this.timestamp = attr['timestamp'];
     }
 
     public static insertMany(rows: Array<RequestData>) {

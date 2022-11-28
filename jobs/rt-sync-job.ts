@@ -19,9 +19,13 @@ async function handleRequestStream(changeStream: ChangeStream) {
     try {
         await pipeline(readableStream,
             new FilterOperation(["insert", "update"]),
-            new FilterUpdates([]),
-            new SlowDown(500),
-            new Log()
+            // new FilterUpdates(["reportStatus", "requestDate", "isSingleRequest", "credit", "crcy", "oppri", "node_id", "route", "userCountryCode", "deliveryTime", "smsc", "campaign_name", "campaign_pid"]),
+            new AddTimestamp(),
+            // new SlowDown(1000),
+            // new Log(["_id","_data"]),
+            new WriteRequest(1000).on("data", (data) => {
+                JSON.stringify(data);
+            })
         )
     } catch (error: any) {
         logger.error(error);
@@ -36,9 +40,13 @@ async function handleReportStream(changeStream: ChangeStream) {
     try {
         await pipeline(readableStream,
             new FilterOperation(["insert", "update"]),
-            new FilterUpdates([]),
-            new SlowDown(500),
-            new Log()
+            // new FilterUpdates(["status", "sentTime", "user_pid", "credit", "isSingleRequest", "crcy", "oppri", "route", "deliveryTime"]),
+            new AddTimestamp(),
+            // new SlowDown(1000),
+            // new Log(["_id","_data"]),
+            new WriteReport(1000).on("data", (data) => {
+                JSON.stringify(data);
+            })
         )
     } catch (error: any) {
         logger.error(error);
@@ -48,15 +56,15 @@ async function handleReportStream(changeStream: ChangeStream) {
 }
 async function initToken(args: any, job: jobType) {
     let startToken = args?.token;
-    if (startToken) {
-        try {
-            if (args.force) await Tracker.upsert({ jobType: job, token: startToken, lastTimestamp: new Date().toISOString() });
-            else await Tracker.create({ jobType: job, token: startToken, lastTimestamp: new Date().toISOString() });
-        } catch (error: any) {
-            if (error.message === 'Validation error') logger.error('token already exists. Use --force to force replace the current value');
-            else throw error;
-        }
+
+    try {
+        if (args.force) await Tracker.upsert({ jobType: job, token: startToken, lastTimestamp: new Date().toISOString() });
+        else await Tracker.create({ jobType: job, token: startToken, lastTimestamp: new Date().toISOString() });
+    } catch (error: any) {
+        if (error.message === 'Validation error') logger.error('token already exists. Use --force to force replace the current value');
+        else throw error;
     }
+
 }
 export const rtRequestSync = async (args: any) => {
     if (!DB_NAME) throw new Error("DB_NAME is not found in env")
@@ -79,7 +87,7 @@ export const rtReportSync = async (args: any) => {
     if (!REPORT_DATA_COLLECTION) throw new Error("REPORT_DATA_COLLECTION is not found in env");
     await initToken(args, jobType.RT_REPORT_DATA);
     mongoService().on("connect", async (connection: MongoClient) => {
-        const { token = "", lastTimestamp }: any = await Tracker.findByPk(jobType.RT_REQUEST_DATA);
+        const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_REPORT_DATA);
         const collection = connection.db(DB_NAME).collection(REPORT_DATA_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
@@ -91,6 +99,19 @@ export const rtReportSync = async (args: any) => {
     })
 }
 
+class AddTimestamp extends Transform {
+    constructor(options: any = {}) {
+        options.objectMode = true;
+        super(options);
+    }
+
+    async _transform(request: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        request.fullDocument.timestamp = new Timestamp(request?.clusterTime).toString();
+        // Convert string back to timestamp - Timestamp.fromString("7171080789872869490",10)
+        this.push(request);
+        callback();
+    }
+}
 class SlowDown extends Transform {
     time: number;
     constructor(time: number = 100, options: any = {}) {
@@ -106,18 +127,34 @@ class SlowDown extends Transform {
     }
 }
 class Log extends Transform {
-    private key;
-    constructor(key?: string, options: any = {}) {
+    private keys: string[] = new Array();
+    constructor(keys?: string | string[], options: any = {}) {
         options.objectMode = true;
         super(options);
-        this.key = key;
+        if (typeof keys == "string") {
+            this.keys = [keys]
+        } else {
+            this.keys = keys || [];
+        };
     }
 
     async _transform(request: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
-        if (this.key) {
-            logger.info(request[this.key]);
-        } else {
-            logger.info(request);
+        let value = request;
+        if (this.keys.length > 0) {
+            for (let key of this.keys) {
+                try {
+                    value = value[key];
+                } catch (error) {
+                    logger.error(error);
+                    value = value;
+                }
+            }
+        }
+        try {
+            (typeof value == "object") ? logger.info(JSON.stringify(value)) : logger.info(value);
+
+        } catch (error) {
+            logger.error(error);
         }
         this.push(request);
         callback();
@@ -159,11 +196,11 @@ class FilterOperation extends Transform {
 }
 
 class FilterUpdates extends Transform {
-    fields: string[];
+    fields: Set<string>;
     constructor(fields: string[], options: any = {}) {
         options.objectMode = true;
         super(options);
-        this.fields = fields;
+        this.fields = new Set(Object.keys(fields));
     }
 
     _transform(request: any, encoding: BufferEncoding, callback: TransformCallback): void {
@@ -173,8 +210,8 @@ class FilterUpdates extends Transform {
             this.push(request);
         } else {
             // const updatedFields = request?.updateDescription?.updatedFields;
-            const updatedFields = new Set(Object.keys(request?.updateDescription?.updatedFields || []));
-            const isAllowedField = this.fields.some((field) => updatedFields.has(field));
+            const updatedFields = Object.keys(request?.updateDescription?.updatedFields) || [];
+            const isAllowedField = updatedFields.some((field: string) => this.fields.has(field));
             if (isAllowedField) {
                 this.push(request);
             }
@@ -256,6 +293,7 @@ class WriteReport extends Transform {
                     throw reason;
                 }
             });
+            logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_REPORT_DATA, lastTimestamp: new Date(doc?.sentTime).toISOString(), token: data?._id?._data });
             this.batch = [];
         }
