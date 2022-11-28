@@ -6,7 +6,8 @@ import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-
 import { dataIntegrity } from "./data-integrity";
 import { requestSync } from "./request-sync";
 import { reportSync } from "./report-sync";
-import { rtRequestSync } from "./rt-request-sync";
+// import { rtRequestSync } from "./rt-request-sync";
+import { rtRequestSync, rtReportSync } from "./rt-sync-job";
 import sequelize from '../database/sequelize-service';
 import cron from 'node-cron';
 const args = require('minimist')(process.argv.slice(2));
@@ -18,7 +19,8 @@ const Jobs: any = {
     otpReportSyncJob,
     requestSync,
     reportSync,
-    rtRequestSync
+    rtRequestSync,
+    rtReportSync
 };
 
 // Register your cron jobs

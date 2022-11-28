@@ -71,7 +71,7 @@ export const rtRequestSync = async (args: any) => {
             startAfter: (token) ? { "_data": token } : null
         }
         const stream = collection.watch([], options);
-        await handleReportStream(stream);
+        await handleRequestStream(stream);
     })
 }
 export const rtReportSync = async (args: any) => {
