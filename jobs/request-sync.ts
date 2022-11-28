@@ -18,17 +18,17 @@ async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDo
         await pipeline(stream as Readable,
             new Lag("requestDate", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
-            new SlowDown(100),
-            new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp)
+            // new SlowDown(100),
+            new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp),
+            new WriteRequest(1000)
                 .on("data", async (data) => {
-                    logger.info(`${data?.isSingleRequest} - ${data?.reportStatus} - ${data?.requestDate}`);
-
-
+                    logger.info(`${data?._id} - ${data?.requestDate} - ${data?.isSingleRequest} - ${data?.reportStatus || data?.status}`);
+                    logger.info(data);
                 })
         )
     } catch (error: any) {
         logger.error(error);
-        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        // await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
         await delay(2000);
         process.exit(1);
     }
@@ -184,8 +184,8 @@ class WriteRequest extends Transform {
                 }
             })
 
-            logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
-            await Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: new Date(data?.requestDate).toISOString() });
+            logger.info(`Last Document : ${JSON.stringify(data?._id)}`);
+            await Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: new Date(data?.requestDate).toISOString(), lastDocumentId: data?._id?.toString() });
             this.batch = [];
             this.reportBatch = [];
         }
