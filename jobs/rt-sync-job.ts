@@ -19,11 +19,13 @@ async function handleRequestStream(changeStream: ChangeStream) {
     try {
         await pipeline(readableStream,
             new FilterOperation(["insert", "update"]),
+            new FilterOutNull(),
             // new FilterUpdates(["reportStatus", "requestDate", "isSingleRequest", "credit", "crcy", "oppri", "node_id", "route", "userCountryCode", "deliveryTime", "smsc", "campaign_name", "campaign_pid"]),
             new AddTimestamp(),
             // new SlowDown(1000),
             // new Log(["_id","_data"]),
-            new WriteRequest(1000).on("data", (data) => {
+            new WriteRequest(1000)
+            .on("data", (data) => {
                 logger.info(JSON.stringify(data));
             })
         )
@@ -40,6 +42,7 @@ async function handleReportStream(changeStream: ChangeStream) {
     try {
         await pipeline(readableStream,
             new FilterOperation(["insert", "update"]),
+            new FilterOutNull(),
             // new FilterUpdates(["status", "sentTime", "user_pid", "credit", "isSingleRequest", "crcy", "oppri", "route", "deliveryTime"]),
             new AddTimestamp(),
             // new SlowDown(1000),
@@ -97,6 +100,20 @@ export const rtReportSync = async (args: any) => {
         const stream = collection.watch([], options);
         await handleReportStream(stream);
     })
+}
+
+class FilterOutNull extends Transform {
+    constructor(options: any = {}) {
+        options.objectMode = true;
+        super(options);
+    }
+
+    async _transform(request: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        if (request?.fullDocument) {
+            this.push(request);
+        }
+        callback();
+    }
 }
 
 class AddTimestamp extends Transform {
