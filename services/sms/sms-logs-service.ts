@@ -76,7 +76,7 @@ class SmsLogsService {
         const repWhereClause = this.getRepWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
             FROM (${prepareQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, reqWhereClause, '_id')}) AS requestData
-            JOIN (${prepareQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, repWhereClause, '_id')}) AS reportData
+            LEFT JOIN (${prepareQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, repWhereClause, '_id')}) AS reportData
             ON reportData.requestId = requestData._id`;
         logger.info(query);
         return query;
