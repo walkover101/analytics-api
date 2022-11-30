@@ -135,7 +135,7 @@ async function getFailureReason(smsc: string, description: string) {
     }
 }
 
-function prepareNestedQuery(tableName: string, attributes: string[], groupBy: string, whereClause: string) {
+function prepareQuery(tableName: string, attributes: string[], whereClause: string, groupBy: string) {
     const query = `SELECT ${attributes.join(',')}
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${tableName}\`
             WHERE ${whereClause}
@@ -210,5 +210,5 @@ export {
     generateStatHTML,
     getErrorCodes,
     getFailureReason,
-    prepareNestedQuery
+    prepareQuery
 }

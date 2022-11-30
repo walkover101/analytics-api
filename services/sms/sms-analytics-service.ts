@@ -1,4 +1,4 @@
-import { getQuotedStrings, getValidFields, prepareNestedQuery } from "../utility-service";
+import { getQuotedStrings, getValidFields, prepareQuery } from "../utility-service";
 import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
@@ -51,8 +51,8 @@ class SmsAnalyticsService {
         const groupByAttribs = validFields.withAlias.join(',');
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
-            FROM (${prepareNestedQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, '_id', reqWhereClause)}) AS requestData
-            LEFT JOIN (${prepareNestedQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, '_id', repWhereClause)}) AS reportData
+            FROM (${prepareQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, reqWhereClause, '_id')}) AS requestData
+            LEFT JOIN (${prepareQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, repWhereClause, '_id')}) AS reportData
             ON reportData.requestID = requestData._id
             GROUP BY ${groupBy}
             ORDER BY ${groupBy}`;

@@ -1,6 +1,6 @@
 
 import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
-import { convertCodesToMessage, getQuotedStrings, getValidFields, prepareNestedQuery } from '../utility-service';
+import { convertCodesToMessage, getQuotedStrings, getValidFields, prepareQuery } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -72,11 +72,11 @@ class SmsLogsService {
         startDate = startDate.setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
-        const repWhereClause = this.getRepWhereClause(companyId, startDate, endDate, timeZone, filters);
         const reqWhereClause = this.getReqWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const repWhereClause = this.getRepWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
-            FROM (${prepareNestedQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, '_id', reqWhereClause)}) AS requestData
-            JOIN (${prepareNestedQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, '_id', repWhereClause)}) AS reportData
+            FROM (${prepareQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, reqWhereClause, '_id')}) AS requestData
+            JOIN (${prepareQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, repWhereClause, '_id')}) AS reportData
             ON reportData.requestId = requestData._id`;
         logger.info(query);
         return query;
