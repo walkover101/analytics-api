@@ -5,6 +5,7 @@ import { Stat } from '../apis'; import { CacheContainer } from 'node-ts-cache';
 import { MemoryStorage } from 'node-ts-cache-storage-memory';
 import logger from '../logger/logger';
 import axios from 'axios';
+import { MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 
 const cache = new CacheContainer(new MemoryStorage());
 const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API;
@@ -134,6 +135,15 @@ async function getFailureReason(smsc: string, description: string) {
     }
 }
 
+function prepareNestedQuery(tableName: string, attributes: string[], groupBy: string, whereClause: string) {
+    const query = `SELECT ${attributes.join(',')}
+            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${tableName}\`
+            WHERE ${whereClause}
+            GROUP BY ${groupBy}`;
+
+    return query;
+}
+
 function generateStatHTML(map: Map<string, Stat>) {
     let rows = ``;
     map.forEach((stat, key) => {
@@ -199,5 +209,6 @@ export {
     convertCodesToMessage,
     generateStatHTML,
     getErrorCodes,
-    getFailureReason
+    getFailureReason,
+    prepareNestedQuery
 }

@@ -1,5 +1,5 @@
-import { getQuotedStrings, getValidFields } from "../utility-service";
-import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
+import { getQuotedStrings, getValidFields, prepareNestedQuery } from "../utility-service";
+import { getQueryResults, REPORT_DATA_TABLE_ID, REQUEST_DATA_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -51,22 +51,13 @@ class SmsAnalyticsService {
         const groupByAttribs = validFields.withAlias.join(',');
 
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
-            FROM (${this.prepareNestedQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, '_id', reqWhereClause)}) AS requestData
-            LEFT JOIN (${this.prepareNestedQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, '_id', repWhereClause)}) AS reportData
+            FROM (${prepareNestedQuery(REQUEST_DATA_TABLE_ID, REQUEST_FIELDS, '_id', reqWhereClause)}) AS requestData
+            LEFT JOIN (${prepareNestedQuery(REPORT_DATA_TABLE_ID, REPORT_FIELDS, '_id', repWhereClause)}) AS reportData
             ON reportData.requestID = requestData._id
             GROUP BY ${groupBy}
             ORDER BY ${groupBy}`;
 
         logger.info(query);
-        return query;
-    }
-
-    public prepareNestedQuery(tableName: string, attributes: string[], groupBy: string, whereClause: string) {
-        const query = `SELECT ${attributes.join(',')}
-            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${tableName}\`
-            WHERE ${whereClause}
-            GROUP BY ${groupBy}`;
-
         return query;
     }
 
