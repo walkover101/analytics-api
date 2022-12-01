@@ -7,7 +7,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    submittedAt: 'STRING(reportData.submittedAt)',
+    requestedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
     reason: `CASE
@@ -30,7 +30,7 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     vendorId: 'requestData.vendorId',
     messageType: 'requestData.messageType',
     direction: 'requestData.direction',
-    timestamp: 'STRING(reportData.timestamp)',
+    statusUpdatedAt: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
 };
 
