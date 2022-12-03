@@ -78,7 +78,7 @@ export const rtRequestSync = async (args: any) => {
         const collection = connection.db(DB_NAME).collection(REQUEST_DATA_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
-            batchSize: 2,
+            batchSize: 500,
             startAfter: (token) ? { "_data": token } : null
         }
         const stream = collection.watch([], options);
