@@ -31,18 +31,6 @@ async function handleReportStream(stream: Stream, lastTimestamp: string, lastDoc
         process.exit(1);
 
     }
-    // stream
-    //     .pipe(new Lag("sentTime", 55 * 60))
-    //     .pipe(new Skip(lastTimestamp, lastDocumentId))
-    //     // .pipe(new WriteReport(1000))
-    //     // .on("data", async (data) => {
-    //     //     logger.info(data?.sentTime);
-
-
-    //     // })
-    //     .on("error", (error) => {
-    //         logger.error(error);
-    //     })
 }
 
 
@@ -58,8 +46,6 @@ class Skip extends Transform {
     }
 
     async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
-        // logger.info(data?._id, data?.sentTime);
-        // await delay(500);
         if (this.skipped) {
             this.push(data);
             // await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() })

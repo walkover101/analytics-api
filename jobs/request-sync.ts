@@ -12,14 +12,12 @@ const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || "";
 const DB_NAME = process.env.MONGO_DB_NAME;
 
-async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, filterOutTimestamp: string) {
+async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string) {
 
     try {
         await pipeline(stream as Readable,
             new Lag("requestDate", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
-            // new SlowDown(100),
-            // new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp),
             new WriteRequest(1000)
                 .on("data", async (data) => {
                     logger.info(`${data?._id} - ${data?.requestDate} - ${data?.isSingleRequest} - ${data?.reportStatus || data?.status}`);
@@ -223,7 +221,7 @@ const requestSync = async (args: any) => {
                 // $lte: DateTime.fromISO("2022-11-16T11:00Z").toJSDate()
             }
         }
-        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), lastTimestamp, lastDocumentId, "2022-11-25 09:56:25 UTC");
+        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), lastTimestamp, lastDocumentId);
     });
 }
 
