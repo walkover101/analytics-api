@@ -25,13 +25,16 @@ async function handleRequestStream(changeStream: ChangeStream) {
             // new SlowDown(1000),
             // new Log(["_id","_data"]),
             new WriteRequest(1000)
-            .on("data", (data) => {
-                logger.info(JSON.stringify(data));
-            })
+                .on("data", (data) => {
+                    logger.info(JSON.stringify(data));
+                })
         )
     } catch (error: any) {
         logger.error(error);
-        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(reason => {
+            logger.error(reason);
+        });
+        await delay(5000);
         process.exit(1);
     }
 
@@ -53,7 +56,10 @@ async function handleReportStream(changeStream: ChangeStream) {
         )
     } catch (error: any) {
         logger.error(error);
-        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(reason => {
+            logger.error(reason);
+        });
+        await delay(5000);
         process.exit(1);
     }
 }
@@ -94,7 +100,7 @@ export const rtReportSync = async (args: any) => {
         const collection = connection.db(DB_NAME).collection(REPORT_DATA_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
-            batchSize: 2,
+            batchSize: 500,
             startAfter: (token) ? { "_data": token } : null
         }
         const stream = collection.watch([], options);
