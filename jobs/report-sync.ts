@@ -17,7 +17,7 @@ async function handleReportStream(stream: Stream, lastTimestamp: string, lastDoc
     try {
         await pipeline(
             stream as Readable,
-            new Lag("sentTime", 55 * 60),
+            new Lag("sentTime", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
             new WriteReport(1000)
                 .on("data", (data) => {
@@ -116,10 +116,11 @@ class WriteReport extends Transform {
 const reportSync = async (args: any) => {
     mongoService().on("connect", async (connection: MongoClient) => {
         let ts = args?.timestamp;
+        let docId = args?.id;
         if (ts) {
             try {
-                if (args.force) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: ts });
-                else await Tracker.create({ jobType: jobType.REPORT_DATA, lastTimestamp: ts });
+                if (args.force) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: ts, lastDocumentId: docId });
+                else await Tracker.create({ jobType: jobType.REPORT_DATA, lastTimestamp: ts, lastDocumentId: docId });
             } catch (error: any) {
                 if (error.message === 'Validation error') logger.error('lastTimestamp already exists. Use --force to force replace the current value');
                 else throw error;

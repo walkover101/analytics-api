@@ -19,7 +19,7 @@ async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDo
             new Lag("requestDate", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
             // new SlowDown(100),
-            new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp),
+            // new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp),
             new WriteRequest(1000)
                 .on("data", async (data) => {
                     logger.info(`${data?._id} - ${data?.requestDate} - ${data?.isSingleRequest} - ${data?.reportStatus || data?.status}`);
@@ -199,11 +199,12 @@ const requestSync = async (args: any) => {
 
     mongoService().on("connect", async (connection: MongoClient) => {
         let ts = args?.timestamp;
+        let docId = args?.id;
         if (ts) {
             ts = new Date(ts).toISOString();
             try {
-                if (args.force) Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts });
-                else await Tracker.create({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts });
+                if (args.force) Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts, lastDocumentId: docId });
+                else await Tracker.create({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts, lastDocumentId: docId });
 
             } catch (error: any) {
                 if (error.message === 'Validation error') logger.error('lastTimestamp already exists. Use --force to force replace the current value');
