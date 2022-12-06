@@ -7,11 +7,21 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    submittedAt: 'STRING(reportData.submittedAt)',
+    requestedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    reportStatus: 'reportData.status',
-    reason: 'reportData.reason',
+    reason: `CASE
+    WHEN requestData.reason IS NOT NULL
+    THEN requestData.reason
+    ELSE reportData.reason
+    END
+    `,
+    status: `CASE
+    WHEN reportData.status IS NOT NULL
+    THEN reportData.status
+    ELSE requestData.status
+    END
+    `,
 
     // from request-data
     uuid: 'requestData.uuid',
@@ -20,9 +30,8 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     vendorId: 'requestData.vendorId',
     messageType: 'requestData.messageType',
     direction: 'requestData.direction',
-    timestamp: 'STRING(reportData.timestamp)',
+    statusUpdatedAt: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
-    requestStatus: 'requestData.status'
 };
 
 class WaLogsService {
@@ -38,25 +47,32 @@ class WaLogsService {
         endDate = endDate.plus({ days: 1 }).setZone(timeZone).set({ hour: 0, minute: 0, second: 0 });
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
+        const responseSubQuery = this.getResponseSubQuery(companyId, startDate, endDate, filters);
         const query = `SELECT ${attributes} 
             FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${WA_REQ_TABLE_ID}\` as requestData
-            LEFT JOIN \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${WA_REP_TABLE_ID}\` as reportData
+            LEFT JOIN (${responseSubQuery}) AS reportData
             ON requestData.uuid = reportData.uuid
             WHERE ${whereClause}`;
         logger.info(query);
         return query;
     }
 
+    private getResponseSubQuery(companyId: string, startDate: DateTime, endDate: DateTime, filters: { [field: string]: string }) {
+        return `SELECT uuid, submittedAt, price, origin, status, reason, timestamp
+                FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${WA_REP_TABLE_ID}\`
+                WHERE (submittedAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
+                    AND companyId = "${companyId}"`;
+    }
+
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: String, filters: { [key: string]: string }) {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(reportData.submittedAt BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
-        conditions += ` AND (requestData.timestamp BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(requestData.timestamp BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
-        if (companyId) conditions += `AND reportData.companyId = "${companyId}" AND requestData.companyId = "${companyId}"`;
-        if (query.status) conditions += ` AND reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})`;
+        if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
+        if (query.status) conditions += ` AND (reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))}) OR (reportData.status is NULL AND requestData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})))`;
 
         return conditions;
     }

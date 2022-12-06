@@ -18,6 +18,7 @@ export default class MailRequest {
     nodeId: number; //Node Id used in campaign
     clientRequestIP: string; //Client IP
     createdAt: Date; //Timestamp when this mail was requested to be sent.
+    isSmtp: number;
 
     constructor(attr: any) {
         this.subject = attr['sub'];
@@ -28,11 +29,12 @@ export default class MailRequest {
         this.mailerRequestId = attr['mri'];
         this.nodeId = parseInt(attr['cmp']);
         this.clientRequestIP = attr['cri'];
+        this.isSmtp = parseInt(attr['is_smtp']);
 
         //common in all three email models
         this.recipientEmail = attr['rem']?.toLowerCase();
         this.outboundEmailId = parseInt(attr['oid']);
-        this.requestId = getHashCode(`${this.outboundEmailId}-${this.recipientEmail}`);
+        this.requestId = getHashCode(`${attr['mri']}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
     }
