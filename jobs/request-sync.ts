@@ -26,7 +26,9 @@ async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDo
         )
     } catch (error: any) {
         logger.error(error);
-        // await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(error => {
+            console.log(error);
+        });
         await delay(2000);
         process.exit(1);
     }

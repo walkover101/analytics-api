@@ -26,7 +26,9 @@ async function handleReportStream(stream: Stream, lastTimestamp: string, lastDoc
 
     } catch (error: any) {
         logger.error(error);
-        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(error => {
+            console.log(error);
+        });;
         await delay(2000);
         process.exit(1);
 
@@ -92,6 +94,7 @@ class WriteReport extends Transform {
                     throw reason;
                 }
             });
+            logger.info(`Last Document : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() });
             this.batch = [];
         }
