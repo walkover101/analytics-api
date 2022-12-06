@@ -43,7 +43,7 @@ async function processMsgs(msgs: any[]) {
     try {
         const mailReports: Array<MailReport> = [];
         msgs.map(msg => msg.map((mailRep: any) => mailReports.push(new MailReport(mailRep))));
-        if (mailReports.length) await MailReport.insertMany(mailReports);
+        if (mailReports.length) await MailReport.insertBatch(mailReports);
     } catch (err: any) {
         if (err.name !== 'PartialFailureError') throw err;
         logger.error(`[CONSUMER](Mail Reports) PartialFailureError`);
