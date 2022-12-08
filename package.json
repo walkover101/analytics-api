@@ -56,6 +56,7 @@
     "sequelize": "^6.21.3",
     "sqlite3": "^5.0.9",
     "winston": "^3.7.2",
-    "zip-bucket": "^1.8.2"
+    "zip-bucket": "^1.8.2",
+    "zod": "^3.19.1"
   }
 }
