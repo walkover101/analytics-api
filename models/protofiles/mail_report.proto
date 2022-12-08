@@ -1,0 +1,21 @@
+package mailReport;
+syntax = "proto3";
+
+message mail_report {
+    string requestId = 1;
+    int64 eventId = 2;
+    int64 statusCode = 3;
+    string enhancedStatusCode = 4;
+    string reason = 5;
+    string resultState = 6;
+    string remoteMX = 7;
+    string remoteIP = 8;
+    int64 contentSize = 9;
+    int64 senderDedicatedIPId = 10;
+    string hostname = 11;
+    string recipientEmail = 12;
+    string outboundEmailId = 13;
+    string companyId = 14;
+    date requestTime = 15;
+    date createdAt = 16;
+}

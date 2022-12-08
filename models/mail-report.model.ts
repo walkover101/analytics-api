@@ -1,5 +1,5 @@
 // import { Table } from '@google-cloud/bigquery';
-// import msg91Dataset from '../database/big-query-service';
+import  { MAIL_REP_TABLE_ID, MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 import { getHashCode } from "../services/utility-service";
 const {BigQueryWriteClient} = require('@google-cloud/bigquery-storage').v1;
 
@@ -11,10 +11,6 @@ const mode = require('@google-cloud/bigquery-storage').protos.google.cloud
   .bigquery.storage.v1.WriteStream.Type;
 
 // const mailReportTable: Table = msg91Dataset.table(MAIL_REP_TABLE_ID);
-const MAIL_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'mail_report';
-const MSG91_DATASET_ID = process.env.MSG91_DATASET_ID || 'msg91_test';
-const MSG91_PROJECT_ID = process.env.GCP_PROJECT_ID || "msg91-reports";
-
 export default class MailReport {
     requestId: string; //Request Id of this mail (Not unique in this table)
     eventId: number; //Events that occurred while processing this mail. (2,3,4,8,9)	
@@ -54,7 +50,7 @@ export default class MailReport {
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
     }
 
-    public static async insertBatch(rows: Array<MailReport>) {
+    public static async insertMany(mailReports: Array<MailReport>) {
     const protoDescriptor: {name: string, field: any[]} = {name: '', field: []};
   protoDescriptor.name = MAIL_REP_TABLE_ID;
   protoDescriptor.field = [
@@ -141,10 +137,9 @@ export default class MailReport {
   ];
 
 
-
   const  projectId: string = MSG91_PROJECT_ID;
   const datasetId: string = MSG91_DATASET_ID;
-  const tableId: string = MAIL_REP_TABLE_ID;
+  const tableId: string = MAIL_REP_TABLE_ID
 
   const parent = `projects/${projectId}/datasets/${datasetId}/tables/${tableId}`;
  
@@ -152,7 +147,7 @@ export default class MailReport {
 
     let writeStream = {type: mode.PENDING};
 
-    let request = {
+    let request: any = {
         parent,
         writeStream,
       };
@@ -209,9 +204,10 @@ export default class MailReport {
         }
       });
 
-      let protoRows: {} = {
+
+      let protoRows: Object = {
         writerSchema: {protoDescriptor},
-        rows,
+        rows: {mailReports},
       };
 
       request = {
@@ -220,7 +216,7 @@ export default class MailReport {
       };
 
       stream.write(request); //send batch
-
+      return protoRows;
     
   } catch (error) {
     console.log(error);
