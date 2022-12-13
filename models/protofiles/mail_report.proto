@@ -14,8 +14,8 @@ message mail_report {
     int64 senderDedicatedIPId = 10;
     string hostname = 11;
     string recipientEmail = 12;
-    string outboundEmailId = 13;
+    int64 outboundEmailId = 13;
     string companyId = 14;
-    date requestTime = 15;
-    date createdAt = 16;
+    string requestTime = 15;
+    string createdAt = 16;
 }

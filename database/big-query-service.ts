@@ -1,5 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import * as _ from "lodash";
+const { BigQueryWriteClient } = require('@google-cloud/bigquery-storage').v1;
 
 export const MSG91_DATASET_ID = process.env.MSG91_DATASET_ID || 'msg91_test';
 export const MSG91_PROJECT_ID = process.env.GCP_PROJECT_ID || "msg91-reports";
@@ -12,6 +13,7 @@ export const MAIL_REP_TABLE_ID = process.env.MAIL_REP_TABLE_ID || 'mail_report';
 export const MAIL_EVENTS_TABLE_ID = process.env.MAIL_EVENTS_TABLE_ID || 'mail_event';
 export const WA_REQ_TABLE_ID = process.env.WA_REQ_TABLE_ID || 'wa_request';
 export const WA_REP_TABLE_ID = process.env.WA_REP_TABLE_ID || 'wa_report';
+export const parent = `projects/${MSG91_PROJECT_ID}/datasets/${MSG91_DATASET_ID}/tables/${MAIL_REP_TABLE_ID}`;
 
 const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,
@@ -23,6 +25,10 @@ const bigQuery = new BigQuery({
     credentials: CREDENTIALS,
     projectId: process.env.GCP_PROJECT_ID
 });
+
+const writeClient = new BigQueryWriteClient({
+    credentials: CREDENTIALS,
+  });
 
 function getMsg91Dataset() {
     return bigQuery.dataset(MSG91_DATASET_ID);
@@ -37,5 +43,6 @@ async function getQueryResults(query: string) {
 export default getMsg91Dataset();
 export {
     bigQuery,
-    getQueryResults
+    getQueryResults,
+    writeClient
 }
