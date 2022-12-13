@@ -4,8 +4,8 @@ import logger from "./../logger/logger";
 import { has } from 'lodash';
 import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-job';
 import { dataIntegrity } from "./data-integrity";
-import { requestSync } from "./request-sync";
-import { reportSync } from "./report-sync";
+import { requestSync, requestPatch } from "./request-sync";
+import { reportSync, reportPatch } from "./report-sync";
 // import { rtRequestSync } from "./rt-request-sync";
 import { rtRequestSync, rtReportSync } from "./rt-sync-job";
 import sequelize from '../database/sequelize-service';
@@ -18,7 +18,9 @@ const Jobs: any = {
     reportDataSyncJob,
     otpReportSyncJob,
     requestSync,
+    requestPatch,
     reportSync,
+    reportPatch,
     rtRequestSync,
     rtReportSync
 };

@@ -13,13 +13,13 @@ import rabbitmqProducer from "../database/rabbitmq-producer";
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || "";
 const DB_NAME = process.env.MONGO_DB_NAME;
 
-async function handleReportStream(stream: Stream, lastTimestamp: string, lastDocumentId: string) {
+async function handleReportStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, persist: boolean = true) {
     try {
         await pipeline(
             stream as Readable,
-            new Lag("sentTime", 55 * 60),
+            // new Lag("sentTime", 55 * 60),
             new Skip(lastTimestamp, lastDocumentId),
-            new WriteReport(1000)
+            new WriteReport(1000,persist)
                 .on("data", (data) => {
                     logger.info(JSON.stringify(data))
                 }));
@@ -85,13 +85,17 @@ class Skip extends Transform {
 class WriteReport extends Transform {
     private batchSize: number;
     private batch: ReportData[] = new Array();
-    constructor(batchSize: number = 100, options: any = {}) {
+    private persist: boolean;
+    constructor(batchSize: number = 100,persist: boolean = true, options: any = {}) {
         options.objectMode = true;
         super(options);
         this.batchSize = batchSize;
+        this.persist = persist;
     }
 
     async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        if (this.writableEnded && this.writableLength == 1) this.batchSize = 1;
+        
         this.batch.push(await ReportData.createAsync(data));
         if (this.batch.length >= this.batchSize) {
             await ReportData.insertMany(this.batch).catch((reason) => {
@@ -106,7 +110,9 @@ class WriteReport extends Transform {
                     throw reason;
                 }
             });
-            await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() });
+            logger.info(`${data?._id} - ${data?.sentTime} `);
+
+            if(this.persist) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() });
             this.batch = [];
         }
         callback();
@@ -141,6 +147,39 @@ const reportSync = async (args: any) => {
     });
 }
 
+const reportPatch = async (args: any) => {
+
+
+    mongoService().on("connect", async (connection: MongoClient) => {
+        let start = new Date(args?.start_ts).toISOString();
+        let end = new Date(args?.end_ts).toISOString();
+        let docId = args?.id;
+        logger.info(`Patching data between ${start} AND ${end}`);
+        if (!start) throw new Error("start_ts is required");
+        if (!end) throw new Error("end_ts is required");
+
+        const collection = connection.db(DB_NAME).collection(REPORT_DATA_COLLECTION);
+        const query = {
+            sentTime: {
+                $gte: DateTime.fromJSDate(new Date(start)).toJSDate(),
+                $lte: DateTime.fromJSDate(new Date(end)).toJSDate()
+            }
+        }
+        await handleReportStream(collection.find(query).sort({ sentTime: 1 }).stream(), start, docId,false)
+  
+        // const collection = connection.db(DB_NAME).collection(REQUEST_DATA_COLLECTION);
+        // const query = {
+        //     requestDate: {
+        //         $gte: DateTime.fromJSDate(new Date(start)).toJSDate(),
+        //         $lte: DateTime.fromJSDate(new Date(end)).toJSDate()
+        //     }
+        // }
+        // handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), start, docId, false);
+    });
+}
+
+
 export {
-    reportSync
+    reportSync,
+    reportPatch
 }

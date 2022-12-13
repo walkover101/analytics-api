@@ -12,23 +12,25 @@ const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || "";
 const DB_NAME = process.env.MONGO_DB_NAME;
 
-async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, filterOutTimestamp: string) {
-
+async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, persist: boolean = true) {
     try {
         await pipeline(stream as Readable,
-            new Lag("requestDate", 48 * 60),
+            // new Lag("requestDate", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
-            // new SlowDown(100),
-            new FilterOutSingleRequestWithStatus(DELIVERED_STATUS_CODES, filterOutTimestamp),
-            new WriteRequest(1000)
+            new WriteRequest(1000, persist)
                 .on("data", async (data) => {
                     logger.info(`${data?._id} - ${data?.requestDate} - ${data?.isSingleRequest} - ${data?.reportStatus || data?.status}`);
-                    logger.info(data);
+                    // logger.info(data);
+                })
+                .on('end', () => {
+                    logger.info("Stream Ended");
                 })
         )
     } catch (error: any) {
         logger.error(error);
-        // await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(error => {
+            console.log(error);
+        });
         await delay(2000);
         process.exit(1);
     }
@@ -152,13 +154,16 @@ class WriteRequest extends Transform {
     private batchSize: number;
     private batch: RequestData[] = new Array();
     private reportBatch: ReportData[] = new Array();
-    constructor(batchSize: number = 100, options: any = {}) {
+    private persist: boolean = true;
+    constructor(batchSize: number = 100, persist: boolean = true, options: any = {}) {
         options.objectMode = true;
         super(options);
         this.batchSize = batchSize;
+        this.persist = persist;
     }
 
     async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        if (this.writableEnded && this.writableLength == 1) this.batchSize = 1;
         this.batch.push(new RequestData(data));
         if (data?.isSingleRequest == "1") this.reportBatch.push(await ReportData.createAsync({ ...data, status: data?.reportStatus, sentTime: data?.requestDate, user_pid: data?.requestUserid }));
         if (this.batch.length >= this.batchSize) {
@@ -184,8 +189,9 @@ class WriteRequest extends Transform {
                 }
             })
 
-            logger.info(`Last Document : ${JSON.stringify(data?._id)}`);
-            await Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: new Date(data?.requestDate).toISOString(), lastDocumentId: data?._id?.toString() });
+            logger.info(`${data?._id} - ${data?.requestDate} `);
+
+            if (this.persist) await Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: new Date(data?.requestDate).toISOString(), lastDocumentId: data?._id?.toString() });
             this.batch = [];
             this.reportBatch = [];
         }
@@ -194,16 +200,16 @@ class WriteRequest extends Transform {
     }
 }
 
+
 const requestSync = async (args: any) => {
-
-
     mongoService().on("connect", async (connection: MongoClient) => {
         let ts = args?.timestamp;
+        let docId = args?.id;
         if (ts) {
             ts = new Date(ts).toISOString();
             try {
-                if (args.force) Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts });
-                else await Tracker.create({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts });
+                if (args.force) Tracker.upsert({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts, lastDocumentId: docId });
+                else await Tracker.create({ jobType: jobType.REQUEST_DATA, lastTimestamp: ts, lastDocumentId: docId });
 
             } catch (error: any) {
                 if (error.message === 'Validation error') logger.error('lastTimestamp already exists. Use --force to force replace the current value');
@@ -222,13 +228,33 @@ const requestSync = async (args: any) => {
                 // $lte: DateTime.fromISO("2022-11-16T11:00Z").toJSDate()
             }
         }
-        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), lastTimestamp, lastDocumentId, "2022-11-25 09:56:25 UTC");
+        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), lastTimestamp, lastDocumentId);
     });
 }
 
-// Start Syncing From - 2022-11-23 05:20:27 UTC
-// Start Filtring From - 2022-11-25 09:56:25 UTC
+const requestPatch = async (args: any) => {
 
+
+    mongoService().on("connect", async (connection: MongoClient) => {
+        let start = new Date(args?.start_ts).toISOString();
+        let end = new Date(args?.end_ts).toISOString();
+        let docId = args?.id;
+        logger.info(`Patching data between ${start} AND ${end}`);
+        if (!start) throw new Error("start_ts is required");
+        if (!end) throw new Error("end_ts is required");
+
+
+        const collection = connection.db(DB_NAME).collection(REQUEST_DATA_COLLECTION);
+        const query = {
+            requestDate: {
+                $gte: DateTime.fromJSDate(new Date(start)).toJSDate(),
+                $lte: DateTime.fromJSDate(new Date(end)).toJSDate()
+            }
+        }
+        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), start, docId, false);
+    });
+}
 export {
-    requestSync
+    requestSync,
+    requestPatch
 }
