@@ -17,7 +17,7 @@ async function handleReportStream(stream: Stream, lastTimestamp: string, lastDoc
     try {
         await pipeline(
             stream as Readable,
-            // new Lag("sentTime", 55 * 60),
+            new Lag("sentTime", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
             new WriteReport(1000,persist)
                 .on("data", (data) => {
@@ -26,23 +26,13 @@ async function handleReportStream(stream: Stream, lastTimestamp: string, lastDoc
 
     } catch (error: any) {
         logger.error(error);
-        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(error => {
+            console.log(error);
+        });;
         await delay(2000);
         process.exit(1);
 
     }
-    // stream
-    //     .pipe(new Lag("sentTime", 55 * 60))
-    //     .pipe(new Skip(lastTimestamp, lastDocumentId))
-    //     // .pipe(new WriteReport(1000))
-    //     // .on("data", async (data) => {
-    //     //     logger.info(data?.sentTime);
-
-
-    //     // })
-    //     .on("error", (error) => {
-    //         logger.error(error);
-    //     })
 }
 
 
@@ -58,8 +48,6 @@ class Skip extends Transform {
     }
 
     async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
-        // logger.info(data?._id, data?.sentTime);
-        // await delay(500);
         if (this.skipped) {
             this.push(data);
             // await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() })
@@ -122,10 +110,11 @@ class WriteReport extends Transform {
 const reportSync = async (args: any) => {
     mongoService().on("connect", async (connection: MongoClient) => {
         let ts = args?.timestamp;
+        let docId = args?.id;
         if (ts) {
             try {
-                if (args.force) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: ts });
-                else await Tracker.create({ jobType: jobType.REPORT_DATA, lastTimestamp: ts });
+                if (args.force) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: ts, lastDocumentId: docId });
+                else await Tracker.create({ jobType: jobType.REPORT_DATA, lastTimestamp: ts, lastDocumentId: docId });
             } catch (error: any) {
                 if (error.message === 'Validation error') logger.error('lastTimestamp already exists. Use --force to force replace the current value');
                 else throw error;

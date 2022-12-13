@@ -15,7 +15,7 @@ const DB_NAME = process.env.MONGO_DB_NAME;
 async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, persist: boolean = true) {
     try {
         await pipeline(stream as Readable,
-            // new Lag("requestDate", 48 * 60),
+            new Lag("requestDate", 48 * 60),
             new Skip(lastTimestamp, lastDocumentId),
             new WriteRequest(1000, persist)
                 .on("data", async (data) => {
