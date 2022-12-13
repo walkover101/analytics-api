@@ -3,7 +3,7 @@ import { ChangeStream, MongoClient, ObjectId, Timestamp } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay, sendChannelNotification } from "../services/utility-service";
 import { DateTime } from "luxon";
-import { Readable, Stream, Transform, TransformCallback } from "stream";
+import { PassThrough, Readable, Stream, Transform, TransformCallback } from "stream";
 import ReportData from "../models/report-data.model";
 import Tracker, { jobType } from "../models/trackers.model";
 import RequestData from "../models/request-data.model";
@@ -12,12 +12,22 @@ const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || "";
 const DB_NAME = process.env.MONGO_DB_NAME;
 
-async function handleRequestStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, persist: boolean = true) {
+export type Options = {
+    persistPointer?: boolean,
+    lag?: boolean,
+    lastTimestamp: string,
+    lastDocumentId?: string
+}
+
+
+async function handleRequestStream(stream: Stream, options: Options) {
+    const { lastTimestamp, lastDocumentId, persistPointer = true, lag = true } = options;
     try {
         await pipeline(stream as Readable,
-            new Lag("requestDate", 48 * 60),
+            (lag) ?
+                new Lag("requestDate", 48 * 60) : new PassThrough(),
             new Skip(lastTimestamp, lastDocumentId),
-            new WriteRequest(1000, persist)
+            new WriteRequest(1000, persistPointer)
                 .on("data", async (data) => {
                     logger.info(`${data?._id} - ${data?.requestDate} - ${data?.isSingleRequest} - ${data?.reportStatus || data?.status}`);
                     // logger.info(data);
@@ -122,7 +132,7 @@ class Skip extends Transform {
     private timestamp: DateTime;
     private id: string;
     private skipped: boolean = false;
-    constructor(timestamp: string, id: string, options: any = {}) {
+    constructor(timestamp: string, id: string = "null", options: any = {}) {
         options.objectMode = true;
         super(options);
         this.timestamp = DateTime.fromJSDate(new Date(timestamp));
@@ -135,7 +145,7 @@ class Skip extends Transform {
         } else {
             let timestamp = DateTime.fromJSDate(new Date(data?.requestDate));
             let diff = timestamp.diff(this.timestamp, "seconds").seconds;
-            if (diff <= 0 && data?._id == this.id) {
+            if (diff <= 0 && (this.id == "null" || data?._id == this.id)) {
                 this.skipped = true;
             }
             if (diff > 0) {
@@ -228,7 +238,7 @@ const requestSync = async (args: any) => {
                 // $lte: DateTime.fromISO("2022-11-16T11:00Z").toJSDate()
             }
         }
-        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), lastTimestamp, lastDocumentId);
+        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), { lastTimestamp, lastDocumentId });
     });
 }
 
@@ -251,7 +261,12 @@ const requestPatch = async (args: any) => {
                 $lte: DateTime.fromJSDate(new Date(end)).toJSDate()
             }
         }
-        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), start, docId, false);
+        handleRequestStream(collection.find(query).sort({ requestDate: 1 }).stream(), {
+            lastTimestamp: start,
+            lastDocumentId: docId,
+            persistPointer: false,
+            lag: false
+        });
     });
 }
 export {

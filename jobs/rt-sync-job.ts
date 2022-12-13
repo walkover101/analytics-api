@@ -9,9 +9,11 @@ import RequestData from '../models/request-data.model';
 import { Readable, TransformCallback } from "stream";
 import { Transform } from "stream";
 import { pipeline } from "stream/promises";
+import OtpModel from "../models/otp-model";
 
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || '';
+const OTP_DATA_COLLECTION = process.env.OTP_DATA_COLLECTION || '';
 const DB_NAME = process.env.MONGO_DB_NAME;
 
 async function handleRequestStream(changeStream: ChangeStream) {
@@ -63,6 +65,27 @@ async function handleReportStream(changeStream: ChangeStream) {
         process.exit(1);
     }
 }
+async function handleOTPStream(changeStream: ChangeStream) {
+    const readableStream: Readable = changeStream.stream();
+    try {
+        await pipeline(readableStream,
+            new FilterOperation(['insert','update']),
+            new FilterOutNull(),
+            new AddTimestamp(),
+            new WriteOTPReport(1000).on('data',(data)=>{
+                logger.info(JSON.stringify(data));
+            })
+            )
+    } catch (error: any) {
+        logger.error(error);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(reason => {
+            logger.error(reason);
+        });
+        await delay(5000);
+        process.exit(1);
+    }
+}
+
 async function initToken(args: any, job: jobType) {
     let startToken = args?.token;
 
@@ -98,6 +121,23 @@ export const rtReportSync = async (args: any) => {
     mongoService().on("connect", async (connection: MongoClient) => {
         const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_REPORT_DATA);
         const collection = connection.db(DB_NAME).collection(REPORT_DATA_COLLECTION);
+        const options: any = {
+            fullDocument: 'updateLookup',
+            batchSize: 500,
+            startAfter: (token) ? { "_data": token } : null
+        }
+        const stream = collection.watch([], options);
+        await handleReportStream(stream);
+    })
+}
+
+export const rtOTPSync = async (args: any) => {
+    if (!DB_NAME) throw new Error("DB_NAME is not found in env")
+    if (!OTP_DATA_COLLECTION) throw new Error("OTP_DATA_COLLECTION is not found in env");
+    await initToken(args, jobType.RT_REPORT_DATA);
+    mongoService().on("connect", async (connection: MongoClient) => {
+        const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_OTP_REPORT);
+        const collection = connection.db(DB_NAME).collection(OTP_DATA_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
             batchSize: 500,
@@ -318,6 +358,39 @@ class WriteReport extends Transform {
             });
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_REPORT_DATA, lastTimestamp: new Date(doc?.sentTime).toISOString(), token: data?._id?._data });
+            this.batch = [];
+        }
+        callback();
+    }
+}
+
+class WriteOTPReport extends Transform {
+    private batchSize: number;
+    private batch: OtpModel[] = new Array();
+    constructor(batchSize: number = 100, options: any = {}) {
+        options.objectMode = true;
+        super(options);
+        this.batchSize = batchSize;
+    }
+
+    async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        const doc = data?.fullDocument;
+        this.batch.push(await OtpModel.createAsync(doc));
+        if (this.batch.length >= this.batchSize) {
+            await OtpModel.insertMany(this.batch).catch((reason) => {
+                logger.error(reason);
+                if (reason?.name == "PartialFailureError") {
+                    const errors = reason?.errors || [];
+                    for (const error of errors) {
+                        const row = error?.row || {};
+                        this.push({ ...row, error: error?.errors });
+                    }
+                } else {
+                    throw reason;
+                }
+            });
+            logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
+            await Tracker.upsert({ jobType: jobType.RT_OTP_REPORT, lastTimestamp: new Date(doc?.sentTime).toISOString(), token: data?._id?._data });
             this.batch = [];
         }
         callback();

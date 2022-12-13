@@ -3,23 +3,25 @@ import { ChangeStream, MongoClient, ObjectId, Timestamp } from 'mongodb';
 import mongoService from '../database/mongo-service';
 import { delay, sendChannelNotification } from "../services/utility-service";
 import { DateTime } from "luxon";
-import { Readable, Stream, Transform, TransformCallback } from "stream";
+import { PassThrough, Readable, Stream, Transform, TransformCallback } from "stream";
 import ReportData from "../models/report-data.model";
 import Tracker, { jobType } from "../models/trackers.model";
 import RequestData from "../models/request-data.model";
-import { Lag } from "./request-sync";
+import { Lag, Options } from "./request-sync";
 import { pipeline } from "stream/promises";
 import rabbitmqProducer from "../database/rabbitmq-producer";
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || "";
 const DB_NAME = process.env.MONGO_DB_NAME;
 
-async function handleReportStream(stream: Stream, lastTimestamp: string, lastDocumentId: string, persist: boolean = true) {
+async function handleReportStream(stream: Stream, options: Options) {
+    const { lastTimestamp, lastDocumentId, persistPointer = true, lag = true } = options;
     try {
         await pipeline(
             stream as Readable,
-            new Lag("sentTime", 48 * 60),
+            (lag) ?
+                new Lag("sentTime", 48 * 60) : new PassThrough(),
             new Skip(lastTimestamp, lastDocumentId),
-            new WriteReport(1000,persist)
+            new WriteReport(1000, persistPointer)
                 .on("data", (data) => {
                     logger.info(JSON.stringify(data))
                 }));
@@ -40,7 +42,7 @@ class Skip extends Transform {
     private timestamp: DateTime;
     private id: string;
     private skipped: boolean = false;
-    constructor(timestamp: string, id: string, options: any = {}) {
+    constructor(timestamp: string, id: string = "null", options: any = {}) {
         options.objectMode = true;
         super(options);
         this.timestamp = DateTime.fromJSDate(new Date(timestamp));
@@ -55,7 +57,7 @@ class Skip extends Transform {
         } else {
             let timestamp = DateTime.fromJSDate(new Date(data?.sentTime));
             let diff = timestamp.diff(this.timestamp, "seconds").seconds;
-            if (diff <= 0 && data?._id == this.id) {
+            if (diff <= 0 && (this.id == "null" || data?._id == this.id)) {
                 this.skipped = true;
             }
             if (diff > 0) {
@@ -74,7 +76,7 @@ class WriteReport extends Transform {
     private batchSize: number;
     private batch: ReportData[] = new Array();
     private persist: boolean;
-    constructor(batchSize: number = 100,persist: boolean = true, options: any = {}) {
+    constructor(batchSize: number = 100, persist: boolean = true, options: any = {}) {
         options.objectMode = true;
         super(options);
         this.batchSize = batchSize;
@@ -83,7 +85,7 @@ class WriteReport extends Transform {
 
     async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
         if (this.writableEnded && this.writableLength == 1) this.batchSize = 1;
-        
+
         this.batch.push(await ReportData.createAsync(data));
         if (this.batch.length >= this.batchSize) {
             await ReportData.insertMany(this.batch).catch((reason) => {
@@ -100,7 +102,7 @@ class WriteReport extends Transform {
             });
             logger.info(`${data?._id} - ${data?.sentTime} `);
 
-            if(this.persist) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() });
+            if (this.persist) await Tracker.upsert({ jobType: jobType.REPORT_DATA, lastTimestamp: new Date(data?.sentTime).toISOString(), lastDocumentId: data?._id?.toString() });
             this.batch = [];
         }
         callback();
@@ -132,7 +134,7 @@ const reportSync = async (args: any) => {
                 // $lte: DateTime.fromISO("2022-11-16T11:00Z").toJSDate()
             }
         }
-        await handleReportStream(collection.find(query).sort({ sentTime: 1 }).stream(), lastTimestamp, lastDocumentId)
+        await handleReportStream(collection.find(query).sort({ sentTime: 1 }).stream(), { lastTimestamp, lastDocumentId })
     });
 }
 
@@ -154,8 +156,8 @@ const reportPatch = async (args: any) => {
                 $lte: DateTime.fromJSDate(new Date(end)).toJSDate()
             }
         }
-        await handleReportStream(collection.find(query).sort({ sentTime: 1 }).stream(), start, docId,false)
-  
+        await handleReportStream(collection.find(query).sort({ sentTime: 1 }).stream(), { lastTimestamp: start, lastDocumentId: docId, persistPointer: false, lag: false })
+
         // const collection = connection.db(DB_NAME).collection(REQUEST_DATA_COLLECTION);
         // const query = {
         //     requestDate: {
