@@ -54,6 +54,7 @@ export default class OtpModel {
     voiceStatus: number;
     demoAccount: number;
     source: number;
+    timestamp: string;
 
     private constructor(attr: any) {
         this.id = attr['_id'].toString();
@@ -104,6 +105,7 @@ export default class OtpModel {
         this.voiceStatus = +attr['voice_status'];
         this.demoAccount = +attr['demo_account'];
         this.source = +attr['source'];
+        this.timestamp = attr['timestamp'];
     }
 
     public static createAsync = async (attr: any) => {
