@@ -14,13 +14,17 @@ const COLLECTION = {
     requestData: process.env.REQUEST_DATA_COLLECTION || '',
     rtRequestData: process.env.REQUEST_DATA_COLLECTION || '',
     reportData: process.env.REPORT_DATA_COLLECTION || '',
-    otpReport: process.env.OTP_REPORT_COLLECTION || ''
+    rtReportData: process.env.REPORT_DATA_COLLECTION || '',
+    otpReport: process.env.OTP_REPORT_COLLECTION || '',
+    rtOTPReport: process.env.OTP_REPORT_COLLECTION || ''
 }
 const FILTER_BY = {
     requestData: 'requestDate',
     reportData: 'sentTime',
     otpReport: 'requestDate',
-    rtRequestData: 'rtRequestData'
+    rtRequestData: 'rtRequestData',
+    rtReportData: 'rtReportData',
+    rtOTPReport: 'rtOTPReport'
 }
 
 const MONGO_DOCS_LIMIT = +(process.env.MONGO_DOCS_LIMIT || 10000);
