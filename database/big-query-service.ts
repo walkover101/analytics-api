@@ -14,6 +14,10 @@ export const MAIL_EVENTS_TABLE_ID = process.env.MAIL_EVENTS_TABLE_ID || 'mail_ev
 export const WA_REQ_TABLE_ID = process.env.WA_REQ_TABLE_ID || 'wa_request';
 export const WA_REP_TABLE_ID = process.env.WA_REP_TABLE_ID || 'wa_report';
 export const parent = `projects/${MSG91_PROJECT_ID}/datasets/${MSG91_DATASET_ID}/tables/${MAIL_REP_TABLE_ID}`;
+export const mode = require('@google-cloud/bigquery-storage').protos.google.cloud
+.bigquery.storage.v1.WriteStream.Type;
+export const type = require('@google-cloud/bigquery-storage').protos.google.protobuf
+.FieldDescriptorProto.Type;
 
 const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,

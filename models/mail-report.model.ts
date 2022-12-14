@@ -1,10 +1,7 @@
-import  { parent, writeClient } from '../database/big-query-service';
+import  { mode, parent, writeClient } from '../database/big-query-service';
 import { getHashCode } from "../services/utility-service";
 import protoDescriptor from './protofiles/mailReport_descriptor';
 import { DateTime } from 'luxon';
-
-const mode = require('@google-cloud/bigquery-storage').protos.google.cloud
-  .bigquery.storage.v1.WriteStream.Type;
 export default class MailReport {
     requestId: string; //Request Id of this mail (Not unique in this table)
     eventId: number; //Events that occurred while processing this mail. (2,3,4,8,9)	

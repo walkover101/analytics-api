@@ -1,7 +1,4 @@
-import  { MAIL_REP_TABLE_ID } from '../../database/big-query-service'
-
-const type = require('@google-cloud/bigquery-storage').protos.google.protobuf
-  .FieldDescriptorProto.Type;
+import  { MAIL_REP_TABLE_ID, type } from '../../database/big-query-service'
 
 const protoDescriptor: {name: string, field: any[]} = {name: '', field: []};
 protoDescriptor.name = MAIL_REP_TABLE_ID;
