@@ -13,7 +13,7 @@ import OtpModel from "../models/otp-model";
 
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || '';
-const OTP_DATA_COLLECTION = process.env.OTP_DATA_COLLECTION || '';
+const OTP_REPORT_COLLECTION = process.env.OTP_REPORT_COLLECTION || '';
 const DB_NAME = process.env.MONGO_DB_NAME;
 
 async function handleRequestStream(changeStream: ChangeStream) {
@@ -133,11 +133,11 @@ export const rtReportSync = async (args: any) => {
 
 export const rtOTPSync = async (args: any) => {
     if (!DB_NAME) throw new Error("DB_NAME is not found in env")
-    if (!OTP_DATA_COLLECTION) throw new Error("OTP_DATA_COLLECTION is not found in env");
+    if (!OTP_REPORT_COLLECTION) throw new Error("OTP_DATA_COLLECTION is not found in env");
     await initToken(args, jobType.RT_REPORT_DATA);
     mongoService().on("connect", async (connection: MongoClient) => {
         const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_OTP_REPORT);
-        const collection = connection.db(DB_NAME).collection(OTP_DATA_COLLECTION);
+        const collection = connection.db(DB_NAME).collection(OTP_REPORT_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
             batchSize: 500,
