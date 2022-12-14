@@ -69,13 +69,13 @@ async function handleOTPStream(changeStream: ChangeStream) {
     const readableStream: Readable = changeStream.stream();
     try {
         await pipeline(readableStream,
-            new FilterOperation(['insert','update']),
+            new FilterOperation(['insert', 'update']),
             new FilterOutNull(),
             new AddTimestamp(),
-            new WriteOTPReport(1000).on('data',(data)=>{
+            new WriteOTPReport(1000).on('data', (data) => {
                 logger.info(JSON.stringify(data));
             })
-            )
+        )
     } catch (error: any) {
         logger.error(error);
         await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(reason => {
@@ -133,8 +133,8 @@ export const rtReportSync = async (args: any) => {
 
 export const rtOTPSync = async (args: any) => {
     if (!DB_NAME) throw new Error("DB_NAME is not found in env")
-    if (!OTP_REPORT_COLLECTION) throw new Error("OTP_DATA_COLLECTION is not found in env");
-    await initToken(args, jobType.RT_REPORT_DATA);
+    if (!OTP_REPORT_COLLECTION) throw new Error("OTP_REPORT_COLLECTION is not found in env");
+    await initToken(args, jobType.RT_OTP_REPORT);
     mongoService().on("connect", async (connection: MongoClient) => {
         const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_OTP_REPORT);
         const collection = connection.db(DB_NAME).collection(OTP_REPORT_COLLECTION);
@@ -144,7 +144,7 @@ export const rtOTPSync = async (args: any) => {
             startAfter: (token) ? { "_data": token } : null
         }
         const stream = collection.watch([], options);
-        await handleReportStream(stream);
+        await handleOTPStream(stream);
     })
 }
 
