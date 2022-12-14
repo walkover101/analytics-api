@@ -1,4 +1,4 @@
-import { getQuotedStrings, getValidFields } from "../utility-service";
+import { getQuotedStrings, getValidFields, prepareQuery } from "../utility-service";
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, OTP_TABLE_ID } from '../../database/big-query-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
@@ -10,6 +10,8 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     country: 'otpData.countryCode',
     vendorId: 'otpData.smsc'
 };
+const REPORT_FIELDS: string[] = ['id'].concat(['countryCode', 'requestDate', 'deliveryTime', 'smsc', 'sentTime', 'status', 'reportStatus', 'credit'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`));
+
 const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
 const FAILED_STATUS_CODES = [2, 5, 6, 7, 8, 13, 25, 28, 30, 81];
@@ -40,10 +42,8 @@ class OtpAnalyticsService {
         const validFields = getValidFields(PERMITTED_GROUPINGS, (groupings || DEFAULT_GROUP_BY).splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
         const groupByAttribs = validFields.withAlias.join(',');
-
         const query = `SELECT ${groupByAttribs}, ${this.aggregateAttribs()}
-            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${OTP_TABLE_ID}\` AS otpData
-            WHERE ${whereClause}
+            FROM (${prepareQuery(OTP_TABLE_ID, REPORT_FIELDS, whereClause, 'id')}) AS otpData
             GROUP BY ${groupBy}
             ORDER BY ${groupBy}`;
 
@@ -53,11 +53,11 @@ class OtpAnalyticsService {
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string, filters: { [field: string]: string }) {
         // mandatory conditions
-        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
-        if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
-        if (filters.vendorIds) conditions += `AND otpData.smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
+        if (companyId) conditions += `AND requestUserid = "${companyId}"`;
+        if (filters.vendorIds) conditions += `AND smsc in (${getQuotedStrings(filters.vendorIds.splitAndTrim(','))})`;
 
         return conditions;
     }
