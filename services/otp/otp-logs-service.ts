@@ -1,6 +1,6 @@
 
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, OTP_TABLE_ID } from '../../database/big-query-service';
-import { convertCodesToMessage, getValidFields } from '../utility-service';
+import { convertCodesToMessage, getValidFields, prepareQuery } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -50,6 +50,10 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     otpVerCount: "otpData.otpVerCount",
     failureReason: "otpData.failureReason",
 };
+const REPORT_FIELDS: string[] = ['id'].concat(['sentTime', 'deliveryTime', 'credit', 'credits', 'pauseReason',
+    'requestUserid', 'voiceRetryCount', 'otpRetry', 'verified', 'otpVerCount',
+    'telNum', 'reportStatus', 'requestSender', 'failureReason'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`));
+
 
 class OtpLogsService {
     private static instance: OtpLogsService;
@@ -63,8 +67,7 @@ class OtpLogsService {
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
-            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${OTP_TABLE_ID}\` AS otpData 
-            WHERE ${whereClause}`;
+            FROM (${prepareQuery(OTP_TABLE_ID, REPORT_FIELDS, whereClause, 'id')}) AS otpData`;
         logger.info(query);
         return query;
     }
@@ -73,10 +76,10 @@ class OtpLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
-        if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
+        if (companyId) conditions += `AND requestUserid = "${companyId}"`;
 
         return conditions;
     }
