@@ -10,11 +10,16 @@ import { Readable, TransformCallback } from "stream";
 import { Transform } from "stream";
 import { pipeline } from "stream/promises";
 import OtpModel from "../models/otp-model";
+import health from '../database/health-service';
 
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || '';
 const OTP_REPORT_COLLECTION = process.env.OTP_REPORT_COLLECTION || '';
 const DB_NAME = process.env.MONGO_DB_NAME;
+
+const RT_OTP_HEALTH_UUID = process.env.RT_OTP_HEALTH_UUID || "";
+const RT_SMS_REP_HEALTH_UUID = process.env.RT_SMS_REP_HEALTH_UUID || "";
+const RT_SMS_REQ_HEALTH_UUID = process.env.RT_SMS_REQ_HEALTH_UUID || "";
 
 async function handleRequestStream(changeStream: ChangeStream) {
     const readableStream: Readable = changeStream.stream();
@@ -325,6 +330,7 @@ class WriteRequest extends Transform {
             await Tracker.upsert({ jobType: jobType.RT_REQUEST_DATA, lastTimestamp: new Date(doc?.requestDate).toISOString(), token: data?._id?._data });
             this.batch = [];
             this.reportBatch = [];
+            health.ping(RT_SMS_REQ_HEALTH_UUID);
         }
 
         callback();
@@ -359,6 +365,7 @@ class WriteReport extends Transform {
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_REPORT_DATA, lastTimestamp: new Date(doc?.sentTime).toISOString(), token: data?._id?._data });
             this.batch = [];
+            health.ping(RT_SMS_REP_HEALTH_UUID);
         }
         callback();
     }
@@ -392,6 +399,7 @@ class WriteOTPReport extends Transform {
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_OTP_REPORT, lastTimestamp: new Date().toISOString(), token: data?._id?._data });
             this.batch = [];
+            health.ping(RT_OTP_HEALTH_UUID);
         }
         callback();
     }
