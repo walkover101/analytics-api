@@ -44,11 +44,12 @@ function startConsumption() {
 async function processMsgs(msgs: any[]) {
     logger.info(`[CONSUMER](Mail Reports) Buffer full, processing ${msgs} messages...`);
     try {
-        protobuf.load( mailReport_proto, function(err: any, root: { lookupType: (arg0: string) => any; }) {
+        protobuf.load(mailReport_proto, function (err: any, root: { lookupType: (arg0: string) => any; }) {
             if (err) throw err;
             const mailReport = root.lookupType("mailReport.mail_report");
             const mailReports: Array<MailReport> = [];
-            msgs.map(msg => msg.map(async (mailRep: any) => {
+
+            msgs.forEach(msg => msg.forEach(async (mailRep: any) => {
                 let message = mailReport.create(new MailReport(mailRep));
                 let buffer = mailReport.encode(message).finish();
                 mailReports.push(buffer);
