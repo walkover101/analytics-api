@@ -390,7 +390,7 @@ class WriteOTPReport extends Transform {
                 }
             });
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
-            await Tracker.upsert({ jobType: jobType.RT_OTP_REPORT, lastTimestamp: new Date(doc?.requestDate).toISOString(), token: data?._id?._data });
+            await Tracker.upsert({ jobType: jobType.RT_OTP_REPORT, lastTimestamp: new Date().toISOString(), token: data?._id?._data });
             this.batch = [];
         }
         callback();
