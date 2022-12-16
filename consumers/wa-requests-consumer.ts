@@ -1,72 +1,37 @@
 import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import WARequest from '../models/wa-request.model';
+import { Consumer } from './consumer';
 
-const BUFFER_SIZE = parseInt(process.env.RABBIT_WA_REQ_BUFFER_SIZE || '50');
+const BUFFER_SIZE = parseInt(process.env.RABBIT_WA_REQ_BUFFER_SIZE || '5');
 const QUEUE_NAME = process.env.RABBIT_WA_REQ_QUEUE_NAME || 'wa-requests';
-let rabbitConnection: Connection;
-let rabbitChannel: Channel;
 
-async function start() {
+let batch: Array<WARequest> = [];
+async function processMsgs(message: any, channel: Channel) {
+
     try {
-        logger.info(`[CONSUMER](WA Requests) Creating channel...`);
-        rabbitChannel = await rabbitConnection.createChannel();
-        rabbitChannel.prefetch(BUFFER_SIZE);
-        rabbitChannel.assertQueue(QUEUE_NAME, { durable: true });
-        startConsumption();
-    } catch (error: any) {
-        logger.error(error);
-    }
-}
-
-function startConsumption() {
-    let buffer: any[] = [];
-    logger.info(`[CONSUMER](WA Requests) Buffer is empty, waiting for messages...`);
-
-    rabbitChannel.consume(QUEUE_NAME, async (msg: any) => {
-        logger.info(`[CONSUMER](WA Requests) New message received, pushing to buffer...`);
-        buffer.push(JSON.parse(msg.content.toString()));
-
-        if (buffer.length === BUFFER_SIZE) {
-            await processMsgs(buffer);
-            logger.info(`[CONSUMER](WA Requests) Messages processed, send ackowledgement...`);
-            rabbitChannel.ack(msg, true); // true: Multiple Ack
-            buffer = [];
-            logger.info(`[CONSUMER](WA Requests) Buffer is empty, waiting for messages...`);
+        let event = message?.content;
+        event = JSON.parse(event.toString());
+        console.log(event);
+        if (Array.isArray(event)) {
+            event.forEach(e => batch.push(new WARequest(e)));
         }
-    }, { noAck: false }); // Auto Ack Off
-}
-
-async function processMsgs(msgs: any[]) {
-    logger.info(`[CONSUMER](WA Requests) Buffer full, processing ${msgs.length} messages...`);
-    try {
-        const waRequests: Array<WARequest> = [];
-        msgs.map(msg => {
-            let temp = msg.content = msg?.content;
-            try{
-                msg.content = JSON.stringify(msg?.content);
-            }catch(error){
-                msg.content = temp;
-            }
-            waRequests.push(new WARequest(msg))
-        });
-        if (waRequests.length) await WARequest.insertMany(waRequests);
-    } catch (err: any) {
-        if (err.name !== 'PartialFailureError') throw err;
-        logger.error(`[CONSUMER](WA Requests) PartialFailureError`);
-        logger.error(JSON.stringify(err));
+        if (batch.length >= BUFFER_SIZE) {
+            console.log(batch);
+            await WARequest.insertMany(batch);
+            batch = [];
+            channel.ack(message, true);
+        };
+    } catch (error: any) {
+        if (error?.name !== 'PartialFailureError') throw error;
+        logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
+        logger.error(JSON.stringify(error));
     }
+
 }
 
-const waRequestsConsumer = () => {
-    logger.info(`[CONSUMER](WA Requests) Initiated...`);
 
-    rabbitmqService().on("connect", (connection) => {
-        rabbitConnection = connection;
-        start();
-    });
+export const waRequest: Consumer = {
+    queue: QUEUE_NAME,
+    processor: processMsgs
 }
-
-export {
-    waRequestsConsumer
-};

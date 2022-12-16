@@ -1,43 +1,60 @@
 import "../startup/dotenv";
 import '../startup/string.extensions';
 import logger from "./../logger/logger";
+import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import { has } from 'lodash';
-import { mailRequestsConsumer } from './mail-requests-consumer';
-import { mailReportsConsumer } from './mail-reports-consumer';
-import { mailEventsConsumer } from './mail-events-consumer';
-import { waReportsConsumer } from "./wa-reports-consumer";
-import { waRequestsConsumer } from "./wa-requests-consumer";
-import { zipFolderConsumer } from "./zip-folder-consumer";
-import { notificationConsumer } from "./notification-consumer";
-
-// Register your consumers here
-const Consumers: any = {
-    mailRequestsConsumer,
-    mailReportsConsumer,
-    mailEventsConsumer,
-    waReportsConsumer,
-    waRequestsConsumer,
-    zipFolderConsumer,
-    notificationConsumer
-};
+import * as consumers from './consumer';
 
 function invalidConsumerName(consumerName: string): Boolean {
-    return !has(Consumers, consumerName)
+    return !has(consumers, consumerName)
 }
 
 function getAvailableConsumers() {
-    const consumerNames = Object.keys(Consumers);
+    const consumerNames = Object.keys(consumers);
     const numberedConsumerNames = consumerNames.map((consumer, idx) => `${idx + 1}. ${consumer}`);
     return numberedConsumerNames.join('\n');
 }
 
-function main() {
-    const consumerName = process.argv[2];
+class Consumer {
+    private connection?: Connection;
+    private channel?: Channel;
+    private queue: string;
+    private processor: Function;
+    constructor(obj: { queue: string, processor: Function }) {
+        this.queue = obj.queue;
+        this.processor = obj.processor;
+        this.setup();
+    }
+    private setup() {
+        rabbitmqService().on("connect", async (connection) => {
+            this.connection = connection;
+            this.channel = await this.connection?.createChannel();
+            this.channel?.prefetch(10);
+            this.channel?.assertQueue(this.queue, { durable: true });
+            this.start();
+        })
+    }
+    private start() {
+        this.channel?.consume(this.queue, async (message: any) => {
+            try {
+                await this.processor(message, this.channel);
+                // this.channel?.ack(message);
+            } catch (error) {
+                logger.error(error);
+                // this.channel?.nack(message);
+            }
+        }, { noAck: false })
+    }
+}
 
+function main() {
+    const consumerName: string = process.argv[2];
     if (invalidConsumerName(consumerName))
         return logger.error(`Valid consumer name is required\n\nAvailable consumers: \n${getAvailableConsumers()}`);
-
-    Consumers[consumerName]();
+    new Consumer((consumers as any)[consumerName]);
 }
 
 main();
+
+
+
