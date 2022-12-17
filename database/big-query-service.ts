@@ -43,10 +43,11 @@ async function getQueryResults(query: string) {
 }
 
 async function getStream(parent: string, writeStream: { type: any }) {
-    const writeStreamName = await getWriteStreamName(parent, writeStream);
+    const streamName = await getWriteStreamName(parent, writeStream);
     // This header is required so that BQ storage API knows which region to route the request to
-    const options = { otherArgs: { headers: { 'x-goog-request-params': `write_stream=${writeStreamName}` } } }
-    return await writeClient.appendRows(options);
+    const options = { otherArgs: { headers: { 'x-goog-request-params': `write_stream=${streamName}` } } }
+    const stream = await writeClient.appendRows(options);
+    return [stream, streamName]
 }
 
 async function getWriteStreamName(parent: string, writeStream: { type: any }) {

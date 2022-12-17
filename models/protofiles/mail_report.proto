@@ -3,19 +3,19 @@ syntax = "proto3";
 
 message mail_report {
     string requestId = 1;
-    int64 eventId = 2;
-    int64 statusCode = 3;
-    string enhancedStatusCode = 4;
-    string reason = 5;
-    string resultState = 6;
-    string remoteMX = 7;
-    string remoteIP = 8;
-    int64 contentSize = 9;
-    int64 senderDedicatedIPId = 10;
-    string hostname = 11;
-    string recipientEmail = 12;
-    int64 outboundEmailId = 13;
+    optional int64 eventId = 2;
+    optional int64 statusCode = 3;
+    optional string enhancedStatusCode = 4;
+    optional string reason = 5;
+    optional string resultState = 6;
+    optional string remoteMX = 7;
+    optional string remoteIP = 8;
+    optional int64 contentSize = 9;
+    optional int64 senderDedicatedIPId = 10;
+    optional string hostname = 11;
+    optional string recipientEmail = 12;
+    optional int64 outboundEmailId = 13;
     string companyId = 14;
-    string requestTime = 15;
-    string createdAt = 16;
+    optional string requestTime = 15;
+    optional string createdAt = 16;
 }

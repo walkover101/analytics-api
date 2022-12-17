@@ -72,6 +72,4 @@ const mailReportsConsumer = (message: any) => {
     });
 }
 
-export {
-    mailReportsConsumer
-};
+export { mailReportsConsumer };
