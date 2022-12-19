@@ -1,14 +1,8 @@
-import {
-  getStream,
-  MSG91_PROJECT_ID,
-  writeClient,
-  MSG91_DATASET_ID,
-  MAIL_REP_TABLE_ID,
-  mode,
-} from "../database/big-query-service";
+import { getStream, MSG91_PROJECT_ID, writeClient, MSG91_DATASET_ID, MAIL_REP_TABLE_ID, mode } from "../database/big-query-service";
 import { getHashCode } from "../services/utility-service";
 import protoDescriptor from "./protofiles/mailReport_descriptor";
 import { DateTime } from "luxon";
+import logger from "../logger/logger";
 
 const parent = `projects/${MSG91_PROJECT_ID}/datasets/${MSG91_DATASET_ID}/tables/${MAIL_REP_TABLE_ID}`;
 const writeStream = { type: mode.PENDING };
@@ -83,7 +77,7 @@ export default class MailReport {
             name: streamName,
           });
 
-          console.info(`Row count: ${response.rowCount}`);
+          logger.info(`Row count: ${response.rowCount}`);
 
           [response] = await writeClient.batchCommitWriteStreams({
             // after this data will be available to read
@@ -91,9 +85,9 @@ export default class MailReport {
             writeStreams: [streamName],
           });
 
-          console.info(response);
+          logger.info(response);
         } catch (err) {
-          console.error(err);
+          logger.error(err);
         }
       });
 
@@ -104,7 +98,7 @@ export default class MailReport {
 
       stream.write({ writeStream: streamName, protoRows }); //send batch
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }
 }
