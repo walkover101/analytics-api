@@ -28,15 +28,19 @@ const getAnalytics = async (req: Request, res: Response) => {
 const getCampaignAnalytics = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        let { companyId, smsNodeIds, smsReqIds, waNodeIds, waReqIds, emailNodeIds, emailReqIds, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
+        let { companyId, smsNodeIds, smsReqIds, waNodeIds, waReqIds, emailNodeIds, emailReqIds, allNodes, timeZone, groupBy, mailGroupBy, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
         if (!companyId) throw "companyId required";
         let smsAnalytics, waAnalytics, mailAnalytics;
-        if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !waReqIds?.length && !emailNodeIds?.length && !emailReqIds?.length) {
+        if (allNodes == 'true') {
             smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
             mailAnalytics = await mailAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, mailGroupBy, true);
             waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy, true);
+        } else if (!smsNodeIds?.length && !smsReqIds?.length && !waNodeIds?.length && !waReqIds?.length && !emailNodeIds?.length && !emailReqIds?.length) {
+            smsAnalytics = { data: [], total: {} };
+            mailAnalytics = { data: [], total: {} };
+            waAnalytics = { data: [], total: {} };
         } else {
             if (smsNodeIds?.length || smsReqIds?.length) smsAnalytics = await smsAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
             if (waNodeIds?.length || waReqIds?.length) waAnalytics = await waAnalyticsService.getAnalytics(companyId, fromDate, toDate, timeZone, params, groupBy);
