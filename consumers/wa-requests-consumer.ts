@@ -30,7 +30,6 @@ async function processMsgs(message: any, channel: Channel) {
 
 }
 
-
 export const waRequest: Consumer = {
     queue: QUEUE_NAME,
     processor: processMsgs
