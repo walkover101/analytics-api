@@ -5,6 +5,8 @@ import { waReport } from './wa-reports-consumer';
 import { waRequest } from './wa-requests-consumer';
 import { zipFolder } from './zip-folder-consumer';
 import { notification } from './notification-consumer';
+import { voiceReports } from './voice-report-consumer';
+import { voiceRequests } from './voice-request-consumer';
 
 export interface IConsumer {
     queue: string,

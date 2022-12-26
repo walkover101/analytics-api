@@ -1,0 +1,19 @@
+package voiceRequest;
+syntax = "proto3";
+
+message voice_request {
+    string uuid = 1;
+    string companyId = 2;
+    optional string status = 3;
+    optional int64 boxId = 4;
+    optional int64 source = 5;
+    optional string destination = 6;
+    optional string direction = 7;
+    optional string connectType = 8;
+    optional int64 templateId = 9;
+    optional string type = 10;
+    optional string uuidBulk = 11;
+    optional int64 campaignNodeId = 12;
+    optional string vendorBulkId = 13;
+    optional string vendorRequestId = 14;
+}
