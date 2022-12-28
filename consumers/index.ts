@@ -3,6 +3,7 @@ import '../startup/string.extensions';
 import logger from "./../logger/logger";
 import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import { has } from 'lodash';
+import { IConsumer } from "./consumer";
 import * as consumers from './consumer';
 
 function invalidConsumerName(consumerName: string): Boolean {
@@ -20,18 +21,22 @@ class Consumer {
     private channel?: Channel;
     private queue: string;
     private processor: Function;
-    constructor(obj: { queue: string, processor: Function }) {
+    private rabbitService;
+    constructor(obj: IConsumer) {
         this.queue = obj.queue;
         this.processor = obj.processor;
+        this.rabbitService = rabbitmqService();
         this.setup();
     }
     private setup() {
-        rabbitmqService().on("connect", async (connection) => {
+        this.rabbitService.on("connect", async (connection) => {
             this.connection = connection;
             this.channel = await this.connection?.createChannel();
             this.channel?.prefetch(10);
             this.channel?.assertQueue(this.queue, { durable: true });
             this.start();
+        }).on("error", (error) => {
+            logger.error(error);
         })
     }
     private start() {

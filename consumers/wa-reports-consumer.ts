@@ -1,14 +1,14 @@
 import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import WAReport from '../models/wa-report.model';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_WA_REP_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_WA_REP_QUEUE_NAME || 'wa-requests';
 
 
 let batch: Array<WAReport> = [];
-async function processMsgs(message: any, channel: Channel) {
+async function processMsg(message: any, channel: Channel) {
     try {
         let event = message?.content;
         event = JSON.parse(event.toString());
@@ -28,7 +28,7 @@ async function processMsgs(message: any, channel: Channel) {
 }
 
 
-export const waReport: Consumer = {
+export const waReport: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsgs
+    processor: processMsg
 }

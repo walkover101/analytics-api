@@ -1,7 +1,7 @@
 import { Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import MailEvent from '../models/mail-event.model';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_MAIL_EVENTS_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_MAIL_EVENTS_QUEUE_NAME || 'email-event-logs';
@@ -26,7 +26,7 @@ async function processMsgs(message: any, channel: Channel) {
     }
 }
 
-export const mailEvent: Consumer = {
+export const mailEvent: IConsumer = {
     queue: QUEUE_NAME,
     processor: processMsgs
 }

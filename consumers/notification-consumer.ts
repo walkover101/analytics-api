@@ -4,7 +4,7 @@ import { db } from "../firebase";
 import { Storage } from '@google-cloud/storage';
 import { DOWNLOAD_STATUS } from '../models/download.model';
 import axios from 'axios';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 
 type Type = 'channel' | 'email';
 
@@ -143,7 +143,7 @@ async function sendEmail(msg: Email, apiKey: string) {
     await axios(config);
 }
 
-export const notification: Consumer = {
+export const notification: IConsumer = {
     queue: QUEUE_NAME,
     processor: consume
 }
