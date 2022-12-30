@@ -10,7 +10,7 @@ export default class VoiceRequest {
     status: string; // (queued, ringing, balance)
     createdAt: Date;
     boxId: number;
-    source: number; //(api, hello)
+    source: number; 
     destination: string;
     direction: string; // (inbound, outbound)
     connectType: string; // Direct|Team|Flow|agent|tts

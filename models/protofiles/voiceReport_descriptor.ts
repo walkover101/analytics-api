@@ -106,7 +106,7 @@ protoDescriptor.field = [
       {
         name: 'vendorRequestId',
         number: 20,
-        type: type.TYPE_INT64,
+        type: type.TYPE_STRING,
   
       }       
 ];
