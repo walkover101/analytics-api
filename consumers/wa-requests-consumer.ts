@@ -26,6 +26,7 @@ async function processMsg(message: any, channel: Channel) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
         logger.error(JSON.stringify(error));
+        channel.ack(message, true);
     }
 
 }

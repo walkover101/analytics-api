@@ -49,6 +49,7 @@ async function processMsgs(message: any, channel: Channel) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
         logger.error(JSON.stringify(error));
+        channel.ack(message, true);
     }
 }
 
