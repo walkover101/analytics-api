@@ -8,7 +8,7 @@ import axios from 'axios';
 import { MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 
 const cache = new CacheContainer(new MemoryStorage());
-const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API;
+const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API || "https://control.msg91.com/api/v5/report/SMPPErrorCodeDetails";
 const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
