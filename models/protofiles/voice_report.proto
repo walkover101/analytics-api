@@ -19,5 +19,7 @@ message voice_report {
     optional string vendorBilling = 15;
     optional string vendorRate = 16;
     optional string vendorCharged = 17;
-    optional string vendorRequestId = 18;
+    optional int64 agentId = 18;
+    optional string disconnectedBy = 19;
+    optional int64 vendorRequestId = 20; 
 }

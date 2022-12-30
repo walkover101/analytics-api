@@ -6,9 +6,9 @@ const parent = `projects/${MSG91_PROJECT_ID}/datasets/${MSG91_DATASET_ID}/tables
 const writeStream = { type: mode.PENDING };
 export default class VoiceRequest {
     uuid: string;
-    companyId: string;
-    createdAt: Date;
+    companyId: number;
     status: string; // (queued, ringing, balance)
+    createdAt: Date;
     boxId: number;
     source: number; //(api, hello)
     destination: string;
@@ -16,22 +16,20 @@ export default class VoiceRequest {
     connectType: string; // Direct|Team|Flow|agent|tts
     templateId: number;
     type: string; // ('api','bulk','hello','trunk','utteru')
+    startTime: Date;
+    callerId: number;
+    connectedTo: number;
+    agentId: number;
     uuidBulk: string;
     campaignNodeId: number;
     vendorBulkId: string;
     vendorRequestId: string;
 
-    // Optional
-    agentId: number;
-    disconnectedBy: string; // (source, destination)
-    // connectedTo: number;
-    // startTime: Date;
-
     constructor(attr: any) {
         this.uuid = attr['uuid'];
         this.companyId = attr['company_id'];
-        this.createdAt = attr['created_at'];
         this.status = attr['status'];
+        this.createdAt = attr['created_at'];
         this.boxId = attr['box_id'];
         this.source = attr['source'];
         this.destination = attr['destination'];
@@ -39,16 +37,14 @@ export default class VoiceRequest {
         this.connectType = attr['connect_type'];
         this.templateId = attr['template_id'];
         this.type = attr['type'];
+        this.startTime = attr['start_time'];
+        this.callerId = attr['caller_id'];
+        this.connectedTo = attr['connected_to'];
+        this.agentId = attr['agent_id'];
         this.uuidBulk = attr['bulk_uuid'];
         this.campaignNodeId = attr['campaign_node_id'];
         this.vendorBulkId = attr['vendor_bulk_id'];
         this.vendorRequestId = attr['vendor_request_id'];
-
-        this.agentId = attr['agent_id'];
-        this.disconnectedBy = attr['disconnected_by'];
-        // this.startTime = attr['start_time'];
-        // this.callerId = attr['caller_id'];
-        // this.connectedTo = attr['connected_to'];
     }
 
     public static async insertMany(voiceRequests: Array<VoiceRequest>) {

@@ -92,11 +92,23 @@ protoDescriptor.field = [
   
       },
       {
-        name: 'vendorRequestId',
+        name: 'agentId',
         number: 18,
+        type: type.TYPE_INT64,
+  
+      },
+      {
+        name: 'disconnectedBy',
+        number: 19,
         type: type.TYPE_STRING,
   
       },
+      {
+        name: 'vendorRequestId',
+        number: 20,
+        type: type.TYPE_INT64,
+  
+      }       
 ];
 
 export default protoDescriptor;
