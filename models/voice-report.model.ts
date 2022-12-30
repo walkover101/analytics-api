@@ -15,19 +15,16 @@ export default class VoiceReport {
     callerId: number;
     duration: number;
     billingDuration: number;
-    ivrInputs: string; //not sure
+    ivrInputs: string; 
     billing: string; // (1/1, 6/6, 60/60, 60/1, 60/6)
     rate: string;
     charged: string;
     vendorBilling: string; // (6/6, 60/60, 60/1, 60/6)
     vendorRate: string;
     vendorCharged: string;
-    vendorRequestId: string;
-
+    agentId: number;
     disconnectedBy: string; // (source, destination)
-    // agentId: number;
-    // dialplanRateId: number;
-    // vendorRateId: number;
+    vendorRequestId: string;
 
     constructor(attr: any) {
         this.uuid = attr['uuid'];
@@ -47,12 +44,10 @@ export default class VoiceReport {
         this.vendorBilling = attr['vendor_billing'];
         this.vendorRate = attr['vendor_rate'];
         this.vendorCharged = attr['vendor_charged'];
+        this.agentId = attr['agent_id'];
+        this.disconnectedBy = attr['disconnected_by'];
         this.vendorRequestId = attr['vendor_request_id'];
 
-        this.disconnectedBy = attr['disconnected_by'];
-        // this.agentId = attr['agent_id'];
-        // this.dialplanRateId = attr['dialplan_rate_id'];
-        // this.vendorRateId = attr['vendor_rate_id'];
     }
 
     public static async insertMany(voiceReports: Array<VoiceReport>) {

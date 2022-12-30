@@ -3,17 +3,22 @@ syntax = "proto3";
 
 message voice_request {
     string uuid = 1;
-    string companyId = 2;
+    int64 companyId = 2;
     optional string status = 3;
-    optional int64 boxId = 4;
-    optional int64 source = 5;
-    optional string destination = 6;
-    optional string direction = 7;
-    optional string connectType = 8;
-    optional int64 templateId = 9;
-    optional string type = 10;
-    optional string uuidBulk = 11;
-    optional int64 campaignNodeId = 12;
-    optional string vendorBulkId = 13;
-    optional string vendorRequestId = 14;
+    optional string createdAt = 4;
+    optional int64 boxId = 5;
+    optional int64 source = 6;
+    optional string destination = 7;
+    optional string direction = 8;
+    optional string connectType = 9;
+    optional int64 templateId = 10;
+    optional string type = 11;
+    optional string startTime = 12;
+    optional int64 callerId = 13;
+    optional int64 connectedTo = 14;
+    optional int64 agentId = 15;
+    optional string uuidBulk = 16;
+    optional int64 campaignNodeId = 17;
+    optional string vendorBulkId = 18;
+    optional string vendorRequestId = 19;
 }
