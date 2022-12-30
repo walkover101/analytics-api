@@ -1,14 +1,14 @@
 import { Channel } from "amqplib";
 import logger from "../logger/logger";
 import MailRequest from '../models/mail-request.model';
-import { Consumer } from "./consumer";
+import { IConsumer } from "./consumer";
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_MAIL_REQ_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_MAIL_REQ_QUEUE_NAME || 'email-request-logs';
 
 
 let batch: Array<MailRequest> = [];
-async function processMsgs(message: any, channel: Channel) {
+async function processMsg(message: any, channel: Channel) {
     try {
         let event = message?.content;
         event = JSON.parse(event.toString());
@@ -27,8 +27,8 @@ async function processMsgs(message: any, channel: Channel) {
     }
 }
 
-export const mailRequests: Consumer = {
+export const mailRequests: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsgs
+    processor: processMsg
 }
 

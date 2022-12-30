@@ -4,7 +4,7 @@ import { db } from "../firebase";
 import { Storage } from '@google-cloud/storage';
 import { DOWNLOAD_STATUS } from '../models/download.model';
 import axios from 'axios';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,
     "client_email": process.env.CLIENT_EMAIL,
@@ -152,7 +152,7 @@ async function sendNotification(message: string, options: any) {
 }
 
 
-export const zipFolder: Consumer = {
+export const zipFolder: IConsumer = {
     queue: QUEUE_NAME,
     processor: consume
 }

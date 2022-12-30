@@ -1,7 +1,7 @@
 import { Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import axios from 'axios';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 
 type Type = 'channel' | 'email' | 'slack';
 
@@ -177,7 +177,7 @@ async function sendEmail(msg: Email, apiKey: string) {
     await axios(config);
 }
 
-export const notification: Consumer = {
+export const notification: IConsumer = {
     queue: QUEUE_NAME,
     processor: consume
 }

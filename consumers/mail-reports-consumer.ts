@@ -1,7 +1,7 @@
 import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import MailReport from '../models/mail-report.model';
-import { Consumer } from './consumer';
+import { IConsumer } from './consumer';
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_MAIL_REP_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_MAIL_REP_QUEUE_NAME || 'email-response-logs';
@@ -26,7 +26,7 @@ async function processMsgs(message: any, channel: Channel) {
     }
 }
 
-export const mailReports: Consumer = {
+export const mailReports: IConsumer = {
     queue: QUEUE_NAME,
     processor: processMsgs
 }

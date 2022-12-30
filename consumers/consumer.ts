@@ -6,22 +6,22 @@ import { waRequest } from './wa-requests-consumer';
 import { zipFolder } from './zip-folder-consumer';
 import { notification } from './notification-consumer';
 
-export interface Consumer {
+export interface IConsumer {
     queue: string,
     processor: Function
 }
 
 
-export const mailRequestsConsumer: Consumer = mailRequests;
-export const mailReportsConsumer: Consumer = mailReports;
+export const mailRequestsConsumer: IConsumer = mailRequests;
+export const mailReportsConsumer: IConsumer = mailReports;
 
 // Mail Event Consumer
-export const mailEventsConsumer: Consumer = mailEvent;
+export const mailEventsConsumer: IConsumer = mailEvent;
 
-export const waReportsConsumer: Consumer = waReport;
-export const waRequestsConsumer: Consumer = waRequest;
-export const zipFolderConsumer: Consumer = zipFolder;
-export const notificationConsumer: Consumer = notification;
+export const waReportsConsumer: IConsumer = waReport;
+export const waRequestsConsumer: IConsumer = waRequest;
+export const zipFolderConsumer: IConsumer = zipFolder;
+export const notificationConsumer: IConsumer = notification;
 
 
 
