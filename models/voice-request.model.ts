@@ -103,7 +103,7 @@ export default class VoiceRequest {
     }
   }
 
-  public static insertmany(rows: Array<VoiceRequest>) {
+  public static insertMany(rows: Array<VoiceRequest>) {
     const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
     return voiceRequestTable.insert(rows, insertOptions);
   }

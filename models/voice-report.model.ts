@@ -106,7 +106,7 @@ export default class VoiceReport {
     }
   }
 
-  public static insertmany(rows: Array<VoiceReport>) {
+  public static insertMany(rows: Array<VoiceReport>) {
     const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
     return voiceReportTable.insert(rows, insertOptions);
   }

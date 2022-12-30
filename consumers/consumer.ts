@@ -13,15 +13,21 @@ export interface IConsumer {
     processor: Function
 }
 
+// Voice Consumers
+export const voiceRequestsConsumer: IConsumer = voiceRequests;
+export const voiceReportsConsumer: IConsumer = voiceReports;
 
+// Mail Consumers
 export const mailRequestsConsumer: IConsumer = mailRequests;
 export const mailReportsConsumer: IConsumer = mailReports;
-
-// Mail Event Consumer
 export const mailEventsConsumer: IConsumer = mailEvent;
 
+// Whatsapp Consumers
 export const waReportsConsumer: IConsumer = waReport;
 export const waRequestsConsumer: IConsumer = waRequest;
+
+
+// Other Consumers
 export const zipFolderConsumer: IConsumer = zipFolder;
 export const notificationConsumer: IConsumer = notification;
 
