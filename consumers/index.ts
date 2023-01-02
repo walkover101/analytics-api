@@ -45,10 +45,9 @@ class Consumer {
         this.channel?.consume(this.queue, async (message: any) => {
             try {
                 await this.processor(message, this.channel);
-                // this.channel?.ack(message);
             } catch (error) {
                 logger.error(error);
-                // this.channel?.nack(message);
+                throw error;
             }
         }, { noAck: false })
     }
