@@ -5,6 +5,7 @@ import otpAnalyticsService from "../services/otp/otp-analytics-service";
 import mailAnalyticsService from "../services/email/mail-analytics-service";
 import { formatDate, getDefaultDate } from "../services/utility-service";
 import waAnalyticsService from "../services/whatsapp/wa-analytics-service";
+import voiceAnalyticsService from "../services/voice/voice-analytics-service";
 import { RESOURCE_TYPE } from "../models/download.model";
 
 // GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa'
@@ -63,6 +64,8 @@ const getService = (resourceType: string) => {
                 return otpAnalyticsService;
             case RESOURCE_TYPE.WA:
                 return waAnalyticsService;
+            case RESOURCE_TYPE.VOICE:
+                return voiceAnalyticsService;
             default:
                 return smsAnalyticsService;
         }

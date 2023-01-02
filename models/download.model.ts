@@ -24,7 +24,8 @@ export enum RESOURCE_TYPE {
     SMS = 'sms',
     EMAIL = 'mail',
     OTP = 'otp',
-    WA = 'wa'
+    WA = 'wa',
+    VOICE = 'voice'
 }
 
 export enum REPORT_TYPE {

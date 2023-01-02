@@ -7,6 +7,7 @@ import MailEvent from '../models/mail-event.model';
 import otpLogsService from "../services/otp/otp-logs-service";
 import waLogsService from "../services/whatsapp/wa-logs-service";
 import { RESOURCE_TYPE } from "../models/download.model";
+import voiceLogsService from "../services/voice/voice-logs-service";
 
 //GET '/logs/sms' | 'logs/mail' | 'logs/otp' | 'logs/wa'
 const getLogs = async (req: Request, res: Response) => {
@@ -51,8 +52,10 @@ const getService = (resourceType: string) => {
                 return otpLogsService;
             case RESOURCE_TYPE.WA:
                 return waLogsService;
+            case RESOURCE_TYPE.VOICE:
+                return voiceLogsService;
             default:
-                return smsLogsService;                  
+                return smsLogsService;
         }
     } catch (error: any) {
         logger.error(error);
