@@ -12,6 +12,8 @@ import smsAnalyticsService from '../services/sms/sms-analytics-service';
 import mailAnalyticsService from '../services/email/mail-analytics-service';
 import OtpAnalyticsService from '../services/otp/otp-analytics-service';
 import waAnalyticsService from '../services/whatsapp/wa-analytics-service';
+import voiceLogsService from '../services/voice/voice-logs-service';
+import voiceAnalyticsService from '../services/voice/voice-analytics-service';
 
 export enum DOWNLOAD_STATUS {
     PENDING = 'PENDING',
@@ -69,6 +71,8 @@ export default class Download {
                 break;
             case RESOURCE_TYPE.WA:
                 this.resourceType = RESOURCE_TYPE.WA;
+            case RESOURCE_TYPE.VOICE:
+                this.resourceType = RESOURCE_TYPE.VOICE;
                 break;
             default:
                 this.resourceType = RESOURCE_TYPE.SMS;
@@ -143,6 +147,8 @@ export default class Download {
                 return otpLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             case RESOURCE_TYPE.WA:
                 return waLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
+            case RESOURCE_TYPE.VOICE:
+                return voiceLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
             default:
                 return smsLogsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.fields);
         }
@@ -156,6 +162,8 @@ export default class Download {
                 return OtpAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
             case RESOURCE_TYPE.WA:
                 return waAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
+            case RESOURCE_TYPE.VOICE:
+                return voiceAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
             default:
                 return smsAnalyticsService.getQuery(this.companyId, this.startDate, this.endDate, this.timezone, this.query, this.query?.groupBy);
         }

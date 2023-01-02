@@ -6,7 +6,7 @@ import logger from '../../logger/logger';
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    sentDateTime: `STRING(TIMESTAMP_TRUNC(DATETIME(reportData.sentTime,'${DEFAULT_TIMEZONE}'), SECOND))`,
+    createdAt: `STRING(TIMESTAMP_TRUNC(DATETIME(reportData.createdAt,'${DEFAULT_TIMEZONE}'), SECOND))`,
     status: 'reportData.status',
     startTime: 'STRING(DATE(reportData.startTime))',
     endTime: 'STRING(TIME(reportData.endTime))',
