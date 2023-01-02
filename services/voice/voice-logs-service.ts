@@ -12,7 +12,6 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     endTime: 'STRING(TIME(reportData.endTime))',
     duration: 'reportData.duration',
     billingDuration: 'reportData.billingDuration',
-    telNum: 'reportData.telNum',
     charged: 'reportData.charged',
     destination: 'reportData.destination'
     // from request-data
