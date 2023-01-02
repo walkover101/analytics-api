@@ -21,10 +21,12 @@ class Consumer {
     private channel?: Channel;
     private queue: string;
     private processor: Function;
+    private bufferSize: number = 1;
     private rabbitService;
     constructor(obj: IConsumer) {
         this.queue = obj.queue;
         this.processor = obj.processor;
+        this.bufferSize = obj.prefetch;
         this.rabbitService = rabbitmqService();
         this.setup();
     }
@@ -32,7 +34,7 @@ class Consumer {
         this.rabbitService.on("connect", async (connection) => {
             this.connection = connection;
             this.channel = await this.connection?.createChannel();
-            this.channel?.prefetch(10);
+            this.channel?.prefetch(this.bufferSize);
             this.channel?.assertQueue(this.queue, { durable: true });
             this.start();
         }).on("error", (error) => {

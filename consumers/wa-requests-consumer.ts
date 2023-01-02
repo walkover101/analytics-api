@@ -7,32 +7,35 @@ const BUFFER_SIZE = parseInt(process.env.RABBIT_WA_REQ_BUFFER_SIZE || '5');
 const QUEUE_NAME = process.env.RABBIT_WA_REQ_QUEUE_NAME || 'wa-requests';
 
 let batch: Array<WARequest> = [];
+let bufferLength: number = 0;
 async function processMsg(message: any, channel: Channel) {
 
     try {
         let event = message?.content;
         event = JSON.parse(event.toString());
-        console.log(event);
         if (Array.isArray(event)) {
             event.forEach(e => batch.push(new WARequest(e)));
         }
-        if (batch.length >= BUFFER_SIZE) {
-            console.log(batch);
+        bufferLength++;
+        if (bufferLength >= BUFFER_SIZE) {
             await WARequest.insertMany(batch);
             batch = [];
-            channel.ack(message, true);
-        };
+            bufferLength = 0;
+        } else {
+            return;
+        }
     } catch (error: any) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
         logger.error(JSON.stringify(error));
-        channel.ack(message, true);
     }
+    channel.ack(message, true);
 
 }
 
 
 export const waRequest: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsg
+    processor: processMsg,
+    prefetch: BUFFER_SIZE
 }

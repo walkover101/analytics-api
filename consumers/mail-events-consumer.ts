@@ -7,6 +7,7 @@ const BUFFER_SIZE = parseInt(process.env.RABBIT_MAIL_EVENTS_BUFFER_SIZE || '50')
 const QUEUE_NAME = process.env.RABBIT_MAIL_EVENTS_QUEUE_NAME || 'email-event-logs';
 
 let batch: Array<MailEvent> = [];
+let bufferLength: number = 0;
 async function processMsgs(message: any, channel: Channel) {
     try {
         let event = message?.content;
@@ -14,20 +15,24 @@ async function processMsgs(message: any, channel: Channel) {
         if (Array.isArray(event)) {
             event.forEach(e => batch.push(new MailEvent(e)));
         }
-        if (batch.length >= BUFFER_SIZE) {
+        bufferLength++;
+        if (bufferLength >= BUFFER_SIZE) {
             await MailEvent.insertMany(batch);
             batch = [];
-            channel.ack(message, true);
-        };
+            bufferLength = 0;
+        } else {
+            return;
+        }
     } catch (error: any) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
         logger.error(JSON.stringify(error));
-        channel.ack(message, true);
     }
+    channel.ack(message, true);
 }
 
 export const mailEvent: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsgs
+    processor: processMsgs,
+    prefetch: BUFFER_SIZE
 }

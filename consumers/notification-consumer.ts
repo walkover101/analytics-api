@@ -179,5 +179,6 @@ async function sendEmail(msg: Email, apiKey: string) {
 
 export const notification: IConsumer = {
     queue: QUEUE_NAME,
-    processor: consume
+    processor: consume,
+    prefetch: 1
 }

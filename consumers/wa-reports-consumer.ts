@@ -8,6 +8,7 @@ const QUEUE_NAME = process.env.RABBIT_WA_REP_QUEUE_NAME || 'wa-requests';
 
 
 let batch: Array<WAReport> = [];
+let bufferLength: number = 0;
 async function processMsg(message: any, channel: Channel) {
     try {
         let event = message?.content;
@@ -15,21 +16,25 @@ async function processMsg(message: any, channel: Channel) {
         if (Array.isArray(event)) {
             event.forEach(e => batch.push(new WAReport(e)));
         }
-        if (batch.length >= BUFFER_SIZE) {
+        bufferLength++;
+        if (bufferLength >= BUFFER_SIZE) {
             await WAReport.insertMany(batch);
             batch = [];
-            channel.ack(message, true);
-        };
+            bufferLength = 0;
+        } else {
+            return;
+        }
     } catch (error: any) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
         logger.error(JSON.stringify(error));
-        channel.ack(message, true);
     }
+    channel.ack(message, true);
 }
 
 
 export const waReport: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsg
+    processor: processMsg,
+    prefetch: BUFFER_SIZE
 }

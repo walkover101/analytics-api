@@ -154,5 +154,6 @@ async function sendNotification(message: string, options: any) {
 
 export const zipFolder: IConsumer = {
     queue: QUEUE_NAME,
-    processor: consume
+    processor: consume,
+    prefetch: 1
 }

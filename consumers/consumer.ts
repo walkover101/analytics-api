@@ -10,7 +10,8 @@ import { voiceRequests } from './voice-request-consumer';
 
 export interface IConsumer {
     queue: string,
-    processor: Function
+    processor: Function,
+    prefetch: number
 }
 
 // Voice Consumers

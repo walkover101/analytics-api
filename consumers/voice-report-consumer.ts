@@ -11,7 +11,7 @@ const BUFFER_SIZE = parseInt(process.env.RABBIT_VOICE_REP_BUFFER_SIZE || '1');
 const QUEUE_NAME = process.env.RABBIT_VOICE_REP_QUEUE_NAME || 'voice-reports';
 let batch: Array<VoiceReport> = [];
 
-
+let bufferLength: number = 0;
 async function processMsgs(message: any, channel: Channel) {
     try {
         // let event = message?.content;
@@ -40,20 +40,24 @@ async function processMsgs(message: any, channel: Channel) {
         } else {
             batch.push(new VoiceReport(event));
         }
-        if (batch.length >= BUFFER_SIZE) {
+        bufferLength++;
+        if (bufferLength >= BUFFER_SIZE) {
             await VoiceReport.insertMany(batch);
             batch = [];
-            channel.ack(message, true);
-        };
+            bufferLength = 0;
+        } else {
+            return;
+        }
     } catch (error: any) {
         if (error?.name !== 'PartialFailureError') throw error;
         logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
         logger.error(JSON.stringify(error));
-        channel.ack(message, true);
     }
+    channel.ack(message, true);
 }
 
 export const voiceReports: IConsumer = {
     queue: QUEUE_NAME,
-    processor: processMsgs
+    processor: processMsgs,
+    prefetch: BUFFER_SIZE
 }
