@@ -14,7 +14,7 @@ export default class VoiceRequest {
   createdAt: Date;
   boxId: number;
   source: number; //(api, hello)
-  destination: string;
+  destination: number;
   direction: string; // (inbound, outbound)
   connectType: string; // Direct|Team|Flow|agent|tts
   templateId: number;

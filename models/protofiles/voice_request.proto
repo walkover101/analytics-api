@@ -8,7 +8,7 @@ message voice_request {
     optional string createdAt = 4;
     optional int64 boxId = 5;
     optional int64 source = 6;
-    optional string destination = 7;
+    optional int64 destination = 7;
     optional string direction = 8;
     optional string connectType = 9;
     optional int64 templateId = 10;

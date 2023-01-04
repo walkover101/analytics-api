@@ -27,7 +27,7 @@ export default class VoiceReport {
   vendorCharged: string;
   agentId: number;
   disconnectedBy: string; // (source, destination)
-  vendorRequestId: number;
+  vendorRequestId: string;
 
   constructor(attr: any) {
     this.uuid = attr['uuid'];
