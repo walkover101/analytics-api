@@ -72,7 +72,7 @@ class OtpAnalyticsService {
             COUNTIF(otpData.reportStatus in (${FAILED_STATUS_CODES.join(',')})) as failed,
             COUNTIF(otpData.reportStatus in (${REJECTED_STATUS_CODES.join(',')})) as rejected,
             COUNTIF(otpData.reportStatus in (${NDNC_STATUS_CODES.join(',')})) as ndnc,
-            ROUND(SUM(IF(otpData.reportStatus = 1, TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus = 1), 0) as avgDeliveryTime`;
+            ROUND(SUM(IF(otpData.reportStatus in (${DELIVERED_STATUS_CODES.join(',')}), TIMESTAMP_DIFF(otpData.deliveryTime, otpData.sentTime, SECOND), NULL))/COUNTIF(otpData.reportStatus in (${DELIVERED_STATUS_CODES.join(',')})), 0) as avgDeliveryTime`;
     }
 
     private calculateTotalAggr(data: any) {
