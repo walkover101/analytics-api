@@ -10,26 +10,22 @@ let batch: Array<WARequest> = [];
 let bufferLength: number = 0;
 async function processMsg(message: any, channel: Channel) {
 
-    try {
-        let event = message?.content;
-        event = JSON.parse(event.toString());
-        if (Array.isArray(event)) {
-            event.forEach(e => batch.push(new WARequest(e)));
-        }
-        bufferLength++;
-        if (bufferLength >= BUFFER_SIZE) {
-            await WARequest.insertMany(batch);
-            batch = [];
-            bufferLength = 0;
-        } else {
-            return;
-        }
-    } catch (error: any) {
-        if (error?.name !== 'PartialFailureError') throw error;
-        logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
-        logger.error(JSON.stringify(error));
+    let event = message?.content;
+    event = JSON.parse(event.toString());
+    if (Array.isArray(event)) {
+        event.forEach(e => batch.push(new WARequest(e)));
     }
-    channel.ack(message, true);
+    bufferLength++;
+    if (bufferLength >= BUFFER_SIZE) {
+        await WARequest.insertMany(batch).catch(error => {
+            if (error?.name !== 'PartialFailureError') throw error;
+            logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
+            logger.error(JSON.stringify(error));
+        });
+        batch = [];
+        bufferLength = 0;
+        channel.ack(message, true);
+    }
 
 }
 

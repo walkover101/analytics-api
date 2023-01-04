@@ -13,49 +13,45 @@ let batch: Array<VoiceRequest> = [];
 let bufferLength: number = 0;
 async function processMsgs(message: any, channel: Channel) {
 
-    try {
-        // let event = message?.content;
-        // event = JSON.parse(event.toString());
-        // protobuf.load(voiceRequest_proto, async function (err: any, root: { lookupType: (arg0: string) => any; }) {
-        //     if (err) throw err;
-        //     const voiceReport = root.lookupType("voiceReport.voice_report");
+    // let event = message?.content;
+    // event = JSON.parse(event.toString());
+    // protobuf.load(voiceRequest_proto, async function (err: any, root: { lookupType: (arg0: string) => any; }) {
+    //     if (err) throw err;
+    //     const voiceReport = root.lookupType("voiceReport.voice_report");
 
-        //     if (Array.isArray(event)) {
-        //         event.forEach(e => {
-        //             let message = voiceReport.create(new VoiceRequest(e));
-        //             let buffer = voiceReport.encode(message).finish();
-        //             batch.push(buffer)
-        //         });
-        //     }
-        //     if (batch.length >= BUFFER_SIZE) {
-        //         await VoiceRequest.insertMany(batch);
-        //         batch = [];
-        //         channel.ack(message, true);
-        //     }
-        // });
+    //     if (Array.isArray(event)) {
+    //         event.forEach(e => {
+    //             let message = voiceReport.create(new VoiceRequest(e));
+    //             let buffer = voiceReport.encode(message).finish();
+    //             batch.push(buffer)
+    //         });
+    //     }
+    //     if (batch.length >= BUFFER_SIZE) {
+    //         await VoiceRequest.insertMany(batch);
+    //         batch = [];
+    //         channel.ack(message, true);
+    //     }
+    // });
 
-        let event = message?.content;
-
-        event = JSON.parse(event.toString());
-        if (Array.isArray(event)) {
-            event.forEach(e => batch.push(new VoiceRequest(e)));
-        } else {
-            batch.push(new VoiceRequest(event));
-        }
-        bufferLength++;
-        if (bufferLength >= BUFFER_SIZE) {
-            await VoiceRequest.insertMany(batch);
-            batch = [];
-            bufferLength = 0;
-        } else {
-            return;
-        }
-    } catch (error: any) {
-        if (error?.name !== 'PartialFailureError') throw error;
-        logger.error(`[CONSUMER](Voice Requests) PartialFailureError`);
-        logger.error(JSON.stringify(error));
+    let event = message?.content;
+    console.log(message?.fields?.deliveryTag);
+    event = JSON.parse(event.toString());
+    if (Array.isArray(event)) {
+        event.forEach(e => batch.push(new VoiceRequest(e)));
+    } else {
+        batch.push(new VoiceRequest(event));
     }
-    channel.ack(message, true);
+    bufferLength++;
+    if (bufferLength >= BUFFER_SIZE) {
+        await VoiceRequest.insertMany(batch).catch(error => {
+            if (error?.name !== 'PartialFailureError') throw error;
+            logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
+            logger.error(JSON.stringify(error));
+        });
+        batch = [];
+        bufferLength = 0;
+        channel.ack(message, true);
+    }
 }
 
 export const voiceRequests: IConsumer = {

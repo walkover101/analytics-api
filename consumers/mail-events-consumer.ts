@@ -9,26 +9,23 @@ const QUEUE_NAME = process.env.RABBIT_MAIL_EVENTS_QUEUE_NAME || 'email-event-log
 let batch: Array<MailEvent> = [];
 let bufferLength: number = 0;
 async function processMsgs(message: any, channel: Channel) {
-    try {
-        let event = message?.content;
-        event = JSON.parse(event.toString());
-        if (Array.isArray(event)) {
-            event.forEach(e => batch.push(new MailEvent(e)));
-        }
-        bufferLength++;
-        if (bufferLength >= BUFFER_SIZE) {
-            await MailEvent.insertMany(batch);
-            batch = [];
-            bufferLength = 0;
-        } else {
-            return;
-        }
-    } catch (error: any) {
-        if (error?.name !== 'PartialFailureError') throw error;
-        logger.error(`[CONSUMER](Mail Requests) PartialFailureError`);
-        logger.error(JSON.stringify(error));
+    let event = message?.content;
+    event = JSON.parse(event.toString());
+    if (Array.isArray(event)) {
+        event.forEach(e => batch.push(new MailEvent(e)));
     }
-    channel.ack(message, true);
+    bufferLength++;
+    if (bufferLength >= BUFFER_SIZE) {
+        await MailEvent.insertMany(batch).catch(error => {
+            if (error?.name !== 'PartialFailureError') throw error;
+            logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
+            logger.error(JSON.stringify(error));
+        });
+        batch = [];
+        bufferLength = 0;
+        channel.ack(message, true);
+    }
+
 }
 
 export const mailEvent: IConsumer = {
