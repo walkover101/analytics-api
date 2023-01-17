@@ -1,4 +1,4 @@
-import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID } from '../../database/big-query-service';
+import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID, MSG91_PROJECT_ID } from '../../database/big-query-service';
 import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
@@ -86,12 +86,30 @@ class MailLogsService {
 
         return conditions;
     }
+    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = [], option?: Option) {
+        let query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
+        if (option?.datasetId && option?.tableId) {
+            // Set default values
+            option.limit = option?.limit || 100;
+            option.offset = option?.offset || 0;
+            query = `SELECT * FROM \`${MSG91_PROJECT_ID}.${option?.datasetId}.${option?.tableId}\` LIMIT ${option.limit} OFFSET ${option?.offset}`;
+        }
+        const [data, metadata] = await getQueryResults(query, true);
 
-    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
-        const data = await getQueryResults(query);
-        return { data };
+        return {
+            data, metadata: {
+                ...metadata,
+                tableId: option?.tableId || metadata?.tableId,
+                datasetId: option?.datasetId || metadata?.datasetId,
+            }
+        };
     }
 }
 
+type Option = {
+    datasetId?: string,
+    tableId?: string,
+    limit?: number,
+    offset?: number
+}
 export default MailLogsService.getSingletonInstance();

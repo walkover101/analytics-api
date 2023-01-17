@@ -37,10 +37,25 @@ function getMsg91Dataset() {
     return bigQuery.dataset(MSG91_DATASET_ID);
 }
 
-async function getQueryResults(query: string) {
-    const [job] = await getMsg91Dataset().createQueryJob({ query, location: process.env.DATA_SET_LOCATION });
+async function getQueryResults(query: string, metadata: boolean = false) {
+
+    const [job, info] = await getMsg91Dataset().createQueryJob({ query, location: process.env.DATA_SET_LOCATION, useQueryCache: true });
     let [rows] = await job.getQueryResults();
-    return rows;
+    if (metadata) {
+        return [rows,
+            {
+                datasetId: info?.configuration?.query?.destinationTable?.datasetId,
+                tableId: info?.configuration?.query?.destinationTable?.tableId,
+                stats: {
+                    processedBytes: info?.statistics?.query?.totalBytesProcessed,
+                    billedBytes: info?.statistics?.query?.totalBytesBilled,
+                    cacheHit: info?.statistics?.query?.cacheHit
+                }
+            }
+        ];
+    } else {
+        return rows;
+    }
 }
 
 async function getStream(parent: string, writeStream: { type: any }) {

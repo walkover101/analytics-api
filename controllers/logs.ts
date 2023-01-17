@@ -19,7 +19,12 @@ const getLogs = async (req: Request, res: Response) => {
         const toDate = formatDate(endDate);
         const attributes = fields?.length ? fields.splitAndTrim(',') : [];
 
-        const logs = await getService(resourceType)?.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
+        const logs = await getService(resourceType)?.getLogs(companyId, fromDate, toDate, timeZone, params, attributes, {
+            tableId: params?.tableId,
+            datasetId: params?.datasetId,
+            offset: params?.skip,
+            limit: params?.limit
+        });
         res.send(logs);
     } catch (error: any) {
         logger.error(error);
