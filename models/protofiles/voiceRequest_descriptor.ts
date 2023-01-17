@@ -36,7 +36,7 @@ protoDescriptor.field = [
     {
       name: 'destination',
       number: 7,
-      type: type.TYPE_STRING,
+      type: type.TYPE_INT64,
     },
     {
       name: 'direction',
