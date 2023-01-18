@@ -94,7 +94,8 @@ class MailLogsService {
             option.offset = option?.offset || 0;
             query = `SELECT * FROM \`${MSG91_PROJECT_ID}.${option?.datasetId}.${option?.tableId}\` LIMIT ${option.limit} OFFSET ${option?.offset}`;
         }
-        const [data, metadata] = await getQueryResults(query, true);
+        let [data, metadata] = await getQueryResults(query, true);
+        if (option?.limit) data = data?.slice(0, option?.limit);
 
         return {
             data, metadata: {
