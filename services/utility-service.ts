@@ -5,6 +5,7 @@ import { Stat } from '../apis'; import { CacheContainer } from 'node-ts-cache';
 import { MemoryStorage } from 'node-ts-cache-storage-memory';
 import logger from '../logger/logger';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 
 const cache = new CacheContainer(new MemoryStorage());
@@ -12,6 +13,19 @@ const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API || "https://contro
 const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) {
+    throw new Error("JWT_TOKEN is not set in env");
+}
+export function signToken(payload: any) {
+    return jwt.sign(payload, JWT_SECRET, {
+        expiresIn: '8h'
+    });
+}
+
+export function verifyToken(token: string) {
+    return jwt.verify(token, JWT_SECRET);
+}
 
 function delay(time = 1000) {
     return new Promise((resolve) => {
