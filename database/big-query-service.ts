@@ -18,7 +18,7 @@ export const VOICE_REQ_TABLE_ID = process.env.VOICE_REQ_TABLE_ID || 'voice_reque
 export const mode = require('@google-cloud/bigquery-storage').protos.google.cloud.bigquery.storage.v1.WriteStream.Type;
 export const type = require('@google-cloud/bigquery-storage').protos.google.protobuf.FieldDescriptorProto.Type;
 
-const CREDENTIALS = {
+export const CREDENTIALS = {
     "private_key": process.env.PRIVATE_KEY,
     "client_email": process.env.CLIENT_EMAIL,
     "client_id": process.env.CLIENT_ID,
