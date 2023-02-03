@@ -68,7 +68,7 @@ class MailAnalyticsService {
         if (filters.emailNodeIds) conditions += ` AND request.nodeId in (${filters.emailNodeIds.splitAndTrim(',')})`;
         if (filters.emailReqIds) conditions += ` AND request.mailerRequestId in (${getQuotedStrings(filters.emailReqIds.splitAndTrim(','))})`;
         if (onlyNodes) conditions += ` AND request.nodeId IS NOT NULL`;
-        if (filters.isSmtp) conditions += ` AND request.is_smtp = '${filters.isSmtp}`;
+        if (filters.isSmtp) conditions += ` AND request.isSmtp = ${filters.isSmtp}`;
 
         return conditions;
     }
