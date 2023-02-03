@@ -83,6 +83,7 @@ class MailLogsService {
         if (query.remoteMX) conditions += ` AND mailReport.remoteMX in (${getQuotedStrings(query.remoteMX.splitAndTrim(','))})`;
         if (query.remoteIP) conditions += ` AND mailReport.remoteIP in (${getQuotedStrings(query.remoteIP.splitAndTrim(','))})`;
         if (query.hostname) conditions += ` AND mailReport.hostname in (${getQuotedStrings(query.hostname.splitAndTrim(','))})`;
+        if (query.isSmtp) conditions += ` AND is_smtp = '${query.isSmtp}'`;
 
         return conditions;
     }
