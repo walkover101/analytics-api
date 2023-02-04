@@ -17,6 +17,7 @@ const report = z.object({
     smsc: z.string(),
     description: z.string(),
     failureReason: z.string().optional(),
+    errCode: z.string().optional(),
     deliveryTime: z.date(),
     route: z.string(),
     credit: z.number(),
@@ -27,7 +28,6 @@ const report = z.object({
     oppri: z.number(),
     isSingleRequest: z.string(),
     message: z.string(),
-
 })
 
 export const reportKeys = report.keyof();
@@ -63,7 +63,9 @@ export default class ReportData {
 
     public static createAsync = async (attr: any) => {
         const reportData: ReportData = new ReportData(attr);
-        reportData.data.failureReason = await getFailureReason(reportData.data.smsc, reportData.data.description);
+        const failureDesc = await getFailureReason(reportData.data.smsc, reportData.data.description);
+        reportData.data.failureReason = failureDesc?.reason;
+        reportData.data.errCode = failureDesc?.code;
         return reportData;
     }
 
