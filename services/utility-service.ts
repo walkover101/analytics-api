@@ -5,6 +5,7 @@ import { Stat } from '../apis'; import { CacheContainer } from 'node-ts-cache';
 import { MemoryStorage } from 'node-ts-cache-storage-memory';
 import logger from '../logger/logger';
 import axios from 'axios';
+import rabbitmqProducer from '../database/rabbitmq-producer';
 import jwt from 'jsonwebtoken';
 import { MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 
@@ -209,6 +210,14 @@ tr:hover {background-color: #D6EEEE;}
   </body>
   </html>
     `
+}
+
+export async function sendChannelNotification(channelId:string, message:any){
+    await rabbitmqProducer.publishToQueue("notification",{
+        type: "channel",
+        data: {channelId,message},
+        retry: 5
+    });
 }
 export {
     delay,
