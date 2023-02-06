@@ -33,7 +33,8 @@ const request = z.object({
     crcy: z.string(),
     node_id: z.string(),
     scheduleDateTime: z.date(),
-    msgData: z.string()
+    msgData: z.string(),
+    plugin: z.string().optional()
 });
 type Request = z.infer<typeof request>;
 export default class RequestData {
@@ -71,6 +72,7 @@ export default class RequestData {
             node_id: attr['node_id'],
             scheduleDateTime: attr['scheduleDateTime'] || null,
             msgData: attr['msgData'],
+            plugin: attr['plugin'] || null
         }
     }
 

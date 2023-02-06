@@ -41,6 +41,7 @@ export default class MailReport {
         this.companyId = attr['cid'];
         this.requestTime = attr['mct'] && new Date(attr['mct']);
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
+        if (attr['mri'] == null || !this.recipientEmail) throw new Error("mailRequestId and recipientEmail can't be null");
     }
 
     public static insertMany(rows: Array<MailReport>) {

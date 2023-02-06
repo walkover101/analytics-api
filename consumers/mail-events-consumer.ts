@@ -1,67 +1,35 @@
-import rabbitmqService, { Connection, Channel } from '../database/rabbitmq-service';
+import { Channel } from '../database/rabbitmq-service';
 import logger from "../logger/logger";
 import MailEvent from '../models/mail-event.model';
+import { IConsumer } from './consumer';
 
 const BUFFER_SIZE = parseInt(process.env.RABBIT_MAIL_EVENTS_BUFFER_SIZE || '50');
 const QUEUE_NAME = process.env.RABBIT_MAIL_EVENTS_QUEUE_NAME || 'email-event-logs';
-let rabbitConnection: Connection;
-let rabbitChannel: Channel;
 
-async function start() {
-    try {
-        logger.info(`[CONSUMER](Mail Events) Creating channel...`);
-        rabbitChannel = await rabbitConnection.createChannel();
-        rabbitChannel.prefetch(BUFFER_SIZE);
-        rabbitChannel.assertQueue(QUEUE_NAME, { durable: true });
-        startConsumption();
-    } catch (error: any) {
-        logger.error(error);
+let batch: Array<MailEvent> = [];
+let bufferLength: number = 0;
+async function processMsgs(message: any, channel: Channel) {
+    let event = message?.content;
+    event = JSON.parse(event.toString());
+    if (Array.isArray(event)) {
+        event.forEach(e => batch.push(new MailEvent(e)));
     }
-}
-
-function startConsumption() {
-    let buffer: any[] = [];
-    logger.info(`[CONSUMER](Mail Events) Buffer is empty, waiting for messages...`);
-
-    rabbitChannel.consume(QUEUE_NAME, async (msg: any) => {
-        logger.info(`[CONSUMER](Mail Events) New message received, pushing to buffer...`);
-        buffer.push(JSON.parse(msg.content.toString()));
-
-        if (buffer.length === BUFFER_SIZE) {
-            await processMsgs(buffer);
-            logger.info(`[CONSUMER](Mail Events) Messages processed, send ackowledgement...`);
-            rabbitChannel.ack(msg, true); // true: Multiple Ack
-            buffer = [];
-            logger.info(`[CONSUMER](Mail Events) Buffer is empty, waiting for messages...`);
-        }
-    }, { noAck: false }); // Auto Ack Off
-}
-
-async function processMsgs(events: any[]) {
-    logger.info(`[CONSUMER](Mail Events) Buffer full, processing ${events.length} messages...`);
-
-    let mailEvents: Array<MailEvent> = [];
-    events.forEach(msgs => {
-        msgs.forEach((msg: any) => mailEvents.push(new MailEvent(msg)));
-    })
-    try {
-        if (mailEvents.length) await MailEvent.insertMany(mailEvents);
-    } catch (err: any) {
-        if (err.name !== 'PartialFailureError') throw err;
-        logger.error(`[CONSUMER](Mail Events) PartialFailureError`);
-        logger.error(JSON.stringify(err));
+    bufferLength++;
+    if (bufferLength >= BUFFER_SIZE) {
+        await MailEvent.insertMany(batch).catch(error => {
+            if (error?.name !== 'PartialFailureError') throw error;
+            logger.error(`[CONSUMER](Voice Reports) PartialFailureError`);
+            logger.error(JSON.stringify(error));
+        });
+        batch = [];
+        bufferLength = 0;
+        channel.ack(message, true);
     }
+
 }
 
-const mailEventsConsumer = () => {
-    logger.info(`[CONSUMER](Mail Events) Initiated...`);
-
-    rabbitmqService().on("connect", (connection) => {
-        rabbitConnection = connection;
-        start();
-    });
+export const mailEvent: IConsumer = {
+    queue: QUEUE_NAME,
+    processor: processMsgs,
+    prefetch: BUFFER_SIZE
 }
-
-export {
-    mailEventsConsumer
-};
