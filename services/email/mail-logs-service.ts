@@ -76,6 +76,7 @@ class MailLogsService {
         if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.splitAndTrim(','))})`;
         if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.splitAndTrim(',')})`;
         if (companyId) conditions += ` AND mailRequest.companyId = '${companyId}'`;
+        if (query.isSmtp) conditions += ` AND mailRequest.isSmtp = ${query.isSmtp}`;
 
         if (companyId) conditions += ` AND mailReport.companyId = '${companyId}'`;
         if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.splitAndTrim(',')})`;

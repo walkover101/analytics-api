@@ -9,11 +9,11 @@ import waLogsService from "../services/whatsapp/wa-logs-service";
 import { RESOURCE_TYPE } from "../models/download.model";
 import voiceLogsService from "../services/voice/voice-logs-service";
 
-//GET '/logs/sms' | 'logs/mail' | 'logs/otp' | 'logs/wa'
+//GET '/logs/sms' | 'logs/mail' | 'logs/otp' | 'logs/wa' | 'logs/voice'
 const getLogs = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
-        const resourceType = req.params[0]; // sms | otp | mail | wa
+        const resourceType = req.params[0]; // sms | otp | mail | wa | voice
         let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
