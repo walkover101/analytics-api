@@ -53,10 +53,12 @@ class Consumer {
     }
 }
 
+
 function main() {
     const consumerName: string = process.argv[2];
     if (invalidConsumerName(consumerName))
         return logger.error(`Valid consumer name is required\n\nAvailable consumers: \n${getAvailableConsumers()}`);
+
     new Consumer((consumers as any)[consumerName]);
 }
 

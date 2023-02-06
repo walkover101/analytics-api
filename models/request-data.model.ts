@@ -38,6 +38,7 @@ const request = z.object({
 });
 type Request = z.infer<typeof request>;
 export default class RequestData {
+
     data: Request;
 
     constructor(attr: any) {
