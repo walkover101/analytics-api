@@ -1,8 +1,9 @@
 
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, OTP_TABLE_ID } from '../../database/big-query-service';
-import { convertCodesToMessage, getValidFields } from '../utility-service';
+import { convertCodesToMessage, getValidFields, prepareQuery, signToken, verifyToken } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
+import { PaginationOption } from '../email/mail-logs-service';
 
 const STATUS_CODES = {
     1: "Delivered",
@@ -50,6 +51,10 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     otpVerCount: "otpData.otpVerCount",
     failureReason: "otpData.failureReason",
 };
+const REPORT_FIELDS: string[] = ['id'].concat(['sentTime', 'deliveryTime', 'credit', 'credits', 'pauseReason',
+    'requestUserid', 'voiceRetryCount', 'otpRetry', 'verified', 'otpVerCount',
+    'telNum', 'reportStatus', 'requestSender', 'failureReason'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`));
+
 
 class OtpLogsService {
     private static instance: OtpLogsService;
@@ -63,8 +68,7 @@ class OtpLogsService {
         const attributes = getValidFields(PERMITTED_FIELDS, fields).withAlias.join(',');
         const whereClause = this.getWhereClause(companyId, startDate, endDate, timeZone, filters);
         const query = `SELECT ${attributes} 
-            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${OTP_TABLE_ID}\` AS otpData 
-            WHERE ${whereClause}`;
+            FROM (${prepareQuery(OTP_TABLE_ID, REPORT_FIELDS, whereClause, 'id')}) AS otpData`;
         logger.info(query);
         return query;
     }
@@ -73,18 +77,37 @@ class OtpLogsService {
         const query: { [key: string]: string } = filters;
 
         // mandatory conditions
-        let conditions = `(otpData.requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
+        let conditions = `(requestDate BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")`;
 
         // optional conditions
-        if (companyId) conditions += `AND otpData.requestUserid = "${companyId}"`;
+        if (companyId) conditions += `AND requestUserid = "${companyId}"`;
 
         return conditions;
     }
 
-    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
-        const data = await getQueryResults(query);
-        return { data };
+    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = [], option?: PaginationOption) {
+        let query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
+        const pagination = (option?.paginationToken) ? verifyToken(option?.paginationToken) as PaginationOption : {};
+        if (option && pagination?.datasetId && pagination?.tableId) {
+            // Set default values
+            option.limit = option?.limit || 100;
+            option.offset = option?.offset || 0;
+            query = `SELECT * FROM \`${MSG91_PROJECT_ID}.${pagination?.datasetId}.${pagination?.tableId}\` LIMIT ${option.limit} OFFSET ${option?.offset}`;
+        }
+        let [data, metadata] = await getQueryResults(query, true);
+        if (option?.limit) data = data?.slice(0, option?.limit);
+
+        return {
+            data, metadata: {
+                ...metadata,
+                offset: option?.offset,
+                limit: option?.limit,
+                paginationToken: signToken({
+                    tableId: pagination?.tableId || metadata?.tableId,
+                    datasetId: pagination?.datasetId || metadata?.datasetId,
+                })
+            }
+        };
     }
 }
 

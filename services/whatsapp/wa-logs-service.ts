@@ -1,17 +1,28 @@
 
 import { getQueryResults, MSG91_DATASET_ID, MSG91_PROJECT_ID, WA_REQ_TABLE_ID, WA_REP_TABLE_ID } from '../../database/big-query-service';
-import { getQuotedStrings, getValidFields } from '../utility-service';
+import { getQuotedStrings, getValidFields, signToken, verifyToken } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
+import { PaginationOption } from '../email/mail-logs-service';
 
 const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
 const PERMITTED_FIELDS: { [key: string]: string } = {
     // from report-data
-    submittedAt: 'STRING(reportData.submittedAt)',
+    requestedAt: 'STRING(reportData.submittedAt)',
     price: 'reportData.price',
     origin: 'reportData.origin',
-    reportStatus: 'reportData.status',
-    reason: 'reportData.reason',
+    reason: `CASE
+    WHEN requestData.reason IS NOT NULL
+    THEN requestData.reason
+    ELSE reportData.reason
+    END
+    `,
+    status: `CASE
+    WHEN reportData.status IS NOT NULL
+    THEN reportData.status
+    ELSE requestData.status
+    END
+    `,
 
     // from request-data
     uuid: 'requestData.uuid',
@@ -20,9 +31,8 @@ const PERMITTED_FIELDS: { [key: string]: string } = {
     vendorId: 'requestData.vendorId',
     messageType: 'requestData.messageType',
     direction: 'requestData.direction',
-    timestamp: 'STRING(reportData.timestamp)',
+    statusUpdatedAt: 'STRING(reportData.timestamp)',
     content: 'requestData.content',
-    requestStatus: 'requestData.status'
 };
 
 class WaLogsService {
@@ -63,15 +73,34 @@ class WaLogsService {
 
         // optional conditions
         if (companyId) conditions += ` AND requestData.companyId = "${companyId}"`;
-        if (query.status) conditions += ` AND reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})`;
+        if (query.status) conditions += ` AND (reportData.status in (${getQuotedStrings(query.status.splitAndTrim(','))}) OR (reportData.status is NULL AND requestData.status in (${getQuotedStrings(query.status.splitAndTrim(','))})))`;
 
         return conditions;
     }
 
-    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
-        const data = await getQueryResults(query);
-        return { data };
+    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = [], option?: PaginationOption) {
+        let query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
+        const pagination = (option?.paginationToken) ? verifyToken(option?.paginationToken) as PaginationOption : {};
+        if (option && pagination?.datasetId && pagination?.tableId) {
+            // Set default values
+            option.limit = option?.limit || 100;
+            option.offset = option?.offset || 0;
+            query = `SELECT * FROM \`${MSG91_PROJECT_ID}.${pagination?.datasetId}.${pagination?.tableId}\` LIMIT ${option.limit} OFFSET ${option?.offset}`;
+        }
+        let [data, metadata] = await getQueryResults(query, true);
+        if (option?.limit) data = data?.slice(0, option?.limit);
+
+        return {
+            data, metadata: {
+                ...metadata,
+                offset: option?.offset,
+                limit: option?.limit,
+                paginationToken: signToken({
+                    tableId: pagination?.tableId || metadata?.tableId,
+                    datasetId: pagination?.datasetId || metadata?.datasetId,
+                })
+            }
+        };
     }
 }
 

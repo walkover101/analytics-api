@@ -1,5 +1,5 @@
-import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID } from '../../database/big-query-service';
-import { convertCodesToMessage, getQuotedStrings, getValidFields } from '../utility-service';
+import { getQueryResults, MAIL_REP_TABLE_ID, MAIL_REQ_TABLE_ID, MSG91_PROJECT_ID } from '../../database/big-query-service';
+import { convertCodesToMessage, getQuotedStrings, getValidFields, signToken, verifyToken } from '../utility-service';
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 
@@ -76,6 +76,7 @@ class MailLogsService {
         if (query.mailerRequestId) conditions += ` AND mailRequest.mailerRequestId in (${getQuotedStrings(query.mailerRequestId.splitAndTrim(','))})`;
         if (query.nodeId) conditions += ` AND mailRequest.nodeId in (${query.nodeId.splitAndTrim(',')})`;
         if (companyId) conditions += ` AND mailRequest.companyId = '${companyId}'`;
+        if (query.isSmtp) conditions += ` AND mailRequest.isSmtp = ${query.isSmtp}`;
 
         if (companyId) conditions += ` AND mailReport.companyId = '${companyId}'`;
         if (query.senderDedicatedIPId) conditions += ` AND mailReport.senderDedicatedIPId in (${query.senderDedicatedIPId.splitAndTrim(',')})`;
@@ -86,12 +87,37 @@ class MailLogsService {
 
         return conditions;
     }
+    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = [], option?: PaginationOption) {
+        let query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
+        const pagination = (option?.paginationToken) ? verifyToken(option?.paginationToken) as PaginationOption : {};
+        if (option && pagination?.datasetId && pagination?.tableId) {
+            // Set default values
+            option.limit = option?.limit || 100;
+            option.offset = option?.offset || 0;
+            query = `SELECT * FROM \`${MSG91_PROJECT_ID}.${pagination?.datasetId}.${pagination?.tableId}\` LIMIT ${option.limit} OFFSET ${option?.offset}`;
+        }
+        let [data, metadata] = await getQueryResults(query, true);
+        if (option?.limit) data = data?.slice(0, option?.limit);
 
-    public async getLogs(companyId: string, startDate: DateTime, endDate: DateTime, timeZone: string = DEFAULT_TIMEZONE, filters: { [key: string]: string } = {}, fields: string[] = []) {
-        const query: string = this.getQuery(companyId, startDate, endDate, timeZone, filters, fields);
-        const data = await getQueryResults(query);
-        return { data };
+        return {
+            data, metadata: {
+                ...metadata,
+                offset: option?.offset,
+                limit: option?.limit,
+                paginationToken: signToken({
+                    tableId: pagination?.tableId || metadata?.tableId,
+                    datasetId: pagination?.datasetId || metadata?.datasetId,
+                })
+            }
+        };
     }
 }
 
+export type PaginationOption = {
+    datasetId?: string,
+    tableId?: string,
+    paginationToken?: string
+    limit?: number,
+    offset?: number
+}
 export default MailLogsService.getSingletonInstance();

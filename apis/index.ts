@@ -9,6 +9,7 @@ import logRoutes from "./logs";
 import downloadRoutes from "./downloads";
 import profitRoutes from "./profits";
 import { generateStatHTML } from "../services/utility-service";
+import report from './report';
 export type Stat = {
   avg: number,
   count: number,
@@ -33,6 +34,7 @@ export default function (app: Application) {
   app.use("/logs", authenticate, logRoutes);
   app.use("/exports", authenticate, downloadRoutes);
   app.use("/profits", authenticate, profitRoutes);
+  app.use('/report', report);
   app.use(options);
   app.use(error);
 }

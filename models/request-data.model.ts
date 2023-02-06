@@ -1,77 +1,84 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset, { REQUEST_DATA_TABLE_ID } from '../database/big-query-service';
-
+import z from 'zod';
 const requestDataTable: Table = msg91Dataset.table(REQUEST_DATA_TABLE_ID);
 
+const request = z.object({
+    _id: z.string(),
+    requestID: z.string(),
+    telNum: z.string(),
+    reportStatus: z.number(),
+    sentTimeReport: z.date(),
+    providerSMSID: z.string(),
+    user_pid: z.string(),
+    senderID: z.string(),
+    smsc: z.string(),
+    requestRoute: z.string(),
+    campaign_name: z.string(),
+    campaign_pid: z.string(),
+    curRoute: z.string(),
+    expiry: z.string(),
+    isCopied: z.string(),
+    requestDate: z.date(),
+    userCountryCode: z.string(),
+    requestUserid: z.string(),
+    status: z.string(),
+    userCredit: z.string(),
+    isSingleRequest: z.string(),
+    deliveryTime: z.date(),
+    route: z.string(),
+    credit: z.number(),
+    credits: z.number(),
+    oppri: z.number(),
+    crcy: z.string(),
+    node_id: z.string(),
+    scheduleDateTime: z.date(),
+    msgData: z.string(),
+    plugin: z.string().optional()
+});
+type Request = z.infer<typeof request>;
 export default class RequestData {
-    _id: string;
-    requestID: string;
-    telNum: string;
-    reportStatus: number;
-    sentTimeReport: Date;
-    providerSMSID: string;
-    user_pid: string;
-    senderID: string;
-    smsc: string;
-    requestRoute: string;
-    campaign_name: string;
-    campaign_pid: string;
-    curRoute: string;
-    expiry: string;
-    isCopied: string;
-    requestDate: Date;
-    userCountryCode: string;
-    requestUserid: string;
-    status: string;
-    userCredit: string;
-    isSingleRequest: string;
-    deliveryTime: Date;
-    route: string;
-    credit: number;
-    credits: number;
-    oppri: number;
-    crcy: string;
-    node_id: string;
-    scheduleDateTime: Date;
-    msgData: string;
-    timestamp: string;
+
+    data: Request;
 
     constructor(attr: any) {
-        this._id = attr['_id'].toString();
-        this.requestID = attr['requestID'];
-        this.telNum = attr['telNum'];
-        this.reportStatus = attr['reportStatus'];
-        this.sentTimeReport = attr['sentTimeReport'] || null;
-        this.providerSMSID = attr['providerSMSID'];
-        this.user_pid = attr['user_pid'];
-        this.senderID = attr['senderID'];
-        this.smsc = attr['smsc'];
-        this.requestRoute = attr['requestRoute'];
-        this.campaign_name = attr['campaign_name'];
-        this.campaign_pid = attr['campaign_pid'];
-        this.curRoute = attr['curRoute'];
-        this.expiry = attr['expiry'];
-        this.isCopied = attr['isCopied'];
-        this.requestDate = attr['requestDate'] || null;
-        this.userCountryCode = attr['userCountryCode'];
-        this.requestUserid = attr['requestUserid'];
-        this.status = attr['status'];
-        this.userCredit = attr['userCredit'];
-        this.isSingleRequest = attr['isSingleRequest'];
-        this.deliveryTime = attr['deliveryTime'] || null;
-        this.route = attr['route'];
-        this.credit = parseFloat(attr['credit']);
-        this.credits = +attr['credits'];
-        this.oppri = parseFloat(attr['oppri'] || 0);
-        this.crcy = attr['crcy'];
-        this.node_id = attr['node_id'];
-        this.scheduleDateTime = attr['scheduleDateTime'] || null;
-        this.msgData = attr['msgData'];
-        this.timestamp = attr['timestamp'];
+        this.data = {
+            _id: attr['_id'].toString(),
+            requestID: attr['requestID'],
+            telNum: attr['telNum'],
+            reportStatus: attr['reportStatus'],
+            sentTimeReport: attr['sentTimeReport'] || null,
+            providerSMSID: attr['providerSMSID'],
+            user_pid: attr['user_pid'],
+            senderID: attr['senderID'],
+            smsc: attr['smsc'],
+            requestRoute: attr['requestRoute'],
+            campaign_name: attr['campaign_name'],
+            campaign_pid: attr['campaign_pid'],
+            curRoute: attr['curRoute'],
+            expiry: attr['expiry'],
+            isCopied: attr['isCopied'],
+            requestDate: attr['requestDate'] || null,
+            userCountryCode: attr['userCountryCode'],
+            requestUserid: attr['requestUserid'],
+            status: attr['status'],
+            userCredit: attr['userCredit'],
+            isSingleRequest: attr['isSingleRequest'],
+            deliveryTime: attr['deliveryTime'] || null,
+            route: attr['route'],
+            credit: parseFloat(attr['credit']),
+            credits: +attr['credits'],
+            oppri: parseFloat(attr['oppri'] || 0),
+            crcy: attr['crcy'],
+            node_id: attr['node_id'],
+            scheduleDateTime: attr['scheduleDateTime'] || null,
+            msgData: attr['msgData'],
+            plugin: attr['plugin'] || null
+        }
     }
 
     public static insertMany(rows: Array<RequestData>) {
         const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
-        return requestDataTable.insert(rows, insertOptions);
+        return requestDataTable.insert(rows.map(row => row.data), insertOptions);
     }
 }

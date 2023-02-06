@@ -37,6 +37,7 @@ export default class MailRequest {
         this.requestId = getHashCode(`${attr['mri']}-${this.recipientEmail}`);
         this.companyId = attr['cid'];
         this.createdAt = attr['created_at'] && new Date(attr['created_at']);
+        if (attr['mri'] == null || !this.recipientEmail) throw new Error("mailRequestId and recipientEmail can't be null");
     }
 
     public static insertMany(rows: Array<MailRequest>) {

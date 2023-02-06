@@ -15,6 +15,7 @@ export default class OtpModel {
     smsc: string;
     description: string;
     failureReason?: string;
+    errCode?: string;
     requestRoute: string;
     campaignName: string;
     campaignPid: string;
@@ -110,7 +111,9 @@ export default class OtpModel {
 
     public static createAsync = async (attr: any) => {
         const otp: OtpModel = new OtpModel(attr);
-        otp.failureReason = await getFailureReason(otp.smsc, otp.description);
+        const failureDesc = await getFailureReason(otp.smsc, otp.description);
+        otp.failureReason = failureDesc?.reason;
+        otp.errCode = failureDesc?.code;
         return otp;
     }
 

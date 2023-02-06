@@ -6,68 +6,24 @@ import { formatDate, getDefaultDate } from "../services/utility-service";
 import MailEvent from '../models/mail-event.model';
 import otpLogsService from "../services/otp/otp-logs-service";
 import waLogsService from "../services/whatsapp/wa-logs-service";
+import { RESOURCE_TYPE } from "../models/download.model";
+import voiceLogsService from "../services/voice/voice-logs-service";
 
-// GET '/logs/sms'
-const getSmsLogs = async (req: Request, res: Response) => {
+//GET '/logs/sms' | 'logs/mail' | 'logs/otp' | 'logs/wa' | 'logs/voice'
+const getLogs = async (req: Request, res: Response) => {
     try {
         const params = { ...req.query, ...req.params } as any;
+        const resourceType = req.params[0]; // sms | otp | mail | wa | voice
         let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
         const fromDate = formatDate(startDate);
         const toDate = formatDate(endDate);
         const attributes = fields?.length ? fields.splitAndTrim(',') : [];
 
-        const logs = await smsLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
-        res.send(logs);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/logs/otp'
-const getOtpLogs = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-        const attributes = fields?.length ? fields.splitAndTrim(',') : [];
-
-        const logs = await otpLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
-        res.send(logs);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/logs/wa'
-const getWaLogs = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-        const attributes = fields?.length ? fields.splitAndTrim(',') : [];
-
-        const logs = await waLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
-        res.send(logs);
-    } catch (error: any) {
-        logger.error(error);
-        res.status(400).send({ error: error?.message || error });
-    }
-}
-
-// GET '/logs/mail'
-const getMailLogs = async (req: Request, res: Response) => {
-    try {
-        const params = { ...req.query, ...req.params } as any;
-        let { companyId, timeZone, fields, startDate = getDefaultDate().from, endDate = getDefaultDate().to } = params;
-        const fromDate = formatDate(startDate);
-        const toDate = formatDate(endDate);
-        const attributes = fields?.length ? fields.splitAndTrim(',') : [];
-
-        const logs = await mailLogsService.getLogs(companyId, fromDate, toDate, timeZone, params, attributes);
+        const logs = await getService(resourceType)?.getLogs(companyId, fromDate, toDate, timeZone, params, attributes, {
+            paginationToken: params?.paginationToken,
+            offset: params?.offset,
+            limit: params?.limit
+        });
         res.send(logs);
     } catch (error: any) {
         logger.error(error);
@@ -91,10 +47,26 @@ const getMailLogDetails = async (req: Request, res: Response) => {
     }
 }
 
+const getService = (resourceType: string) => {
+    try {
+        switch (resourceType) {
+            case RESOURCE_TYPE.EMAIL:
+                return mailLogsService;
+            case RESOURCE_TYPE.OTP:
+                return otpLogsService;
+            case RESOURCE_TYPE.WA:
+                return waLogsService;
+            case RESOURCE_TYPE.VOICE:
+                return voiceLogsService;
+            default:
+                return smsLogsService;
+        }
+    } catch (error: any) {
+        logger.error(error);
+    }
+}
+
 export {
-    getSmsLogs,
-    getOtpLogs,
-    getWaLogs,
-    getMailLogs,
-    getMailLogDetails
+    getMailLogDetails,
+    getLogs
 };

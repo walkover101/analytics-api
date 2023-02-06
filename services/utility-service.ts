@@ -6,12 +6,27 @@ import { MemoryStorage } from 'node-ts-cache-storage-memory';
 import logger from '../logger/logger';
 import axios from 'axios';
 import rabbitmqProducer from '../database/rabbitmq-producer';
+import jwt from 'jsonwebtoken';
+import { MSG91_DATASET_ID, MSG91_PROJECT_ID } from '../database/big-query-service';
 
 const cache = new CacheContainer(new MemoryStorage());
-const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API;
+const SMPP_ERROR_CODES_API = process.env.SMPP_ERROR_CODES_API || "https://control.msg91.com/api/v5/report/SMPPErrorCodeDetails";
 const DEFAULT_DATE_FORMAT = 'yyyy-MM-dd';
 const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) {
+    throw new Error("JWT_TOKEN is not set in env");
+}
+export function signToken(payload: any) {
+    return jwt.sign(payload, JWT_SECRET, {
+        expiresIn: '8h'
+    });
+}
+
+export function verifyToken(token: string) {
+    return jwt.verify(token, JWT_SECRET);
+}
 
 function delay(time = 1000) {
     return new Promise((resolve) => {
@@ -129,10 +144,19 @@ async function getFailureReason(smsc: string, description: string) {
         const code: string = error?.split(' ')[0];
         const errorCodes = await getErrorCodes();
         if (!errorCodes[smsc]) throw `[${smsc} | ${code}] Not found in error codes list`;
-        return errorCodes[smsc]?.[code];
+        return { code: code, reason: errorCodes[smsc]?.[code] };
     } catch (error) {
         logger.debug(error);
     }
+}
+
+function prepareQuery(tableName: string, attributes: string[], whereClause: string, groupBy: string) {
+    const query = `SELECT ${attributes.join(',')}
+            FROM \`${MSG91_PROJECT_ID}.${MSG91_DATASET_ID}.${tableName}\`
+            WHERE ${whereClause}
+            GROUP BY ${groupBy}`;
+
+    return query;
 }
 
 function generateStatHTML(map: Map<string, Stat>) {
@@ -208,5 +232,6 @@ export {
     convertCodesToMessage,
     generateStatHTML,
     getErrorCodes,
-    getFailureReason
+    getFailureReason,
+    prepareQuery
 }
