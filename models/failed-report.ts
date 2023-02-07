@@ -1,24 +1,25 @@
 import { Table } from '@google-cloud/bigquery';
 import msg91Dataset, { SMS_FAILED_REPORT_TABLE_ID } from '../database/big-query-service';
 import z from 'zod';
+import { DateTime } from 'luxon';
 const failedReportTable: Table = msg91Dataset.table(SMS_FAILED_REPORT_TABLE_ID);
 
 export const failedReportSchema = z.object({
     _id: z.string(),
-    requestID: z.string(),
-    telNum: z.string(),
-    status: z.string(),
-    smsc: z.string(),
-    user_pid: z.string(),
-    senderID: z.string(),
-    route: z.string(),
-    failTime: z.date(),
-    providerSMSID: z.string(),
-    description: z.string(),
-    retryCount: z.string(),
-    oppri: z.string(),
-    crcy: z.string(),
-    insertTime: z.date(),
+    requestID: z.string().optional(),
+    telNum: z.string().optional(),
+    status: z.string().optional(),
+    smsc: z.string().optional(),
+    user_pid: z.string().optional(),
+    senderID: z.string().optional(),
+    route: z.string().optional(),
+    failTime: z.date().optional(),
+    providerSMSID: z.string().optional(),
+    description: z.string().optional(),
+    retryCount: z.string().optional(),
+    oppri: z.string().optional(),
+    crcy: z.string().optional(),
+    insertTime: z.date().optional(),
     timestamp: z.string()
 });
 
@@ -28,7 +29,7 @@ export default class FailedReportData {
     data: FailedReport;
     constructor(attr: any) {
         this.data = {
-            _id: attr['_id'],
+            _id: (attr['_id']).toString(),
             requestID: attr['requestID'],
             telNum: attr['telNum'],
             status: attr['status'],
@@ -36,7 +37,7 @@ export default class FailedReportData {
             user_pid: attr['user_pid'],
             senderID: attr['senderID'],
             route: attr['route'],
-            failTime: attr['failTime'],
+            failTime: new Date(attr['failTime']),
             providerSMSID: attr['providerSMSID'],
             description: attr['description'],
             retryCount: attr['retryCount'],
@@ -48,9 +49,8 @@ export default class FailedReportData {
 
     }
 
-    public static insertMany(rows: Array<FailedReportData>) {
+    public static insertMany(rows: Array<FailedReport>) {
         const insertOptions = { skipInvalidRows: true, ignoreUnknownValues: true };
-        const data = rows.map(row => row.data);
-        return failedReportTable.insert(data, insertOptions);
+        return failedReportTable.insert(rows, insertOptions);
     }
 }
