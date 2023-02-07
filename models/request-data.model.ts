@@ -34,7 +34,8 @@ const request = z.object({
     node_id: z.string(),
     scheduleDateTime: z.date(),
     msgData: z.string(),
-    plugin: z.string().optional()
+    plugin: z.string().optional(),
+    timestamp: z.string()
 });
 type Request = z.infer<typeof request>;
 export default class RequestData {
@@ -73,7 +74,8 @@ export default class RequestData {
             node_id: attr['node_id'],
             scheduleDateTime: attr['scheduleDateTime'] || null,
             msgData: attr['msgData'],
-            plugin: attr['plugin'] || null
+            plugin: attr['plugin'] || null,
+            timestamp: attr['timestamp']
         }
     }
 
