@@ -11,10 +11,12 @@ import { Transform } from "stream";
 import { pipeline } from "stream/promises";
 import OtpModel from "../models/otp-model";
 import health from '../database/health-service';
+import FailedReportData from "../models/failed-report";
 
 const REQUEST_DATA_COLLECTION = process.env.REQUEST_DATA_COLLECTION || '';
 const REPORT_DATA_COLLECTION = process.env.REPORT_DATA_COLLECTION || '';
 const OTP_REPORT_COLLECTION = process.env.OTP_REPORT_COLLECTION || '';
+const FAILED_REPORT_COLLECTION = process.env.FAILED_REPORT_COLLECTION || '';
 const DB_NAME = process.env.MONGO_DB_NAME;
 
 const RT_OTP_HEALTH_UUID = process.env.RT_OTP_HEALTH_UUID || "";
@@ -58,6 +60,26 @@ async function handleReportStream(changeStream: ChangeStream) {
             // new SlowDown(1000),
             // new Log(["_id","_data"]),
             new WriteReport(1000).on("data", (data) => {
+                logger.info(JSON.stringify(data));
+            })
+        )
+    } catch (error: any) {
+        logger.error(error);
+        await sendChannelNotification(process.env.CHANNEL_ID || "", error.message).catch(reason => {
+            logger.error(reason);
+        });
+        await delay(5000);
+        process.exit(1);
+    }
+}
+async function handleFailedReportStream(changeStream: ChangeStream) {
+    const readableStream: Readable = changeStream.stream();
+    try {
+        await pipeline(readableStream,
+            new FilterOperation(['insert', 'update']),
+            new FilterOutNull(),
+            new AddTimestamp(),
+            new WriteFailedReport(1000).on('data', (data) => {
                 logger.info(JSON.stringify(data));
             })
         )
@@ -143,6 +165,23 @@ export const rtOTPSync = async (args: any) => {
     mongoService().on("connect", async (connection: MongoClient) => {
         const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_OTP_REPORT);
         const collection = connection.db(DB_NAME).collection(OTP_REPORT_COLLECTION);
+        const options: any = {
+            fullDocument: 'updateLookup',
+            batchSize: 500,
+            startAfter: (token) ? { "_data": token } : null
+        }
+        const stream = collection.watch([], options);
+        await handleOTPStream(stream);
+    })
+}
+
+export const rtFailedReportSync = async (args: any) => {
+    if (!DB_NAME) throw new Error("DB_NAME is not found in env")
+    if (!FAILED_REPORT_COLLECTION) throw new Error("OTP_REPORT_COLLECTION is not found in env");
+    await initToken(args, jobType.RT_FAILED_REPORT);
+    mongoService().on("connect", async (connection: MongoClient) => {
+        const { lastTimestamp, token = "" }: any = await Tracker.findByPk(jobType.RT_FAILED_REPORT);
+        const collection = connection.db(DB_NAME).collection(FAILED_REPORT_COLLECTION);
         const options: any = {
             fullDocument: 'updateLookup',
             batchSize: 500,
@@ -398,6 +437,40 @@ class WriteOTPReport extends Transform {
             });
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_OTP_REPORT, lastTimestamp: new Date().toISOString(), token: data?._id?._data });
+            this.batch = [];
+            health.ping(RT_OTP_HEALTH_UUID);
+        }
+        callback();
+    }
+}
+
+class WriteFailedReport extends Transform {
+    private batchSize: number;
+    private batch: FailedReportData[] = new Array();
+    constructor(batchSize: number = 100, options: any = {}) {
+        options.objectMode = true;
+        super(options);
+        this.batchSize = batchSize;
+    }
+
+    async _transform(data: any, encoding: BufferEncoding, callback: TransformCallback): Promise<void> {
+        const doc = data?.fullDocument;
+        this.batch.push(new FailedReportData(doc));
+        if (this.batch.length >= this.batchSize) {
+            await FailedReportData.insertMany(this.batch).catch((reason) => {
+                logger.error(reason);
+                if (reason?.name == "PartialFailureError") {
+                    const errors = reason?.errors || [];
+                    for (const error of errors) {
+                        const row = error?.row || {};
+                        this.push({ ...row, error: error?.errors });
+                    }
+                } else {
+                    throw reason;
+                }
+            });
+            logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
+            await Tracker.upsert({ jobType: jobType.RT_FAILED_REPORT, lastTimestamp: new Date().toISOString(), token: data?._id?._data });
             this.batch = [];
             health.ping(RT_OTP_HEALTH_UUID);
         }

@@ -9,6 +9,7 @@ export enum jobType {
     RT_REPORT_DATA = 'rtReportData',
     OTP_REPORT = 'otpReport',
     RT_OTP_REPORT = 'rtOTPReport',
+    RT_FAILED_REPORT = 'rtFailedReport',
 };
 
 const Tracker = sequelize.define("Tracker", {
