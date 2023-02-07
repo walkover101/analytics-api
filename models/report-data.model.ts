@@ -28,6 +28,7 @@ const report = z.object({
     oppri: z.number(),
     isSingleRequest: z.string(),
     message: z.string(),
+    timestamp: z.string()
 })
 
 export const reportKeys = report.keyof();
@@ -57,7 +58,8 @@ export default class ReportData {
             node_id: attr['node_id'],
             oppri: parseFloat(attr['oppri'] || 0),
             isSingleRequest: attr['isSingleRequest'],
-            message: attr['message']
+            message: attr['message'],
+            timestamp: attr['timestamp']
         }
     }
 
