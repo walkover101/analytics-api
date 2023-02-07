@@ -1,12 +1,16 @@
 import express from 'express';
 import * as analyticsController from '../controllers/analytics';
 import * as downloadsController from '../controllers/downloads';
+import mailDomainService, * as MailDomainService from '../services/email/mail-domain-service';
 import { REPORT_TYPE } from '../models/download.model';
 
 const router = express.Router();
 
 // GET '/analytics/campaigns'
 router.get('/campaigns', analyticsController.getCampaignAnalytics);
+
+// GET 'analytics/mail/domain'
+router.get('/mail/domain', analyticsController.getMailDomain);
 
 // GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa' | '/analytics/voice'
 router.get(/^\/(sms|otp|mail|wa|voice)/, analyticsController.getAnalytics);
