@@ -2,33 +2,32 @@ import "../startup/dotenv";
 import '../startup/string.extensions';
 import logger from "./../logger/logger";
 import { has } from 'lodash';
-import { requestDataSyncJob, reportDataSyncJob, otpReportSyncJob } from './sync-job';
 import { dataIntegrity } from "./data-integrity";
 import { requestSync, requestPatch } from "./request-sync";
 import { reportSync, reportPatch } from "./report-sync";
-// import { rtRequestSync } from "./rt-request-sync";
-import { rtRequestSync, rtReportSync, rtOTPSync } from "./rt-sync-job";
+import { rtRequestSync, rtReportSync, rtOTPSync, rtFailedReportSync } from "./rt-sync-job";
 import sequelize from '../database/sequelize-service';
+import anomalyDetection from "./anomaly-detection";
 import cron from 'node-cron';
 const args = require('minimist')(process.argv.slice(2));
 
 // Register your jobs here
 const Jobs: any = {
-    requestDataSyncJob,
-    reportDataSyncJob,
-    otpReportSyncJob,
     requestSync,
     requestPatch,
     reportSync,
     reportPatch,
     rtRequestSync,
     rtReportSync,
-    rtOTPSync
+    rtOTPSync,
+    anomalyDetection,
+    rtFailedReportSync
 };
 
 // Register your cron jobs
 const CronJobs: any = {
-    dataIntegrity
+    dataIntegrity,
+    anomalyDetection
 };
 
 

@@ -16,7 +16,7 @@ const Hashes = require('jshashes');
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 const JWT_SECRET = process.env.JWT_SECRET as string;
 if (!JWT_SECRET) {
-    throw new Error("JWT_TOKEN is not set in env");
+    throw new Error("JWT_SECRET is not set in env");
 }
 export function signToken(payload: any) {
     return jwt.sign(payload, JWT_SECRET, {
