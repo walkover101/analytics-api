@@ -20,6 +20,7 @@ const FAILED_REPORT_COLLECTION = process.env.FAILED_REPORT_COLLECTION || '';
 const DB_NAME = process.env.MONGO_DB_NAME;
 
 const RT_OTP_HEALTH_UUID = process.env.RT_OTP_HEALTH_UUID || "";
+const RT_FAILED_REPORT_HEALTH_UUID = process.env.RT_FAILED_REPORT_HEALTH_UUID || "";
 const RT_SMS_REP_HEALTH_UUID = process.env.RT_SMS_REP_HEALTH_UUID || "";
 const RT_SMS_REQ_HEALTH_UUID = process.env.RT_SMS_REQ_HEALTH_UUID || "";
 
@@ -188,7 +189,7 @@ export const rtFailedReportSync = async (args: any) => {
             startAfter: (token) ? { "_data": token } : null
         }
         const stream = collection.watch([], options);
-        await handleOTPStream(stream);
+        await handleFailedReportStream(stream);
     })
 }
 
@@ -472,7 +473,7 @@ class WriteFailedReport extends Transform {
             logger.info(`Last Pointer : ${JSON.stringify(data?._id)}`);
             await Tracker.upsert({ jobType: jobType.RT_FAILED_REPORT, lastTimestamp: new Date().toISOString(), token: data?._id?._data });
             this.batch = [];
-            health.ping(RT_OTP_HEALTH_UUID);
+            health.ping(RT_FAILED_REPORT_HEALTH_UUID);
         }
         callback();
     }
