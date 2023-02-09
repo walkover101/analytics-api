@@ -2,22 +2,12 @@ import { getQueryResults, MSG91_PROJECT_ID, MSG91_DATASET_ID, MAIL_REQ_TABLE_ID,
 import { DateTime } from 'luxon';
 import logger from '../../logger/logger';
 import { getValidFields } from '../utility-service';
-import { stringify } from 'querystring';
 
-// const DEFAULT_TIMEZONE: string = 'Asia/Kolkata';
-const attr = 'requestId, domain, companyId, date, eventId, isSmtp, opened, unsubscribed, complaint';
-const DEFAULT_GROUP_BY = 'date, domain';
+const attr = 'requestId, domain, companyId, eventId, isSmtp, opened, unsubscribed, complaint';
+const DEFAULT_GROUP_BY = 'domain';
 const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request
-    requestId: 'requestId',
     domain: 'domain',
-    companyId: 'companyId',
-    date: 'date',
-    eventId: 'eventId AS eventId',
-    isSmtp: 'isSmtp',
-    opened: 'opened',
-    unsubscribed: 'unsubscribed',
-    complaint: 'complaint'
 };
 
 class MailDomainService {
@@ -40,7 +30,6 @@ class MailDomainService {
         const whereClause = this.getWhereClause(companyId, startDate, endDate);
         const validFields = getValidFields(PERMITTED_GROUPINGS, DEFAULT_GROUP_BY.splitAndTrim(','));
         const groupBy = validFields.onlyAlias.join(',');
-        // const groupByAttribs = validFields.withAlias.join(',');
         const subQuery = this.getSubQuery(companyId, startDate, endDate);
 
         const query = `SELECT  ${this.aggregateAttribs()}
@@ -59,7 +48,6 @@ class MailDomainService {
 
     private getSubQuery(companyId: string, startDate: DateTime, endDate: DateTime) {
         return `SELECT
-        STRING(DATE(report.requestTime,'Asia/Kolkata')) as date,
         report.requestId AS reportId,
         COUNTIF(event.eventId = 5) as opened,
         COUNTIF(event.eventId = 6) as unsubscribed,
@@ -71,7 +59,7 @@ class MailDomainService {
             WHERE (
             report.requestTime BETWEEN "${startDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}" AND "${endDate.setZone('utc').toFormat("yyyy-MM-dd HH:mm:ss z")}")
             AND report.companyId = "${companyId}"
-            GROUP BY date,report.requestId`
+            GROUP BY report.requestId`
     }
 
     private getWhereClause(companyId: string, startDate: DateTime, endDate: DateTime) {
@@ -84,7 +72,7 @@ class MailDomainService {
     }
 
     private aggregateAttribs() {
-        return `date AS date,
+        return `
         COUNT (DISTINCT requestId) AS totalRequest,
         COUNTIF(isSmtp = 1 OR (isSmtp = 0 AND eventId IS NOT NULL)) AS Total,
         ANY_VALUE(companyId) AS companyId,
@@ -116,7 +104,7 @@ class MailDomainService {
         data.forEach((row: any) => {
             companyId = row["companyId"];
             domain = row["domainName"];
-            report["total"] = row["total"] || 0;
+            report["total"] = row["Total"] || 0;
             report["delivered"] = row["delivered"] || 0;
             report["bounced"] = row["bounced"] || 0;
             report["failed"] = row["failed"] || 0;
@@ -127,8 +115,6 @@ class MailDomainService {
             result.push({companyId,domain,report})
         })
 
-        console.log(result);
-        console.log(stringify(result));
         return result;
     }
 }
