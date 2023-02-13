@@ -7,6 +7,8 @@ import { formatDate, getDefaultDate } from "../services/utility-service";
 import waAnalyticsService from "../services/whatsapp/wa-analytics-service";
 import voiceAnalyticsService from "../services/voice/voice-analytics-service";
 import { RESOURCE_TYPE } from "../models/download.model";
+import mailDomainService from "../services/email/mail-domain-service";
+import { stringify } from "querystring";
 
 // GET '/analytics/sms' | '/analytics/mail' | '/analytics/otp' | '/analytics/wa'
 const getAnalytics = async (req: Request, res: Response) => {
@@ -55,6 +57,22 @@ const getCampaignAnalytics = async (req: Request, res: Response) => {
     }
 }
 
+    // GET 'mail/domain'
+    const getMailDomain = async ( req: Request, res: Response) => {
+        try {
+            const params = { ...req.query, ...req.params } as any;
+            let { companyId, startDate = getDefaultDate().from, endDate = getDefaultDate().to, timeZone } = params;
+            const fromDate = formatDate(startDate);
+            const toDate = formatDate(endDate);
+    
+            const analytics = await mailDomainService.getAnalytics(companyId, fromDate, toDate, timeZone);
+            res.send(analytics);
+        } catch (error: any) {
+            logger.error(error);
+            res.status(400).send({ error: error?.message || error });
+        }
+    }
+
 const getService = (resourceType: string) => {
     try {
         switch (resourceType) {
@@ -76,5 +94,6 @@ const getService = (resourceType: string) => {
 
 export {
     getCampaignAnalytics,
-    getAnalytics
+    getAnalytics,
+    getMailDomain
 };
