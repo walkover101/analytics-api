@@ -9,13 +9,14 @@ const PERMITTED_GROUPINGS: { [key: string]: string } = {
     // from request-data
     date: `STRING(DATE(requestData.requestDate,'${DEFAULT_TIMEZONE}'))`,
     nodeId: 'requestData.node_id',
+    plugin: 'requestData.plugin',
 
     // from report-data
     country: 'reportData.countryCode',
     vendorId: 'reportData.smsc',
     reqId: 'reportData.requestID'
 };
-const REQUEST_FIELDS: string[] = ['_id'].concat(['requestDate', 'node_id'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`));
+const REQUEST_FIELDS: string[] = ['_id'].concat(['requestDate', 'node_id', 'plugin'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`));
 const REPORT_FIELDS: string[] = ['countryCode', 'smsc', 'requestID', 'status', 'credit'].map(field => `ARRAY_AGG(${field} ORDER BY timestamp DESC)[OFFSET(0)] AS ${field}`);;
 const DELIVERED_STATUS_CODES = [1, 3, 26];
 const REJECTED_STATUS_CODES = [16, 17, 18, 19, 20, 29];
