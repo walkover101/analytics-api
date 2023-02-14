@@ -1,5 +1,5 @@
 import express, { Application, Request, Response } from "express";
-import { authenticate } from "../middlewares/auth";
+import { auth, Auth } from "../middlewares/auth";
 import options from "../middlewares/options";
 import error from "../middlewares/error";
 import responseTime from "response-time";
@@ -30,10 +30,10 @@ export default function (app: Application) {
     return res.send(generateStatHTML(statMap));
   });
   app.use("/", homeRoutes);
-  app.use("/analytics", authenticate, analyticRoutes);
-  app.use("/logs", authenticate, logRoutes);
-  app.use("/exports", authenticate, downloadRoutes);
-  app.use("/profits", authenticate, profitRoutes);
+  app.use("/analytics", auth([Auth.TOKEN]), analyticRoutes);
+  app.use("/logs", auth([Auth.TOKEN]), logRoutes);
+  app.use("/exports", auth([Auth.TOKEN]), downloadRoutes);
+  app.use("/profits", auth([Auth.TOKEN]), profitRoutes);
   app.use('/report', report);
   app.use(options);
   app.use(error);
